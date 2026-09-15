@@ -1,0 +1,324 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Platform {
+  TELEGRAM
+  X
+}
+
+enum PublishingMode {
+  REQUIRE_APPROVAL
+  AUTO_PUBLISH
+}
+
+enum ProcessingStatus {
+  INGESTED
+  NORMALIZED
+  CLASSIFYING
+  DEDUPLICATING
+  DRAFTING
+  VALIDATING
+  NEEDS_REVIEW
+  PENDING_APPROVAL
+  APPROVED
+  QUEUED
+  PUBLISHED
+  FILTERED
+  REJECTED
+  DUPLICATE
+  FAILED
+}
+
+enum EventClassification {
+  NEW_EVENT
+  DUPLICATE
+  UPDATE
+  UNCERTAIN
+}
+
+enum Relevance {
+  UNASSESSED
+  POLITICAL_NEWS
+  IRRELEVANT
+  UNCERTAIN
+}
+
+enum ValidationStatus {
+  NOT_RUN
+  PASSED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum PublicationStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  UNKNOWN
+}
+
+enum JobStatus {
+  PENDING
+  RUNNING
+  RETRY
+  COMPLETED
+  FAILED
+}
+
+enum LogLevel {
+  INFO
+  WARN
+  ERROR
+}
+
+enum WorkerState {
+  STARTING
+  IDLE
+  BUSY
+  STOPPED
+  ERROR
+}
+
+model AppSettings {
+  id             Int            @id @default(1)
+  publishingMode PublishingMode @default(REQUIRE_APPROVAL)
+  updatedAt      DateTime       @updatedAt
+}
+
+model Source {
+  id         String       @id @default(cuid())
+  platform   Platform
+  handle     String
+  name       String
+  url        String
+  enabled    Boolean      @default(true)
+  deletedAt  DateTime?
+  cursor     Json?
+  lastPollAt DateTime?
+  lastError  String?
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+  posts      SourcePost[]
+
+  @@unique([platform, handle])
+  @@index([enabled, deletedAt])
+}
+
+model SourcePost {
+  id                  String           @id @default(cuid())
+  sourceId            String
+  source              Source           @relation(fields: [sourceId], references: [id], onDelete: Restrict)
+  sourcePostId        String
+  sourceUrl           String
+  originalContent     String           @db.Text
+  normalizedContent   String?          @db.Text
+  contentHash         String?
+  originalLanguage    String?
+  sourcePublishedAt   DateTime
+  ingestedAt          DateTime         @default(now())
+  processingStartedAt DateTime?
+  processingEndedAt   DateTime?
+  relevance           Relevance        @default(UNASSESSED)
+  relevanceResult     Json?
+  rejectionReason     String?          @db.Text
+  status              ProcessingStatus @default(INGESTED)
+  modeAtProcessing    PublishingMode   @default(REQUIRE_APPROVAL)
+  error               String?          @db.Text
+  retryCount          Int              @default(0)
+  nextRetryAt         DateTime?
+  updatedAt           DateTime         @updatedAt
+  matches             EventMatch[]
+  evidence            NewsEvidence[]
+  jobs                ProcessingJob[]
+
+  @@unique([sourceId, sourcePostId])
+  @@index([contentHash])
+  @@index([status, ingestedAt])
+}
+
+model CanonicalEvent {
+  id                String          @id @default(cuid())
+  title             String
+  summary           String          @db.Text
+  occurredAt        DateTime?
+  entities          Json?
+  facts             Json
+  // Provider-neutral embedding storage. Phase 2 may migrate to pgvector.
+  embedding         Float[]         @default([])
+  embeddingModel    String?
+  extractionVersion String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  revisions         EventRevision[]
+
+  @@index([occurredAt])
+  @@index([createdAt])
+}
+
+model EventRevision {
+  id             String         @id @default(cuid())
+  eventId        String
+  event          CanonicalEvent @relation(fields: [eventId], references: [id], onDelete: Restrict)
+  revision       Int            @default(1)
+  facts          Json
+  materialChange String?        @db.Text
+  createdAt      DateTime       @default(now())
+  matches        EventMatch[]
+  newsItem       NewsItem?
+
+  @@unique([eventId, revision])
+}
+
+model EventMatch {
+  id              String              @id @default(cuid())
+  sourcePostId    String
+  sourcePost      SourcePost          @relation(fields: [sourcePostId], references: [id], onDelete: Restrict)
+  eventRevisionId String
+  eventRevision   EventRevision       @relation(fields: [eventRevisionId], references: [id], onDelete: Restrict)
+  classification  EventClassification
+  confidence      Float?
+  rationale       String              @db.Text
+  evidence        Json?
+  matcherVersion  String?
+  createdAt       DateTime            @default(now())
+
+  @@unique([sourcePostId, eventRevisionId])
+  @@index([eventRevisionId, classification])
+}
+
+model NewsItem {
+  id                  String            @id @default(cuid())
+  eventRevisionId     String            @unique
+  eventRevision       EventRevision     @relation(fields: [eventRevisionId], references: [id], onDelete: Restrict)
+  title               String
+  arabicContent       String?           @db.Text
+  protectedQuotes     Json?
+  factualEvidence     Json?
+  status              ProcessingStatus  @default(INGESTED)
+  validationStatus    ValidationStatus  @default(NOT_RUN)
+  validationResult    Json?
+  needsReviewReasons  String[]          @default([])
+  rejectionReason     String?           @db.Text
+  modeAtProcessing    PublishingMode    @default(REQUIRE_APPROVAL)
+  ruleSetId           String?
+  ruleSet             EditorialRuleSet? @relation(fields: [ruleSetId], references: [id], onDelete: Restrict)
+  approvedAt          DateTime?
+  approvedBy          String?
+  error               String?           @db.Text
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+  processingStartedAt DateTime?
+  processingEndedAt   DateTime?
+  evidence            NewsEvidence[]
+  publication         Publication?
+
+  @@index([status, createdAt])
+}
+
+model NewsEvidence {
+  newsItemId   String
+  sourcePostId String
+  newsItem     NewsItem   @relation(fields: [newsItemId], references: [id], onDelete: Restrict)
+  sourcePost   SourcePost @relation(fields: [sourcePostId], references: [id], onDelete: Restrict)
+
+  @@id([newsItemId, sourcePostId])
+}
+
+model EditorialRuleSet {
+  id         String     @id @default(cuid())
+  version    String     @unique
+  // Empty until the owner's documents have been transcribed and approved.
+  rules      Json
+  provenance Json?
+  approvedAt DateTime?
+  createdAt  DateTime   @default(now())
+  newsItems  NewsItem[]
+}
+
+model Publication {
+  id                String               @id @default(cuid())
+  newsItemId        String               @unique
+  newsItem          NewsItem             @relation(fields: [newsItemId], references: [id], onDelete: Restrict)
+  idempotencyKey    String               @unique
+  status            PublicationStatus    @default(PENDING)
+  contentSnapshot   String               @db.Text
+  destination       String
+  telegramMessageId String?
+  telegramResult    Json?
+  error             String?              @db.Text
+  attemptCount      Int                  @default(0)
+  nextRetryAt       DateTime?
+  claimedAt         DateTime?
+  sentAt            DateTime?
+  createdAt         DateTime             @default(now())
+  updatedAt         DateTime             @updatedAt
+  attempts          PublicationAttempt[]
+
+  @@unique([destination, telegramMessageId])
+  @@index([status, nextRetryAt])
+}
+
+model PublicationAttempt {
+  id            String      @id @default(cuid())
+  publicationId String
+  publication   Publication @relation(fields: [publicationId], references: [id], onDelete: Restrict)
+  attempt       Int
+  startedAt     DateTime    @default(now())
+  finishedAt    DateTime?
+  result        Json?
+  error         String?     @db.Text
+
+  @@unique([publicationId, attempt])
+}
+
+model ProcessingJob {
+  id           String     @id @default(cuid())
+  sourcePostId String
+  sourcePost   SourcePost @relation(fields: [sourcePostId], references: [id], onDelete: Restrict)
+  stage        String
+  status       JobStatus  @default(PENDING)
+  attemptCount Int        @default(0)
+  maxAttempts  Int        @default(5)
+  availableAt  DateTime   @default(now())
+  lockedAt     DateTime?
+  lockedBy     String?
+  lastError    String?    @db.Text
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([sourcePostId, stage])
+  @@index([status, availableAt])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  level      LogLevel @default(INFO)
+  action     String
+  actor      String   @default("system")
+  entityType String?
+  entityId   String?
+  message    String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([entityType, entityId])
+}
+
+model WorkerHeartbeat {
+  id         String      @id
+  state      WorkerState @default(STARTING)
+  phase      String      @default("FOUNDATION")
+  startedAt  DateTime    @default(now())
+  lastSeenAt DateTime    @default(now())
+  intervalMs Int         @default(15000)
+  lastError  String?
+  metadata   Json?
+}

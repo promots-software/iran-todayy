@@ -1,0 +1,3 @@
+import { PageTitle } from "@/components/ui";
+import { NewsFeed } from "@/components/news-feed";
+export default function ReviewPage() { return <><PageTitle title="الموافقات والمراجعة" description="الأخبار بانتظار الموافقة، والمواد التي تحتاج تدقيقاً تحريرياً." /><p className="notice">إجراءات الاعتماد والتحرير ستُضاف مع محرك المعالجة. لا يمكن إرسال أي خبر من هذه الصفحة حالياً.</p><section className="panel"><h2>يحتاج مراجعة</h2><NewsFeed where={{ status: "NEEDS_REVIEW" }} /></section><section className="panel"><h2>بانتظار الموافقة</h2><NewsFeed where={{ status: "PENDING_APPROVAL" }} /></section></>; }

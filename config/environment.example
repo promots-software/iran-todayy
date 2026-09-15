@@ -1,0 +1,22 @@
+# Copy this template to .env and supply values locally. Never commit .env.
+# Use a percent-encoded PostgreSQL connection URL for your own database.
+DATABASE_URL=
+POSTGRES_USER=iran_today
+POSTGRES_PASSWORD=
+POSTGRES_DB=iran_today
+# Required to access the dashboard, including in local development.
+ADMIN_USERNAME=
+ADMIN_PASSWORD=
+WORKER_ID=foundation-worker
+WORKER_HEARTBEAT_MS=15000
+# Phase 2/3 ONLY — unused by Phase 1; exact monitoring adapter is still to be selected.
+# TELEGRAM_API_ID=
+# TELEGRAM_API_HASH=
+# TELEGRAM_SESSION=
+# X_BEARER_TOKEN=
+# AI_PROVIDER=
+# AI_API_KEY=
+# AI_MODEL=
+# AI_EMBEDDING_MODEL=
+# TELEGRAM_BOT_TOKEN=
+# TELEGRAM_CHAT_ID=
