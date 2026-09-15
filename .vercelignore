@@ -1,0 +1,16 @@
+.env
+.env.*
+.neon
+.mcp.json
+.agents
+.codex
+.claude
+.cursor
+.test-tools
+.test-db
+node_modules
+.next
+artifacts
+coverage
+*.log
+*.tsbuildinfo
