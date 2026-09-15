@@ -1,5 +1,7 @@
 # Phase 1 file inventory
 
+Neon follow-up adds `neon.ts`, `scripts/prisma-neon.mjs`, `scripts/verify-database.mjs`, and `docs/NEON.md`; updates package manifests, ignore rules, README and the environment variable template. Schema and migration files are unchanged.
+
 All files listed below are new; the repository was empty. Local environment files, dependency directories, build outputs and temporary test database/runtime files are ignored and excluded.
 
 ```text

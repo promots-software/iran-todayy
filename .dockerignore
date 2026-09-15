@@ -8,3 +8,9 @@ node_modules
 .test-db
 .test-tools
 artifacts
+.neon
+.mcp.json
+.cursor
+.agents
+.claude
+.codex

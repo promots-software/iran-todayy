@@ -20,3 +20,11 @@ Thumbs.db
 *.sqlite3
 *.db
 *.dump
+.neon
+.neon/
+.mcp.json
+.cursor/
+.agents/
+.claude/
+.codex/
+skills-lock.json

@@ -78,6 +78,8 @@ Lists are bounded to the latest 100 records for this foundation. All displayed d
 
 ## Environment variables
 
+For the linked Neon production database, see [Neon setup and verification](docs/NEON.md). The Prisma schema remains unchanged; `DATABASE_URL` is the pooled application URL, while `db:neon:migrate` and `db:neon:status` use `DATABASE_URL_UNPOOLED` only in their child process.
+
 | Variable | Phase | Purpose |
 | --- | --- | --- |
 | `DATABASE_URL` | 1 | PostgreSQL connection string |

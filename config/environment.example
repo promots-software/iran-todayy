@@ -1,6 +1,12 @@
 # Copy this template to .env and supply values locally. Never commit .env.
 # Use a percent-encoded PostgreSQL connection URL for your own database.
 DATABASE_URL=
+# Neon direct URL for db:neon:migrate/status; application uses pooled DATABASE_URL.
+DATABASE_URL_UNPOOLED=
+# Written locally by Neon CLI. Neon Auth is provisioned, not wired into the dashboard.
+NEON_BRANCH=
+NEON_AUTH_BASE_URL=
+NEON_AUTH_JWKS_URL=
 POSTGRES_USER=iran_today
 POSTGRES_PASSWORD=
 POSTGRES_DB=iran_today
