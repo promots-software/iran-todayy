@@ -55,7 +55,17 @@ Use a dedicated database. Apply migration and seed, build and start the web app 
 
 Run `npm test`. With neither test environment option, the seven standalone unit tests run and the five database/HTTP tests explicitly skip. Never point integration tests at a live deployment: they intentionally change settings and create/delete fixtures.
 
-## Limitations and recovered environment issues
+## Phase 2 validation — 2026-09-16
+
+- Lint, TypeScript check, Prisma schema validation and Next.js production build passed.
+- All **33 tests passed, zero failed, zero skipped** against isolated PostgreSQL and the built HTTP server. This includes the original 12 tests and 21 Phase 2 tests.
+- New tests cover Arabic/English/Persian semantic fixtures, simultaneous ingestion, material revisions, uncertain matches, immutable evidence, 24-hour boundaries, PDF-derived quote/name/term/claim/figure rules, invalid provider output, retry leases and publication constraints.
+- Authenticated HTTP checks passed for the existing dashboard and all three event filters; unauthenticated access returned 401. Source verification/classification persisted through the actual server action.
+- Additive migration `202609160001_processing` passed locally before deployment to Neon. Neon connectivity, five initial sources and REQUIRE_APPROVAL were verified after migration. No production test fixtures were inserted.
+- Live language understanding and Telegram/X monitoring remain unconfigured. Fixture semantic results are not evidence of an evaluated live AI model. No external publishing or paid service was enabled.
+- HTTP checks validate markup, routes and server actions; no new visual/mobile browser QA was performed.
+
+## Phase 1 limitations and recovered environment issues (historical)
 
 - The first npm download timed out; retrying with cached packages completed successfully.
 - Windows reserved the first selected test database port; using an available port resolved startup.

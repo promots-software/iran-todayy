@@ -40,6 +40,8 @@ enum EventClassification {
   DUPLICATE
   UPDATE
   UNCERTAIN
+  MATERIAL_UPDATE
+  UNCERTAIN_MATCH
 }
 
 enum Relevance {
@@ -101,6 +103,7 @@ model Source {
   enabled    Boolean      @default(true)
   deletedAt  DateTime?
   cursor     Json?
+  editorialProfile Json?
   lastPollAt DateTime?
   lastError  String?
   createdAt  DateTime     @default(now())
@@ -127,6 +130,8 @@ model SourcePost {
   processingEndedAt   DateTime?
   relevance           Relevance        @default(UNASSESSED)
   relevanceResult     Json?
+  metadata            Json?
+  processingResult    Json?
   rejectionReason     String?          @db.Text
   status              ProcessingStatus @default(INGESTED)
   modeAtProcessing    PublishingMode   @default(REQUIRE_APPROVAL)
@@ -234,7 +239,7 @@ model NewsEvidence {
 model EditorialRuleSet {
   id         String     @id @default(cuid())
   version    String     @unique
-  // Empty until the owner's documents have been transcribed and approved.
+  // Immutable version snapshot of the owner's transcribed editorial documents.
   rules      Json
   provenance Json?
   approvedAt DateTime?

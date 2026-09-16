@@ -14,7 +14,7 @@ export function AddSourceForm() {
       <button disabled={pending} type="submit">{pending ? "جارٍ الحفظ…" : "+ إضافة المصدر"}</button>
     </div>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}
-    <p className="muted small">تُحفظ المصادر هنا. ربط المراقبة الفعلية يأتي في المرحلة الثانية.</p>
+    <p className="muted small">كل مصدر مفعّل يدخل مسار المراقبة عند تهيئة موصل مصرح به. الموصلات الحية غير مفعّلة حالياً.</p>
   </form>;
 }
 
@@ -39,7 +39,7 @@ export function ModeForm({ mode }: { mode: "REQUIRE_APPROVAL" | "AUTO_PUBLISH" }
       <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>الموافقة اليدوية</strong><small>كل خبر ينتظر الاعتماد قبل النشر. الوضع الافتراضي للاختبار.</small></span></label>
       <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" defaultChecked={mode === "AUTO_PUBLISH"} /><span><strong>النشر التلقائي</strong><small>لاحقاً: الأخبار التي تجتاز التحقق فقط. أي شك تحريري يُحال إلى المراجعة.</small></span></label>
     </fieldset>
-    <p className="notice">هذا الإعداد محفوظ للمراحل التالية. لا توجد خدمة إرسال أو معالجة أخبار في المرحلة الأولى.</p>
+    <p className="notice">المعالجة متاحة للاختبار. الإرسال الخارجي معطل في المرحلة الثانية في كلا الوضعين.</p>
     <button disabled={pending}>{pending ? "جارٍ الحفظ…" : "حفظ الإعدادات"}</button>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}
   </form>;

@@ -4,6 +4,7 @@ import { usePathname } from "next/navigation";
 const routes = [
   ["/", "نظرة عامة", "◫"], ["/sources", "المصادر", "◎"], ["/review", "الموافقات والمراجعة", "◷"],
   ["/published", "الأخبار المنشورة", "↗"], ["/filtered", "المستبعد والمرفوض", "⊘"],
+  ["/events", "مطابقة الأحداث", "⇄"],
   ["/logs", "سجل العمليات", "≡"], ["/settings", "الإعدادات", "⚙"], ["/system", "حالة النظام", "◇"],
 ];
 export function Navigation() {

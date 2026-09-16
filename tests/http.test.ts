@@ -13,7 +13,8 @@ test("production HTTP routes, authentication and Arabic shell", { skip: !process
   const health = await fetch(`${base}/api/health`);
   assert.equal(health.status, 200);
   assert.equal((await health.json()).phase, "foundation");
-  for (const route of ["/", "/sources", "/settings", "/review", "/published", "/filtered", "/logs", "/system"]) {
+  for (const route of ["/", "/sources", "/settings", "/review", "/published", "/filtered", "/logs", "/system", "/events", "/events?kind=MATERIAL_UPDATE", "/events?kind=UNCERTAIN_MATCH"]) {
+    assert.equal((await fetch(`${base}${route}`)).status,401,`protected ${route}`);
     const response = await fetch(`${base}${route}`, { headers });
     assert.equal(response.status, 200, route);
     const html = await response.text();
@@ -59,6 +60,9 @@ test("production source and mode forms persist changes and show validation error
     assert.match(await submit("/sources", form => form.includes('name="handle"'), input), /تمت إضافة المصدر/);
     const source = await client.source.findUniqueOrThrow({ where: { platform_handle: { platform: "X", handle } } });
     sourceId = source.id;
+    assert.match(await submit("/sources", form => form.includes(`value="${source.id}"`) && form.includes('name="evidence"'), { id:source.id, verified:"on", classification:"NEUTRAL", authority:"NEWSPAPER", evidence:"HTTP fixture verification" }), /تم توثيق التصنيف/);
+    const profiled=await client.source.findUniqueOrThrow({where:{id:source.id}});
+    assert.equal((profiled.editorialProfile as {verified:boolean}).verified,true);
     assert.match(await submit("/sources", form => form.includes('name="handle"'), input), /هذا المصدر موجود بالفعل/);
     assert.match(await submit("/sources", form => form.includes('name="handle"'), { ...input, handle: "invalid handle" }), /أدخل معرّف الحساب الصحيح/);
     const selectRow = (form: string) => form.includes(`value="${source.id}"`);

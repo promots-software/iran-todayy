@@ -2,15 +2,18 @@ import { randomUUID } from "node:crypto";
 import { setTimeout as sleep } from "node:timers/promises";
 import { db } from "../lib/db";
 import { retryDelay } from "../lib/domain";
+import { claimJob, processJob, pollSources } from "../lib/processing/engine";
+import { UnconfiguredLanguageProvider } from "../lib/processing/providers";
 
-const id = process.env.WORKER_ID || `foundation-${randomUUID()}`;
+const id = process.env.WORKER_ID || `processing-${randomUUID()}`;
+const provider = new UnconfiguredLanguageProvider();
 const configuredInterval = Number(process.env.WORKER_HEARTBEAT_MS ?? 15000);
 const intervalMs = Number.isFinite(configuredInterval) ? Math.min(60_000, Math.max(1000, configuredInterval)) : 15000;
 const stop = new AbortController();
 process.once("SIGTERM", () => stop.abort());
 process.once("SIGINT", () => stop.abort());
 function log(level: string, event: string) {
-  console.log(JSON.stringify({ time: new Date().toISOString(), level, worker: id, event, phase: "FOUNDATION" }));
+  console.log(JSON.stringify({ time: new Date().toISOString(), level, worker: id, event, phase: "PROCESSING" }));
 }
 async function pause(ms: number) {
   try { await sleep(ms, undefined, { signal: stop.signal }); }
@@ -24,13 +27,20 @@ async function main() {
   try {
     while (!stop.signal.aborted) {
       try {
-        await db.workerHeartbeat.upsert({ where: { id }, create: { id, state: "IDLE", startedAt, intervalMs, metadata: { processingEnabled: false } }, update: { state: "IDLE", startedAt, lastSeenAt: new Date(), intervalMs, lastError: null, metadata: { processingEnabled: false } } });
+        const metadata = { processingEnabled: true, provider: provider.id, liveMonitoringEnabled: false, externalPublishingEnabled: false };
+        await db.workerHeartbeat.upsert({ where: { id }, create: { id, phase: "PROCESSING", state: "IDLE", startedAt, intervalMs, metadata }, update: { phase: "PROCESSING", state: "IDLE", startedAt, lastSeenAt: new Date(), intervalMs, lastError: null, metadata } });
         if (!registered) {
-          await db.auditLog.create({ data: { action: "WORKER_STARTED", entityType: "WorkerHeartbeat", entityId: id, message: "بدء عامل المرحلة الأولى — نبضات حالة فقط" } });
+          await db.auditLog.create({ data: { action: "WORKER_STARTED", entityType: "WorkerHeartbeat", entityId: id, message: "بدء عامل المعالجة؛ الموصلات الحية والإرسال الخارجي معطلة" } });
           registered = true;
         }
         failures = 0;
-        log("INFO", "heartbeat_idle_no_processing");
+        await pollSources(db, {}, stop.signal);
+        const job = await claimJob(db, id);
+        if (job) {
+          await db.workerHeartbeat.update({ where: { id }, data: { state: "BUSY", lastSeenAt: new Date() } });
+          await processJob(db, job, provider, stop.signal);
+          log("INFO", "job_finished");
+        }
         await pause(intervalMs);
       } catch {
         failures++;

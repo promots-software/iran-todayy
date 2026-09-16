@@ -6,6 +6,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { authenticated } from "@/lib/auth";
 import { saveSource, changeSource, changeMode } from "@/lib/source-service";
+import { saveSourceProfile } from "@/lib/processing/source-profile";
 
 export type ActionState = { ok: boolean; message: string };
 async function actor() {
@@ -41,6 +42,13 @@ export async function modeAction(_: ActionState, form: FormData): Promise<Action
     const user = await actor();
     await changeMode(db, form.get("publishingMode"), user);
     revalidatePath("/", "layout");
-    return { ok: true, message: "تم حفظ وضع النشر. النشر الفعلي غير مفعّل في المرحلة الأولى." };
+    return { ok: true, message: "تم حفظ وضع النشر. الإرسال الخارجي معطل في المرحلة الثانية." };
   } catch (error) { return failure(error); }
+}
+export async function sourceProfileAction(_:ActionState,form:FormData):Promise<ActionState> {
+  try {
+    const user=await actor();
+    await saveSourceProfile(db,z.string().min(1).max(100).parse(form.get("id")),{verified:form.get("verified")==="on",flagged:form.get("flagged")==="on",approvedAnalyst:form.get("approvedAnalyst")==="on",classification:form.get("classification"),authority:form.get("authority"),evidence:form.get("evidence")},user);
+    revalidatePath("/sources");return {ok:true,message:"تم توثيق التصنيف"};
+  }catch(error){return failure(error);}
 }

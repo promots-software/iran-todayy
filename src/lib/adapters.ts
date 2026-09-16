@@ -1,4 +1,5 @@
-// Contracts only. Phase 1 deliberately contains no network adapters or AI rules.
+// Legacy Phase 1 contracts retained for compatibility. The executable Phase 2
+// contracts are in processing/contracts.ts; do not use these for new adapters.
 export interface IncomingPost {
   externalId: string;
   url: string;

@@ -1,4 +1,5 @@
 export const labels: Record<string, string> = {
+  MATERIAL_UPDATE: "تطور جوهري", UNCERTAIN_MATCH: "مطابقة محتملة — تحتاج مراجعة",
   INGESTED: "تم الاستقبال", NORMALIZED: "تم الاستخراج", CLASSIFYING: "قيد التصنيف", DEDUPLICATING: "فحص التكرار",
   DRAFTING: "قيد التحرير", VALIDATING: "قيد التحقق", NEEDS_REVIEW: "يحتاج مراجعة", PENDING_APPROVAL: "بانتظار الموافقة",
   APPROVED: "معتمد", QUEUED: "في قائمة النشر", PUBLISHED: "منشور", FILTERED: "مستبعد", REJECTED: "مرفوض",

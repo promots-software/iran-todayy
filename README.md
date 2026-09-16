@@ -1,6 +1,6 @@
-# Iran Today — Phase 1
+# Iran Today — Phase 2
 
-Single-project, Arabic-first RTL political news administration foundation. The repository was empty at inspection. No prior files or commits were present.
+Single-project, Arabic-first RTL political news administration and processing engine. See [Phase 2 implementation, editorial provenance, limitations and operations](docs/PHASE2.md).
 
 ## Implemented
 
@@ -13,7 +13,7 @@ Single-project, Arabic-first RTL political news administration foundation. The r
 - Worker heartbeat, structured console logs, database reconnect backoff and graceful shutdown.
 - Migration, repeatable seed, Docker Compose, unit and opt-in PostgreSQL integration tests.
 
-**Not implemented:** ingestion, X/Telegram API calls, political classification, semantic matching, AI rewriting, editorial rules, approval mutations or actual publishing. Choosing `AUTO_PUBLISH` only saves a setting. The worker emits heartbeats and never consumes jobs.
+**Phase 2:** idempotent ingestion, validated language-provider contracts, layered semantic matching, versioned PDF-derived editorial rules, transactional jobs, retries and dashboard evidence inspection. Language understanding and monitoring are fixture-driven until authorized providers are configured. The worker consumes jobs but holds them for review when its language provider is unconfigured. No live X/Telegram integration, paid AI, approval mutation or external publication is enabled. `AUTO_PUBLISH` never triggers a send in this release.
 
 ## Local setup
 

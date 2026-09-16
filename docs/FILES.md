@@ -60,3 +60,18 @@ tests/http.test.ts
 tests/seed.test.ts
 tsconfig.json
 ```
+
+## Phase 2 additions
+
+- `src/lib/processing/rules.ts`: complete versioned editorial catalogue and PDF provenance.
+- `src/lib/processing/contracts.ts`: provider schemas and source evidence validation.
+- `src/lib/processing/editorial.ts`: protected spans, deterministic edits and review gates.
+- `src/lib/processing/matcher.ts`: layered semantic event decisions.
+- `src/lib/processing/engine.ts`: ingestion, polling, job claims, retries and transactional persistence.
+- `src/lib/processing/providers.ts`: fixture and unavailable-provider implementations; publishing disabled.
+- `src/lib/processing/source-profile.ts`: audited source classification.
+- `src/app/events/page.tsx`: duplicate, material-update and uncertain-match views.
+- `src/components/processing-details.tsx`, `post-feed.tsx`, `source-profile-form.tsx`: inspection and source verification UI.
+- `prisma/migrations/202609160001_processing/migration.sql`: additive fields/enums and immutable-evidence trigger.
+- `tests/fixtures/processing.ts`, `tests/processing.test.ts`, `tests/processing-database.test.ts`: Phase 2 fixtures and unit/integration tests.
+- `docs/PHASE2.md`: source-to-code mapping, limitations, deployment and worker operations.
