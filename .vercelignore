@@ -14,3 +14,4 @@ artifacts
 coverage
 *.log
 *.tsbuildinfo
+skills-lock.json
