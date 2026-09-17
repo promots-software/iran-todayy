@@ -1,11 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { TelegramMonitor, type ChannelReader, type ReadMessage } from "../src/lib/telegram/monitor";
+import { Api } from "teleproto";
+import { TelegramMonitor, TelegramReader, type ChannelReader, type ReadMessage } from "../src/lib/telegram/monitor";
 import { assertShadowMode, assertApprovalMode } from "../src/lib/processing/shadow";
 import { externalPublicationDecision } from "../src/lib/processing/providers";
 import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { ingest, pollSources } from "../src/lib/processing/engine";
+import { drainedDeadline } from "../src/worker/runtime";
 
 const signal = new AbortController().signal;
 function reader(messages: ReadMessage[]): ChannelReader {
@@ -46,6 +48,70 @@ test("invalid cursor, reassigned channel and cancellation fail closed", async ()
   await assert.rejects(monitor.poll({ handle: "irna_arabic", cursor: 2 }, signal), /CURSOR_INVALID/);
   await assert.rejects(monitor.poll({ handle: "irna_arabic", cursor: { kind: "telegram-shadow-v1", channelId: "999", lastId: 1 } }, signal), /CHANNEL_CHANGED/);
   await assert.rejects(monitor.poll({ handle: "irna_arabic", cursor: null }, AbortSignal.abort()));
+});
+test("timed-out Telegram RPC reconnects and resumes with exactly-once cursor ingestion", async () => {
+  let stuck = true;
+  let reconnects = 0;
+  const messages: ReadMessage[] = [{ id: 1, text: "boundary", date: 1700000000 }];
+  const client = {
+    getEntity: async () => {
+      if (stuck) return await new Promise<never>(() => {});
+      const entity = Object.create(Api.Channel.prototype);
+      Object.assign(entity, { broadcast: true, username: "irna_ar", id: 123 });
+      return entity;
+    },
+    getMessages: async () => messages.map(message => ({ id: message.id, message: message.text, date: message.date })),
+  } as unknown as import("teleproto").TelegramClient;
+  const monitor = new TelegramMonitor(new TelegramReader(client));
+  type MockSource = { id: string; platform: "TELEGRAM"; handle: string; enabled: boolean; deletedAt: null; cursor: unknown; url: string };
+  type MockTx = {
+    source: { findUniqueOrThrow: () => Promise<MockSource> };
+    appSettings: { findUnique: () => Promise<{ publishingMode: "REQUIRE_APPROVAL" }> };
+    sourcePost: { upsert: (args: { where: { sourceId_sourcePostId: { sourceId: string; sourcePostId: string } }; create: Record<string, unknown> }) => Promise<Record<string, unknown>> };
+    processingJob: { upsert: (args: { create: Record<string, unknown> }) => Promise<Record<string, unknown>> };
+  };
+  type MockDb = {
+    source: { findMany: () => Promise<MockSource[]>; update: (args: { data: Record<string, unknown> }) => Promise<MockSource> };
+    appSettings: { findUnique: () => Promise<{ publishingMode: "REQUIRE_APPROVAL" }> };
+    $transaction: (callback: (tx: MockTx) => Promise<unknown>) => Promise<unknown>;
+  };
+  const source: MockSource = { id: "source-timeout", platform: "TELEGRAM", handle: "irna_ar", enabled: true, deletedAt: null, cursor: null, url: "https://t.me/irna_ar" };
+  const posts = new Map<string, Record<string, unknown>>();
+  const db: MockDb = {
+    source: {
+      findMany: async () => [source],
+      update: async ({ data }) => Object.assign(source, data),
+    },
+    appSettings: { findUnique: async () => ({ publishingMode: "REQUIRE_APPROVAL" }) },
+    $transaction: async callback => callback({
+      source: { findUniqueOrThrow: async () => source },
+      appSettings: { findUnique: async () => ({ publishingMode: "REQUIRE_APPROVAL" }) },
+      sourcePost: { upsert: async ({ where, create }) => {
+        const key = `${where.sourceId_sourcePostId.sourceId}:${where.sourceId_sourcePostId.sourcePostId}`;
+        if (!posts.has(key)) posts.set(key, { id: `post-${posts.size + 1}`, ...create });
+        return posts.get(key)!;
+      } },
+      processingJob: { upsert: async ({ create }) => create },
+    }),
+  };
+  await assert.rejects(drainedDeadline(
+    signal => pollSources(db as unknown as PrismaClient, { TELEGRAM: monitor }, signal),
+    async () => { reconnects++; stuck = false; },
+    signal,
+    10,
+    100,
+  ), /WORKER_OPERATION_TIMEOUT/);
+  assert.equal(reconnects, 1);
+  assert.equal(source.cursor, null, "a timed-out poll cannot advance the cursor");
+
+  // The resumed connection establishes its boundary, then ingests the post
+  // arriving around the disconnect. A replay after the checkpoint is a no-op.
+  await pollSources(db as unknown as PrismaClient, { TELEGRAM: monitor }, signal);
+  messages.push({ id: 2, text: "new post", date: 1700000001 });
+  await pollSources(db as unknown as PrismaClient, { TELEGRAM: monitor }, signal);
+  await pollSources(db as unknown as PrismaClient, { TELEGRAM: monitor }, signal);
+  assert.equal(posts.size, 1);
+  assert.equal((source.cursor as unknown as { lastId: number }).lastId, 2);
 });
 test("flood wait pauses all channels, makes no requests during cooldown, and sanitizes errors", async () => {
   let now = 0, calls = 0;

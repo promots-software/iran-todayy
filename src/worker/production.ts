@@ -72,8 +72,8 @@ async function main() {
           if(Date.now()-lastRenewed>=60000)throw new ProcessingError('WORKER_LEASE_LOST');
         };
         const monitor=new TelegramMonitor({
-          channel:handle=>{requireLease();return new TelegramReader(client!).channel(handle);},
-          messages:(handle,after)=>{requireLease();return new TelegramReader(client!).messages(handle,after);},
+          channel:(handle,readSignal)=>{requireLease();return new TelegramReader(client!).channel(handle,readSignal);},
+          messages:(handle,after,readSignal)=>{requireLease();return new TelegramReader(client!).messages(handle,after,readSignal);},
         });
         const reconnect=async()=>{
           telegramReady=false;

@@ -187,6 +187,10 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       await client.source.update({where:{id:source.id},data:{cursor:batch.cursor == null?Prisma.DbNull:json(batch.cursor),lastPollAt:new Date(),lastError:null}});
       report.push({sourceId:source.id,posts:batch.posts.length,error:null});
     } catch (error) {
+      // A timed-out Telegram RPC is cancellation-aware. Let the worker's
+      // reconnect supervisor own the failed poll instead of continuing with
+      // a half-dead client or writing a misleading checkpoint.
+      if (error instanceof ProcessingError && error.code === "TELEGRAM_OPERATION_ABORTED") throw error;
       const safeCodes = ["TELEGRAM_USERNAME_UNAVAILABLE", "TELEGRAM_PUBLIC_CHANNEL_REQUIRED", "TELEGRAM_CHANNEL_CHANGED", "TELEGRAM_CURSOR_INVALID", "TELEGRAM_FLOOD_WAIT", "TELEGRAM_READ_FAILED", "SHADOW_MODE_REQUIRED", "REQUIRE_APPROVAL_REQUIRED"];
       const code = error instanceof ProcessingError && safeCodes.includes(error.code) ? error.code : "MONITOR_UNAVAILABLE";
       await client.source.update({where:{id:source.id},data:{lastPollAt:new Date(),lastError:code}});

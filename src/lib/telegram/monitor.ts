@@ -7,23 +7,50 @@ const cursorSchema = z.object({ kind: z.literal("telegram-shadow-v1"), channelId
 export type TelegramCursor = z.infer<typeof cursorSchema>;
 export type ReadMessage = { id: number; text: string; date: number };
 export interface ChannelReader {
-  channel(handle: string): Promise<string>;
-  messages(handle: string, after: number | null): Promise<ReadMessage[]>;
+  /** The signal is part of the reader contract so a timed-out RPC cannot
+   * leave the poll promise pending while the worker is trying to reconnect. */
+  channel(handle: string, signal?: AbortSignal): Promise<string>;
+  messages(handle: string, after: number | null, signal?: AbortSignal): Promise<ReadMessage[]>;
+}
+
+/**
+ * teleproto's high-level helpers do not accept AbortSignal. Race the request
+ * with the worker signal so the polling operation settles promptly when the
+ * worker's timeout/reconnect path fires. The underlying read is harmless and
+ * read-only; reconnect destroys the old client before a new one is used.
+ */
+function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+  signal.throwIfAborted();
+  return new Promise<T>((resolve, reject) => {
+    let settled = false;
+    const cleanup = () => {
+      if (settled) return;
+      settled = true;
+      signal.removeEventListener("abort", onAbort);
+    };
+    const onAbort = () => {
+      cleanup();
+      reject(new ProcessingError("TELEGRAM_OPERATION_ABORTED", true));
+    };
+    signal.addEventListener("abort", onAbort, { once: true });
+    operation.then(value => { cleanup(); resolve(value); }, error => { cleanup(); reject(error); });
+  });
 }
 
 /** Only resolves public broadcast channels and reads history. No joins, sends or read acknowledgements. */
 export class TelegramReader implements ChannelReader {
   constructor(private client: TelegramClient) {}
-  async channel(handle: string) {
-    const entity = await this.client.getEntity(handle);
+  async channel(handle: string, signal = new AbortController().signal) {
+    const entity = await abortable(this.client.getEntity(handle), signal);
     if (!(entity instanceof Api.Channel) || !entity.broadcast || entity.username?.toLowerCase() !== handle.toLowerCase()) {
       throw new ProcessingError("TELEGRAM_PUBLIC_CHANNEL_REQUIRED");
     }
     return entity.id.toString();
   }
-  async messages(handle: string, after: number | null) {
-    const result = await this.client.getMessages(handle, after === null
+  async messages(handle: string, after: number | null, signal = new AbortController().signal) {
+    const request = this.client.getMessages(handle, after === null
       ? { limit: 1 } : { limit: 50, minId: after, reverse: true });
+    const result = await abortable(request, signal);
     return result.map(m => ({ id: m.id, text: m.message ?? "", date: m.date }));
   }
 }
@@ -42,9 +69,9 @@ export class TelegramMonitor implements Monitor {
     if (parsed && !parsed.success) throw new ProcessingError("TELEGRAM_CURSOR_INVALID");
     const previous = parsed?.success ? parsed.data : null;
     try {
-      const channelId = await this.reader.channel(input.handle);
+      const channelId = await this.reader.channel(input.handle, signal);
       if (previous && previous.channelId !== channelId) throw new ProcessingError("TELEGRAM_CHANNEL_CHANGED");
-      const messages = await this.reader.messages(input.handle, previous?.lastId ?? null);
+      const messages = await this.reader.messages(input.handle, previous?.lastId ?? null, signal);
       signal.throwIfAborted();
       const posts: Incoming[] = [];
       let lastId = previous?.lastId ?? 0;
