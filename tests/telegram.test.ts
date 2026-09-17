@@ -8,6 +8,7 @@ import { PrismaClient } from "@prisma/client";
 import { randomUUID } from "node:crypto";
 import { ingest, pollSources } from "../src/lib/processing/engine";
 import { drainedDeadline } from "../src/worker/runtime";
+import { ProcessingError } from "../src/lib/processing/contracts";
 
 const signal = new AbortController().signal;
 function reader(messages: ReadMessage[]): ChannelReader {
@@ -112,6 +113,34 @@ test("timed-out Telegram RPC reconnects and resumes with exactly-once cursor ing
   await pollSources(db as unknown as PrismaClient, { TELEGRAM: monitor }, signal);
   assert.equal(posts.size, 1);
   assert.equal((source.cursor as unknown as { lastId: number }).lastId, 2);
+});
+test("one slow source is bounded without starving the next enabled source", async () => {
+  const sources = [
+    { id: "slow", platform: "TELEGRAM" as const, handle: "slow_source", enabled: true, deletedAt: null, cursor: null },
+    { id: "next", platform: "TELEGRAM" as const, handle: "next_source", enabled: true, deletedAt: null, cursor: null },
+  ];
+  let nextPolled = false;
+  const adapter = {
+    id: "offline-timeout",
+    live: true,
+    poll: async ({ handle }: { handle: string }, readSignal: AbortSignal) => {
+      if (handle === "slow_source") return await new Promise<never>((_resolve, reject) => readSignal.addEventListener("abort", () => reject(new ProcessingError("TELEGRAM_OPERATION_ABORTED", true)), { once: true }));
+      nextPolled = true;
+      return { posts: [], cursor: { kind: "test", lastId: 2 } };
+    },
+  };
+  const db = {
+    source: {
+      findMany: async () => sources,
+      update: async ({ where, data }: { where: { id: string }; data: Record<string, unknown> }) => Object.assign(sources.find(source => source.id === where.id)!, data),
+    },
+    appSettings: { findUnique: async () => ({ publishingMode: "REQUIRE_APPROVAL" as const }) },
+  };
+  const report = await pollSources(db as unknown as PrismaClient, { TELEGRAM: adapter }, signal, { liveTimeoutMs: 5 });
+  assert.equal(nextPolled, true);
+  assert.equal(report.find(row => row.sourceId === "slow")?.error, "TELEGRAM_OPERATION_TIMEOUT");
+  assert.equal(report.find(row => row.sourceId === "next")?.error, null);
+  assert.deepEqual(sources[1].cursor, { kind: "test", lastId: 2 });
 });
 test("flood wait pauses all channels, makes no requests during cooldown, and sanitizes errors", async () => {
   let now = 0, calls = 0;

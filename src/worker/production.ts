@@ -106,7 +106,7 @@ async function main() {
               const report=await drainedDeadline(pollSignal=>pollSources(db,{TELEGRAM:monitor},pollSignal),reconnect,signal,60000);
               pollErrors=report.filter(r=>r.error).length;
               for(const row of report)log('SOURCE_POLL',row);
-              if(report.some(r=>r.error==='TELEGRAM_READ_FAILED'||r.error==='MONITOR_UNAVAILABLE')){
+              if(report.some(r=>r.error==='TELEGRAM_READ_FAILED'||r.error==='TELEGRAM_OPERATION_TIMEOUT'||r.error==='MONITOR_UNAVAILABLE')){
                 await reconnect();throw new ProcessingError('TELEGRAM_RECONNECT_REQUIRED',true);
               }
               attempts=0;await pause(30000,signal);

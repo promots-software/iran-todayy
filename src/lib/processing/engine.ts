@@ -10,6 +10,10 @@ import {finalizeConstrainedDraft} from './local-finalization';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
 const leaseMs = 300000;
+// Bound each enabled live source independently. A stalled channel must not
+// consume the entire poll window and starve the remaining sources.
+const liveSourcePollTimeoutMs = 15000;
+export type PollSourcesOptions = { liveTimeoutMs?: number };
 const audit = (tx: Prisma.TransactionClient, id: string, action: string, message: string, metadata: unknown) => tx.auditLog.create({ data: { action, actor: "processing-engine", entityType: "SourcePost", entityId: id, message, metadata: json(metadata) } });
 export async function ingest(client: PrismaClient, sourceId: string, raw: unknown, live = false) {
   if (live) assertShadowMode();
@@ -167,20 +171,32 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
     return {postId:post.id,error:code};
   }
 }
-export async function pollSources(client: PrismaClient, monitors: Partial<Record<"TELEGRAM"|"X",Monitor>>, signal: AbortSignal) {
+export async function pollSources(client: PrismaClient, monitors: Partial<Record<"TELEGRAM"|"X",Monitor>>, signal: AbortSignal, options: PollSourcesOptions = {}) {
   const report: {sourceId:string;posts:number;error:string|null}[] = [];
+  const sourceTimeoutMs=options.liveTimeoutMs ?? liveSourcePollTimeoutMs;
   const sources=await client.source.findMany({where:{enabled:true,deletedAt:null}});
   for (const source of sources) {
     if (signal.aborted) break;
     const adapter=monitors[source.platform];
     if (!adapter) continue;
+    let timedOut=false;
+    let timer:ReturnType<typeof setTimeout>|undefined;
+    const sourceController=new AbortController();
     try {
       if (adapter.live) {
         assertShadowMode();
         assertApprovalMode((await client.appSettings.findUnique({where:{id:1}}))?.publishingMode);
         if (source.platform !== "TELEGRAM") throw new ProcessingError("LIVE_PLATFORM_DISABLED");
       }
-      const batch=await adapter.poll({handle:source.handle,cursor:source.cursor},signal);
+      const sourceSignal=AbortSignal.any([signal,sourceController.signal]);
+      const timeout=new Promise<never>((_,reject)=>{
+        if (!adapter.live) return;
+        timer=setTimeout(()=>{
+          timedOut=true;sourceController.abort();reject(new ProcessingError("TELEGRAM_OPERATION_TIMEOUT",true));
+        },sourceTimeoutMs);
+      });
+      const batch=await Promise.race([adapter.poll({handle:source.handle,cursor:source.cursor},sourceSignal),timeout]);
+      if (timer) clearTimeout(timer);
       for (const post of batch.posts) { signal.throwIfAborted(); await ingest(client,source.id,post,adapter.live); }
       // Cursor advances only after all posts commit. Replay is safe after interruption.
       signal.throwIfAborted();
@@ -190,9 +206,10 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       // A timed-out Telegram RPC is cancellation-aware. Let the worker's
       // reconnect supervisor own the failed poll instead of continuing with
       // a half-dead client or writing a misleading checkpoint.
-      if (error instanceof ProcessingError && error.code === "TELEGRAM_OPERATION_ABORTED") throw error;
-      const safeCodes = ["TELEGRAM_USERNAME_UNAVAILABLE", "TELEGRAM_PUBLIC_CHANNEL_REQUIRED", "TELEGRAM_CHANNEL_CHANGED", "TELEGRAM_CURSOR_INVALID", "TELEGRAM_FLOOD_WAIT", "TELEGRAM_READ_FAILED", "SHADOW_MODE_REQUIRED", "REQUIRE_APPROVAL_REQUIRED"];
-      const code = error instanceof ProcessingError && safeCodes.includes(error.code) ? error.code : "MONITOR_UNAVAILABLE";
+      if (timer) clearTimeout(timer);
+      if (error instanceof ProcessingError && error.code === "TELEGRAM_OPERATION_ABORTED" && signal.aborted) throw error;
+      const safeCodes = ["TELEGRAM_USERNAME_UNAVAILABLE", "TELEGRAM_PUBLIC_CHANNEL_REQUIRED", "TELEGRAM_CHANNEL_CHANGED", "TELEGRAM_CURSOR_INVALID", "TELEGRAM_FLOOD_WAIT", "TELEGRAM_READ_FAILED", "TELEGRAM_OPERATION_TIMEOUT", "SHADOW_MODE_REQUIRED", "REQUIRE_APPROVAL_REQUIRED"];
+      const code = timedOut ? "TELEGRAM_OPERATION_TIMEOUT" : error instanceof ProcessingError && safeCodes.includes(error.code) ? error.code : "MONITOR_UNAVAILABLE";
       await client.source.update({where:{id:source.id},data:{lastPollAt:new Date(),lastError:code}});
       report.push({sourceId:source.id,posts:0,error:code});
     }
