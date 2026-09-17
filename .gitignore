@@ -32,3 +32,4 @@ skills-lock.json
 
 .vercel
 .env*
+*.session*

@@ -45,10 +45,14 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   const draft: Draft = parsed.data;
   const review = initialReview(u, profile);
   const sourceQuotes = literalQuotes(content);
+  const outputText = draft.title + "\n" + draft.body;
+  if (!draft.sentences.some(s=>s.text===draft.title)) throw new ProcessingError("MISSING_TITLE_PROVENANCE");
   if ((content.match(/"/g)?.length ?? 0) % 2 || (content.match(/«/g)?.length ?? 0) !== (content.match(/»/g)?.length ?? 0) || (content.match(/“/g)?.length ?? 0) !== (content.match(/”/g)?.length ?? 0)) review.push(reason("QUOTE_REVIEW"));
   for (const span of draft.protectedSpans) {
     checkEvidence(content, span.evidence);
     if (!span.evidence.excerpt.includes(span.text)) throw new ProcessingError("INVALID_PROTECTED_SPAN");
+    if (!outputText.includes(span.text)) throw new ProcessingError("INVALID_PROTECTED_SPAN");
+    if (span.kind === "QUOTE" && !sourceQuotes.some(q=>q.text===span.text && q.start>=span.evidence.start && q.end<=span.evidence.end)) throw new ProcessingError("INVALID_LITERAL_QUOTE");
   }
   const protectedTexts = [...sourceQuotes.map(q=>q.text), ...draft.protectedSpans.map(s=>s.text), ...names.institutions, "قناة الشرق الأوسط"];
   const joined = draft.title + "\n" + draft.body;
@@ -65,10 +69,16 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   }
   let unaccounted = joined;
   for (const s of [...draft.sentences].sort((a,b)=>b.text.length-a.text.length)) unaccounted = unaccounted.split(s.text).join("");
-  if (unaccounted.trim() || u.event.facts.some(f=>!used.has(f.id)) || Object.values(draft.attestation).some(v=>!v)) review.push(reason("UNSUPPORTED_OUTPUT"));
+  if (unaccounted.trim()) throw new ProcessingError("INCOMPLETE_DRAFT_PROVENANCE");
+  if (u.event.facts.some(f=>!used.has(f.id))) review.push(reason("UNSUPPORTED_OUTPUT","UNCOVERED_FACT"));
+  // Missing editorial judgment is a review requirement, never proof of a false fact.
+  // Factual, attribution and numeric failures retain UNSUPPORTED_OUTPUT handling.
+  const editorialJudgments = new Set(['titlesChecked','spellingChecked','noUncoveredTerms']);
+  for(const [key,passed] of Object.entries(draft.attestation)) if(!passed) review.push(reason(editorialJudgments.has(key)?"EDITORIAL_ATTESTATION_REQUIRED":"UNSUPPORTED_OUTPUT",`ATTESTATION_NOT_ESTABLISHED: ${key}`));
   const applied: { ruleId: string; from: string; to: string; reference: string; context?: string }[] = [];
   let title = draft.title, body = draft.body;
-  const transform = (fn: (s:string)=>string) => { title=outsideProtected(title,protectedTexts,fn); body=outsideProtected(body,protectedTexts,fn); };
+  const sentenceEvidence=draft.sentences.map(s=>({...s,factIds:[...s.factIds]}));
+  const transform = (fn: (s:string)=>string) => { title=outsideProtected(title,protectedTexts,fn); body=outsideProtected(body,protectedTexts,fn); sentenceEvidence.forEach(s=>{s.text=outsideProtected(s.text,protectedTexts,fn);}); };
   for (const rule of terminology.filter(r=>r.mode === "automatic")) {
     if (!literalAutomatic.has(rule.id)) continue;
     for (const from of rule.from) transform(s=>s.replace(boundary(from),()=>{ applied.push({ruleId:rule.id,from,to:rule.to[0],reference:rule.reference});return rule.to[0]; }));
@@ -94,11 +104,20 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   for (const [from,to] of Object.entries(names.aliases)) transform(s=>s.replace(boundary(from),to));
   for (const [from,to] of Object.entries(spelling)) transform(s=>s.replace(boundary(from),to));
   transform(s=>s.replace(/[٠-٩۰-۹]/gu,c=>String("٠١٢٣٤٥٦٧٨٩".includes(c)?"٠١٢٣٤٥٦٧٨٩".indexOf(c):"۰۱۲۳۴۵۶۷۸۹".indexOf(c))).replace(/,/g,"،").replace(/;/g,"؛").replace(/\?/g,"؟").replace(/\s+([،؛؟!:.])/gu,"$1").replace(/([!؟])\1+/gu,"$1"));
+  const beforeTitle=title;
   title=outsideProtected(title,protectedTexts,s=>s.replace(/غزّة/gu,"غزة")).replace(/\.$/u,"");
+  if(title!==beforeTitle) {
+    const entry=sentenceEvidence.find(s=>s.text===beforeTitle);
+    if(!entry)throw new ProcessingError("MISSING_TITLE_PROVENANCE");
+    // Keep body provenance if the same sentence also occurs in the body.
+    sentenceEvidence.push({...entry,text:title,factIds:[...entry.factIds]});
+    if(!body.includes(beforeTitle))sentenceEvidence.splice(sentenceEvidence.indexOf(entry),1);
+  }
   const unprotectedBody = unprotectedText(body,protectedTexts);
   if (/(?:\b[1-9]\b|\b10\b|تومان|ريال|شمسي|غالون)/u.test(unprotectedBody)) review.push(reason("FORMAT_REVIEW", "تحقق من الأعداد السردية أو التحويلات المسندة"));
   if (draft.format === "BREAKING" && (!title.startsWith("عاجل |") || title.split(/\s+/).length>20 || /[()]/u.test(title))) review.push(reason("FORMAT_REVIEW", "صيغة العاجل"));
   const hashtags=[...new Set(["#إيران_الآن",...draft.hashtags.map(h=>h.replace("الشرق_الأوسط","غرب_آسيا").replace("الحوثيين","أنصار_الله"))])];
   const unique = [...new Map(review.map(r=>[r.code+":"+(r.detail??""),r])).values()];
-  return { title, body, hashtags, protectedQuotes: sourceQuotes, protectedSpans: draft.protectedSpans, applied, review: unique, sentenceEvidence: draft.sentences };
+  if(!sentenceEvidence.some(s=>s.text===title)||sentenceEvidence.some(s=>!(title+'\n'+body).includes(s.text)))throw new ProcessingError("INVALID_FINAL_PROVENANCE");
+  return { title, body, hashtags, protectedQuotes: sourceQuotes, protectedSpans: draft.protectedSpans, applied, review: unique, sentenceEvidence };
 }

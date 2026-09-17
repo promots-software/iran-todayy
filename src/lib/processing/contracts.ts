@@ -23,7 +23,7 @@ export const eventSchema = z.object({
     kind: z.enum(["FACT", "CLAIM", "FIGURE", "DECISION", "OUTCOME", "STATEMENT"]),
     material: z.boolean(), speaker: supported.nullable(), verified: z.boolean(),
   }).strict()).max(100),
-  summary: text,
+  summary: text.nullable(),
 }).strict();
 export type EventData = z.infer<typeof eventSchema>;
 export const understandingSchema = z.object({
@@ -54,6 +54,8 @@ export type Draft = z.infer<typeof draftSchema>;
 export interface LanguageProvider {
   readonly id: string;
   readonly live: boolean;
+  readonly draftOnlyAccepted?: boolean;
+  readonly constrainedRewrite?: boolean;
   understand(input: { content: string; publishedAt: Date; profile: SourceProfile; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
   compare(input: { incoming: EventData; existing: EventData }, signal: AbortSignal): Promise<unknown>;
   draft(input: { content: string; understanding: Understanding; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;

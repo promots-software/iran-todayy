@@ -3,6 +3,8 @@ node_modules
 .git
 .env
 .env.*
+.env*
+*.session*
 *.log
 *.tsbuildinfo
 .test-db

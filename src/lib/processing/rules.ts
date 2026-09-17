@@ -85,6 +85,7 @@ export const names = {
   reference: "R IV p13; P10 pp14–15; P13.2 p19",
 };
 export const reviewReasons = {
+  EDITORIAL_ATTESTATION_REQUIRED: ["تدقيق تحريري لا يمكن إثباته آلياً؛ يلزم فحص المحرر", "Local editorial attestation workflow; human review required"],
   UNKNOWN_NAME: ["اسم شخص أو مكان غير مدرج؛ يلزم توثيق التعريب", "P4.1 p4; R IV p13"],
   SINGLE_UNOFFICIAL_FIGURE: ["أرقام من مصدر واحد غير رسمي", "P4.2 p4; R IX.4 p18"],
   LEADER_STATUS: ["خبر وفاة أو استشهاد قيادي؛ تثبيت اللقب والرتبة مطلوب", "P4.3 p4; R III p12"],

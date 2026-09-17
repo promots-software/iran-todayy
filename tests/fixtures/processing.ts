@@ -40,7 +40,7 @@ uncertain.understanding.names=uncertain.understanding.names.slice(0,1);
 export function fixtureProvider(records=scenarios) {
   const sameGroup=new Set(["telegram-a","telegram-b","x-a","english","persian","rewrite","update"]);
   return new FixtureLanguageProvider(records,(a,b)=>{
-    const relation=a.summary === "uncertain" || b.summary === "uncertain" ? "UNCERTAIN" : sameGroup.has(a.summary)&&sameGroup.has(b.summary) ? "SAME" : a.summary === b.summary ? "SAME" : "DIFFERENT";
+    const relation=a.summary === "uncertain" || b.summary === "uncertain" ? "UNCERTAIN" : sameGroup.has(a.summary??"")&&sameGroup.has(b.summary??"") ? "SAME" : a.summary === b.summary ? "SAME" : "DIFFERENT";
     return {relation,rationale:relation === "SAME"?"المصدران يصفان زيارة عراقجي نفسها إلى طهران":relation === "DIFFERENT"?"الزيارتان حدثان مختلفان":"هوية الزيارة ومكانها غير محسومين",newFactIds:a.summary === "update"&&!b.facts.some(f=>f.key === "araghchi-signs-agreement-2026-08-10")?["update:agreement"]:[],conflictingFactIds:[]};
   });
 }

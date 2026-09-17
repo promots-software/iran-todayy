@@ -82,6 +82,10 @@ test("schema and source offsets reject fabricated evidence before persistence",(
 test("unsupported draft sentences, changed quotation, false attestations fail closed",()=>{
   const s=fixture("quote",'قال "الخليج العربي"',"ar",'قال "الخليج العربي"');
   s.draft.title='قال "الخليج الفارسي"';s.draft.body="خبر مختلق";s.draft.sentences=[{text:s.draft.title,factIds:[s.understanding.event.facts[0].id]}];
+  assert.throws(()=>editDraft(s.draft,s.content,s.understanding,official),/INCOMPLETE_DRAFT_PROVENANCE/);
+  // Once every sentence is accounted for, quote changes and false factual
+  // attestations still retain their independent review failures.
+  s.draft.body=s.draft.title;s.draft.attestation.factsPreserved=false;
   const result=editDraft(s.draft,s.content,s.understanding,official);
   assert.ok(result.review.some(r=>r.code === "QUOTE_REVIEW"));assert.ok(result.review.some(r=>r.code === "UNSUPPORTED_OUTPUT"));
 });
