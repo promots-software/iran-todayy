@@ -210,7 +210,8 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       if (error instanceof ProcessingError && error.code === "TELEGRAM_OPERATION_ABORTED" && signal.aborted) throw error;
       // ProcessingError codes are authored, uppercase diagnostics; preserve
       // them for source health without ever persisting raw RPC text.
-      const code = timedOut ? "TELEGRAM_OPERATION_TIMEOUT" : error instanceof ProcessingError && /^[A-Z][A-Z0-9_]{0,100}$/.test(error.code) ? error.code : "MONITOR_UNAVAILABLE";
+      const authoredCode = typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" && /^[A-Z][A-Z0-9_]{0,100}$/.test(error.code) ? error.code : null;
+      const code = timedOut ? "TELEGRAM_OPERATION_TIMEOUT" : authoredCode ?? "MONITOR_UNAVAILABLE";
       await client.source.update({where:{id:source.id},data:{lastPollAt:new Date(),lastError:code}});
       report.push({sourceId:source.id,posts:0,error:code});
     }
