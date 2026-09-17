@@ -208,8 +208,9 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       // a half-dead client or writing a misleading checkpoint.
       if (timer) clearTimeout(timer);
       if (error instanceof ProcessingError && error.code === "TELEGRAM_OPERATION_ABORTED" && signal.aborted) throw error;
-      const safeCodes = ["TELEGRAM_USERNAME_UNAVAILABLE", "TELEGRAM_PUBLIC_CHANNEL_REQUIRED", "TELEGRAM_CHANNEL_CHANGED", "TELEGRAM_CURSOR_INVALID", "TELEGRAM_FLOOD_WAIT", "TELEGRAM_READ_FAILED", "TELEGRAM_OPERATION_TIMEOUT", "SHADOW_MODE_REQUIRED", "REQUIRE_APPROVAL_REQUIRED"];
-      const code = timedOut ? "TELEGRAM_OPERATION_TIMEOUT" : error instanceof ProcessingError && safeCodes.includes(error.code) ? error.code : "MONITOR_UNAVAILABLE";
+      // ProcessingError codes are authored, uppercase diagnostics; preserve
+      // them for source health without ever persisting raw RPC text.
+      const code = timedOut ? "TELEGRAM_OPERATION_TIMEOUT" : error instanceof ProcessingError && /^[A-Z][A-Z0-9_]{0,100}$/.test(error.code) ? error.code : "MONITOR_UNAVAILABLE";
       await client.source.update({where:{id:source.id},data:{lastPollAt:new Date(),lastError:code}});
       report.push({sourceId:source.id,posts:0,error:code});
     }
