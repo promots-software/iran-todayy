@@ -1,5 +1,5 @@
 import {idClassificationSchema,idClassificationInput,idClassificationInstructions,preflightIdClassification,adaptIdClassification} from './id-classification';
-import {extractionTask} from './gemini-benchmark-prompt';
+import {extractionTask,uniqueContextInstructions} from './gemini-benchmark-prompt';
 import {buildAtoms,atomSelectionSchema,renderSelection,selectionInstructions} from './constrained-rewrite';
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
@@ -95,7 +95,7 @@ export class GroqLanguageProvider implements LanguageProvider {
     const wireSchema = groqSchema(stage, outputSchema);
 
     const task = step === "extract"
-      ? extractionTask
+      ? extractionTask+" "+uniqueContextInstructions
       : step === 'render'
       ? renderingInstructions
       : step === 'review_rendering'

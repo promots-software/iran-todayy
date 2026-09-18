@@ -76,3 +76,14 @@ Local language recognition, explicit speaker/heading segmentation, and bounded s
 Regression fixtures preserve real source structures with shortened content. Both positive and adversarial variants cover mixed language, speaker changes, ambiguous repetitions, numbers, quotes, unsupported entities and Persian rendering. Offline provider responses are mocks, not evidence of live model reliability.
 
 Baseline recorded provider usage: 165 calls, 400239 tokens, estimated USD 0.16873725. These are historical, not new calls made by this audit. Missing raw stage responses limit root-cause certainty.
+
+## First deployment observation
+
+Railway deployed 892edcd successfully. First newly processed (previously queued)
+Persian item ISNA 404377 failed AMBIGUOUS_EVIDENCE_CONTEXT at actors.0. New
+schema-checked diagnostics prove the provider selected the full post as context
+while both the headline and body contained the actor and action. The validator
+correctly failed closed. A follow-up extraction instruction explicitly requires
+short unique local passages for repeated headline/body evidence. No resolver or
+validation relaxation; the actual Persian structure is an offline regression.
+This item was not retried. No new publication was made by this work.

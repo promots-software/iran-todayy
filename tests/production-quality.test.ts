@@ -35,3 +35,12 @@ test('failed extraction preserves schema-checked output and exact failed field f
  const raw={relevance:'POLITICAL_NEWS',actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:'الاجتماع انتهى.',context:'الاجتماع انتهى.'},speaker:null}]};
  assert.throws(()=>validateMinimalExtraction(raw,source),(e:unknown)=>{const error=e as {code:string;diagnostic:{field:string;output:unknown}};assert.equal(error.code,'AMBIGUOUS_EVIDENCE_CONTEXT');assert.equal(error.diagnostic.field,'statements.0.evidence');assert.deepEqual(error.diagnostic.output,raw);return true;});
 });
+
+test('repeated Persian headline/body anchors require local unique evidence without changing fact IDs',()=>{
+ const source='یارانه شهریور دهک‌های ۱ تا ۳ واریز شد\n\n🔹️یارانه ۴۰۰ هزار تومانی دهک‌های ۱ تا ۳ به حساب سرپرستان خانوار واریز شد.';
+ const body='یارانه ۴۰۰ هزار تومانی دهک‌های ۱ تا ۳ به حساب سرپرستان خانوار واریز شد.';
+ const ev=(excerpt:string)=>({excerpt,context:body});
+ const raw={relevance:'POLITICAL_NEWS',actors:[ev('دهک‌های ۱ تا ۳')],action:ev('واریز شد'),object:ev('یارانه ۴۰۰ هزار تومانی'),location:null,event_time:null,statements:[{evidence:ev(body),speaker:null}]};
+ const x=validateMinimalExtraction(raw,source);assert.equal(x.statements[0].id,'f1');assert.equal(source.slice(x.actors[0].start,x.actors[0].end),raw.actors[0].excerpt);assert.ok(x.actors[0].start>source.indexOf('\n'));
+ assert.throws(()=>validateMinimalExtraction({...raw,actors:[{...raw.actors[0],context:source}]},source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
+});
