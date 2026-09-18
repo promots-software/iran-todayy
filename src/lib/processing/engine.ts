@@ -168,7 +168,7 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
       const next=new Date(Date.now()+retryDelay(job.attemptCount));
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code}});
       if (changed.count) {
-        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({ruleSetVersion:ruleSet.version,review:[reason(code === "PROVIDER_UNAVAILABLE"?"PROVIDER_UNAVAILABLE":"UNSUPPORTED_OUTPUT",code)]})}});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:[reason(code === "PROVIDER_UNAVAILABLE"?"PROVIDER_UNAVAILABLE":"UNSUPPORTED_OUTPUT",code)]})}});
         await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount});
       }
     });

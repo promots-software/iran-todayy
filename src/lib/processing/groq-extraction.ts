@@ -17,19 +17,28 @@ type Evidence=z.infer<typeof evidenceSchema>;
 export function validateMinimalExtraction(raw:unknown,source:string){
   const p=minimalExtractionSchema.safeParse(raw);
   if(!p.success)throw new ProcessingError('GROQ_INVALID_SCHEMA');
-  const resolve=(value:z.infer<typeof evidence>|null):Evidence|null=>{
+  let field='schema';
+  try{
+  const resolve=(value:z.infer<typeof evidence>|null,path:string):Evidence|null=>{
+    field=path;
     if(!value)return null;
     const copy={...value};resolveContextEvidence(copy,source);
     const result=evidenceSchema.parse(copy);checkEvidence(source,result);return result;
   };
   const x=p.data;
-  const result={relevance:x.relevance,actors:x.actors.map(e=>resolve(e)!),action:resolve(x.action),object:resolve(x.object),location:resolve(x.location),event_time:resolve(x.event_time),
-    statements:x.statements.map((s,i)=>({id:`f${i+1}`,evidence:resolve(s.evidence)!,speaker:resolve(s.speaker)}))};
+  const result={relevance:x.relevance,actors:x.actors.map((e,i)=>resolve(e,`actors.${i}`)!),action:resolve(x.action,'action'),object:resolve(x.object,'object'),location:resolve(x.location,'location'),event_time:resolve(x.event_time,'event_time'),
+    statements:x.statements.map((s,i)=>({id:`f${i+1}`,evidence:resolve(s.evidence,`statements.${i}.evidence`)!,speaker:resolve(s.speaker,`statements.${i}.speaker`)}))};
   for(const s of result.statements){
     if(!s.speaker)continue;
+    field=`statements.${s.id}.speaker`;
     validateSpeakerEvidence(source,s.evidence,s.speaker);
   }
   return result;
+  }catch(error){
+    // Only schema-checked extraction data, never transport envelopes or headers.
+    if(error instanceof ProcessingError&&JSON.stringify(p.data).length<=120000)throw new ProcessingError(error.code,error.retryable,{stage:'extract',field,output:p.data});
+    throw error;
+  }
 }
 export type GroundedExtraction=ReturnType<typeof validateMinimalExtraction>;
 export function requireCompleteExtraction(x:GroundedExtraction){
