@@ -1,5 +1,6 @@
 import { Prisma, PrismaClient } from "@prisma/client";
 import { sourceSchema, sourceUrl, publishingModeSchema } from "./domain";
+import { assertApprovalMode } from "./processing/shadow";
 
 export async function saveSource(client: PrismaClient, input: unknown, actor: string) {
   const source = sourceSchema.parse(input);
@@ -25,6 +26,7 @@ export async function changeSource(client: PrismaClient, id: string, operation: 
 
 export async function changeMode(client: PrismaClient, input: unknown, actor: string) {
   const publishingMode = publishingModeSchema.parse(input);
+  assertApprovalMode(publishingMode);
   return client.$transaction(async tx => {
     const previous = await tx.appSettings.findUnique({ where: { id: 1 } });
     await tx.appSettings.upsert({ where: { id: 1 }, create: { id: 1, publishingMode }, update: { publishingMode } });

@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { authenticated } from "@/lib/auth";
 import { saveSource, changeSource, changeMode } from "@/lib/source-service";
 import { saveSourceProfile } from "@/lib/processing/source-profile";
+import {approvePublication,publishApprovedManually} from '@/lib/telegram/publisher';
 
 export type ActionState = { ok: boolean; message: string };
 async function actor() {
@@ -42,7 +43,7 @@ export async function modeAction(_: ActionState, form: FormData): Promise<Action
     const user = await actor();
     await changeMode(db, form.get("publishingMode"), user);
     revalidatePath("/", "layout");
-    return { ok: true, message: "تم حفظ وضع النشر. الإرسال الخارجي معطل في المرحلة الثانية." };
+    return { ok: true, message: "تم حفظ وضع النشر. الموافقة اليدوية إلزامية والنشر التلقائي معطل." };
   } catch (error) { return failure(error); }
 }
 export async function sourceProfileAction(_:ActionState,form:FormData):Promise<ActionState> {
@@ -51,4 +52,30 @@ export async function sourceProfileAction(_:ActionState,form:FormData):Promise<A
     await saveSourceProfile(db,z.string().min(1).max(100).parse(form.get("id")),{verified:form.get("verified")==="on",flagged:form.get("flagged")==="on",approvedAnalyst:form.get("approvedAnalyst")==="on",classification:form.get("classification"),authority:form.get("authority"),evidence:form.get("evidence")},user);
     revalidatePath("/sources");return {ok:true,message:"تم توثيق التصنيف"};
   }catch(error){return failure(error);}
+}
+export async function approvePublicationAction(_:ActionState,form:FormData):Promise<ActionState>{
+ try{
+  const user=await actor();
+  if(form.get('confirm')!=='on')return {ok:false,message:'يلزم تأكيد الموافقة اليدوية بعد مراجعة الأدلة.'};
+  const newsItemId=z.string().min(1).max(100).parse(form.get('id'));
+  const digest=z.string().regex(/^[a-f0-9]{64}$/).parse(form.get('digest'));
+  const keys=form.getAll('reviewKey').map(v=>z.string().max(10000).parse(v));
+  await approvePublication(db,{newsItemId,digest,resolutions:keys.map((key,i)=>({key,note:String(form.get(`resolution-${i}`)??'')}))},user);
+  revalidatePath(`/news/${newsItemId}`);
+  return {ok:true,message:'حُفظ الاعتماد والمحتوى المحدد. لم تُرسل أي رسالة؛ الإرسال إجراء منفصل.'};
+ }catch{return {ok:false,message:'تعذر الاعتماد. تحقق من اكتمال المراجعة، وثبات المسودة، وإعداد وجهة Telegram. أخطاء الأدلة تمنع الاعتماد.'};}
+}
+export async function publishPublicationAction(_:ActionState,form:FormData):Promise<ActionState>{
+ try{
+  const user=await actor();
+  const publicationId=z.string().min(1).max(100).parse(form.get('publicationId'));
+  const digest=z.string().regex(/^[a-f0-9]{64}$/).parse(form.get('digest'));
+  const destination=z.string().regex(/^-[1-9]\d*$/).parse(form.get('destination'));
+  const outcome=await publishApprovedManually(db,{publicationId,digest,destination,confirmed:form.get('confirmSend')==='on'},user);
+  revalidatePath('/', 'layout');
+  return {ok:outcome.status==='SENT',message:outcome.status==='SENT'?'تم إرسال الرسالة وحفظ معرّف Telegram.':outcome.status==='NOT_SENT_ALREADY_CLAIMED'?'لم تُرسل رسالة جديدة. سبق حجز هذا المنشور؛ راجع الحالة ومعرّف الرسالة.':'توقف الإرسال. راجع الحالة والخطأ؛ لا تُعد الإرسال قبل التحقق اليدوي من Telegram.'};
+ }catch{
+  revalidatePath('/', 'layout');
+  return {ok:false,message:'تعذر إتمام الإرسال. حدّث الصفحة وراجع حالة المنشور؛ قد يكون الإرسال قد بدأ. لا تنشئ نسخة أخرى. تحقق من الاعتماد والوجهة وإعداد النشر اليدوي.'};
+ }
 }

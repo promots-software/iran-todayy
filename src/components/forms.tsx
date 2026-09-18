@@ -37,9 +37,9 @@ export function ModeForm({ mode }: { mode: "REQUIRE_APPROVAL" | "AUTO_PUBLISH" }
     <fieldset>
       <legend className="muted">اختر آلية اعتماد الأخبار</legend>
       <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>الموافقة اليدوية</strong><small>كل خبر ينتظر الاعتماد قبل النشر. الوضع الافتراضي للاختبار.</small></span></label>
-      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" defaultChecked={mode === "AUTO_PUBLISH"} /><span><strong>النشر التلقائي</strong><small>لاحقاً: الأخبار التي تجتاز التحقق فقط. أي شك تحريري يُحال إلى المراجعة.</small></span></label>
+      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" disabled /><span><strong>النشر التلقائي</strong><small>معطل أثناء اختبار الاستقبال الحي في وضع الظل.</small></span></label>
     </fieldset>
-    <p className="notice">المعالجة متاحة للاختبار. الإرسال الخارجي معطل في المرحلة الثانية في كلا الوضعين.</p>
+    <p className="notice">الموافقة اليدوية إلزامية. النشر التلقائي معطل؛ إرسال الرسالة المعتمدة يتطلب تأكيداً منفصلاً في صفحة الخبر.</p>
     <button disabled={pending}>{pending ? "جارٍ الحفظ…" : "حفظ الإعدادات"}</button>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}
   </form>;

@@ -33,8 +33,8 @@ test("PostgreSQL persistence, audit, event constraints and publication intent", 
     assert.equal(restored.id, source.id);
     assert.equal(restored.deletedAt, null);
     assert.ok(await client.auditLog.count({ where: { entityId: source.id } }) >= 5);
-    await changeMode(client, "AUTO_PUBLISH", "integration-test");
-    assert.equal((await client.appSettings.findUniqueOrThrow({ where: { id: 1 } })).publishingMode, "AUTO_PUBLISH");
+    await assert.rejects(changeMode(client, "AUTO_PUBLISH", "integration-test"), /REQUIRE_APPROVAL_REQUIRED/);
+    assert.equal((await client.appSettings.findUniqueOrThrow({ where: { id: 1 } })).publishingMode, "REQUIRE_APPROVAL");
     assert.equal((await client.sourcePost.findUniqueOrThrow({ where: { id: post.id } })).modeAtProcessing, "REQUIRE_APPROVAL");
     await assert.rejects(client.appSettings.create({ data: { id: 2 } }));
     const event = await client.canonicalEvent.create({ data: { title: "TEST ONLY", summary: "TEST ONLY", facts: [], revisions: { create: { revision: 1, facts: [] } } }, include: { revisions: true } });
