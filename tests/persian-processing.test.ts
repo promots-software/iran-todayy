@@ -56,6 +56,9 @@ for(const [name,sample] of Object.entries(cases))test(`Persian ${name} reaches g
 
 test('speaker heading scope survives bullet layout while a different intervening voice is rejected',()=>{
  assert.doesNotThrow(()=>validateMinimalExtraction(cases.bullets.extract,cases.bullets.source));
+ const labelled='سخنگوی وزارت امور خارجه:\n🔹این تصمیم اعلام شد.';
+ const labelledExtraction={relevance:'POLITICAL_NEWS',actors:[ev(labelled,'سخنگوی وزارت امور خارجه')],action:ev(labelled,'اعلام شد'),object:null,location:null,event_time:null,statements:[{evidence:ev(labelled,'این تصمیم اعلام شد.'),speaker:ev(labelled,'سخنگوی وزارت امور خارجه')}]};
+ assert.doesNotThrow(()=>validateMinimalExtraction(labelledExtraction,labelled));
  const source='رییس سازمان در گفت‌وگو با ایسنا:\n🔹خبرنگار دیگری گفت:\n🔹این ادعا مطرح شد.';
  const bad={relevance:'POLITICAL_NEWS',actors:[ev(source,'رییس سازمان')],action:ev(source,'گفت‌وگو'),object:null,location:null,event_time:null,statements:[{evidence:ev(source,'این ادعا مطرح شد.'),speaker:ev(source,'رییس سازمان')}]};
  assert.throws(()=>validateMinimalExtraction(bad,source),/SPEAKER_ATTRIBUTION_MISMATCH/);

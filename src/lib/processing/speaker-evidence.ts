@@ -2,6 +2,7 @@ import {ProcessingError,checkEvidence,type Understanding} from './contracts';
 type Evidence=Understanding['event']['facts'][number]['evidence'];
 const bullet=/^[\s🔹🔸🔻🔺▪▫•●◾◽*-]+/u;
 const speech=/(?:گفت(?:‌وگو)?|اظهار|اعلام|افزود|تأکید|تصریح|قال|ذكرت|أوضح|صرح|أضاف|says?|said|stated|told|interview)/iu;
+const explicitSpeakerRole=/(?:سخنگو|المتحدث|الناطق|spokes(?:person|man|woman))/iu;
 /** A speaker heading may govern a contiguous bullet quotation block. Blank
  * lines are layout, but a new heading/narrative or attributed voice ends scope. */
 export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evidence){
@@ -12,7 +13,7 @@ export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evid
  const lineEnd=source.indexOf('\n',speaker.end);
  if(lineEnd<0||lineEnd>=fact.start||source.slice(lineStart,speaker.start).trim())throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
  const heading=source.slice(speaker.end,lineEnd).trim();
- if(!/[:：]$/u.test(heading)||!speech.test(heading))throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
+ if(!/[:：]$/u.test(heading)||(!speech.test(heading)&&!explicitSpeakerRole.test(speaker.excerpt)))throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
  const between=source.slice(lineEnd+1,fact.start);
  const lines=between.split('\n');
  const lead=lines.pop()??'';
