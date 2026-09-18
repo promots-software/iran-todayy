@@ -10,10 +10,11 @@ import {finalizeConstrainedDraft} from './local-finalization';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
 const leaseMs = 300000;
-// Bound each enabled live source independently. A stalled channel must not
-// consume the entire poll window and starve the remaining sources.
-const liveSourcePollTimeoutMs = 15000;
-export type PollSourcesOptions = { liveTimeoutMs?: number };
+export type PollProgress = {sourceId:string;handle:string;phase:'READING'|'PERSISTING'|'COMPLETE'|'ERROR';posts:number;error:string|null;cursor?:unknown;durationMs:number};
+export type PollSourcesOptions = {
+  requireActive?: () => void;
+  onProgress?: (progress:PollProgress) => void;
+};
 const audit = (tx: Prisma.TransactionClient, id: string, action: string, message: string, metadata: unknown) => tx.auditLog.create({ data: { action, actor: "processing-engine", entityType: "SourcePost", entityId: id, message, metadata: json(metadata) } });
 export async function ingest(client: PrismaClient, sourceId: string, raw: unknown, live = false) {
   if (live) assertShadowMode();
@@ -173,47 +174,46 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
 }
 export async function pollSources(client: PrismaClient, monitors: Partial<Record<"TELEGRAM"|"X",Monitor>>, signal: AbortSignal, options: PollSourcesOptions = {}) {
   const report: {sourceId:string;posts:number;error:string|null}[] = [];
-  const sourceTimeoutMs=options.liveTimeoutMs ?? liveSourcePollTimeoutMs;
-  const sources=await client.source.findMany({where:{enabled:true,deletedAt:null}});
+  const sources=await client.source.findMany({where:{enabled:true,deletedAt:null},orderBy:[{lastPollAt:'asc'},{id:'asc'}]});
   for (const source of sources) {
     if (signal.aborted) break;
     const adapter=monitors[source.platform];
     if (!adapter) continue;
-    let timedOut=false;
-    let timer:ReturnType<typeof setTimeout>|undefined;
-    const sourceController=new AbortController();
+    const started=Date.now();
+    let phase:PollProgress['phase']='READING',posts=0;
+    const progress=(error:string|null=null,cursor?:unknown)=>options.onProgress?.({sourceId:source.id,handle:source.handle,phase,posts,error,cursor,durationMs:Date.now()-started});
     try {
+      options.requireActive?.();progress();
       if (adapter.live) {
         assertShadowMode();
         assertApprovalMode((await client.appSettings.findUnique({where:{id:1}}))?.publishingMode);
         if (source.platform !== "TELEGRAM") throw new ProcessingError("LIVE_PLATFORM_DISABLED");
       }
-      const sourceSignal=AbortSignal.any([signal,sourceController.signal]);
-      const timeout=new Promise<never>((_,reject)=>{
-        if (!adapter.live) return;
-        timer=setTimeout(()=>{
-          timedOut=true;sourceController.abort();reject(new ProcessingError("TELEGRAM_OPERATION_TIMEOUT",true));
-        },sourceTimeoutMs);
-      });
-      const batch=await Promise.race([adapter.poll({handle:source.handle,cursor:source.cursor},sourceSignal),timeout]);
-      if (timer) clearTimeout(timer);
-      for (const post of batch.posts) { signal.throwIfAborted(); await ingest(client,source.id,post,adapter.live); }
+      // The transport owns read timeout/cancellation/reconnect. Never race
+      // persistence against a read timeout or abandon an in-flight DB write.
+      const batch=await adapter.poll({handle:source.handle,cursor:source.cursor},signal);
+      phase='PERSISTING';progress();
+      for (const post of batch.posts) {
+        signal.throwIfAborted();options.requireActive?.();
+        await ingest(client,source.id,post,adapter.live);posts++;
+      }
       // Cursor advances only after all posts commit. Replay is safe after interruption.
-      signal.throwIfAborted();
+      signal.throwIfAborted();options.requireActive?.();
       await client.source.update({where:{id:source.id},data:{cursor:batch.cursor == null?Prisma.DbNull:json(batch.cursor),lastPollAt:new Date(),lastError:null}});
-      report.push({sourceId:source.id,posts:batch.posts.length,error:null});
+      phase='COMPLETE';progress(null,batch.cursor);
+      report.push({sourceId:source.id,posts,error:null});
     } catch (error) {
-      // A timed-out Telegram RPC is cancellation-aware. Let the worker's
-      // reconnect supervisor own the failed poll instead of continuing with
-      // a half-dead client or writing a misleading checkpoint.
-      if (timer) clearTimeout(timer);
-      if (error instanceof ProcessingError && error.code === "TELEGRAM_OPERATION_ABORTED" && signal.aborted) throw error;
-      // ProcessingError codes are authored, uppercase diagnostics; preserve
-      // them for source health without ever persisting raw RPC text.
-      const authoredCode = typeof error === "object" && error !== null && "code" in error && typeof error.code === "string" && /^[A-Z][A-Z0-9_]{0,100}$/.test(error.code) ? error.code : null;
-      const code = timedOut ? "TELEGRAM_OPERATION_TIMEOUT" : authoredCode ?? "MONITOR_UNAVAILABLE";
+      if (signal.aborted) throw error;
+      const authoredCode=error instanceof ProcessingError ? error.code : null;
+      if (authoredCode && ['WORKER_DRAIN_FAILED','WORKER_LEASE_LOST','TELEGRAM_AUTHORIZATION_REQUIRED','TELEGRAM_SESSION_INVALID','TELEGRAM_SESSION_CONFLICT','TELEGRAM_CREDENTIALS_REQUIRED','SHADOW_MODE_REQUIRED','REQUIRE_APPROVAL_REQUIRED','PUBLISHING_MUST_BE_DISABLED'].includes(authoredCode)) throw error;
+      // Only application codes and Prisma's documented numeric codes are safe;
+      // never persist arbitrary dependency messages, URLs, or RPC payloads.
+      const prismaCode=error instanceof Prisma.PrismaClientKnownRequestError && /^P\d{4}$/.test(error.code) ? error.code : null;
+      const code=authoredCode ?? prismaCode ?? (phase==='PERSISTING'?'SOURCE_PERSIST_FAILED':'MONITOR_UNAVAILABLE');
+      options.requireActive?.();
       await client.source.update({where:{id:source.id},data:{lastPollAt:new Date(),lastError:code}});
-      report.push({sourceId:source.id,posts:0,error:code});
+      phase='ERROR';progress(code);
+      report.push({sourceId:source.id,posts,error:code});
     }
   }
   return report;

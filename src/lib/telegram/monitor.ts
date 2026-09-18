@@ -19,7 +19,7 @@ export interface ChannelReader {
  * worker's timeout/reconnect path fires. The underlying read is harmless and
  * read-only; reconnect destroys the old client before a new one is used.
  */
-function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
+function abortable<T>(operation: () => Promise<T>, signal: AbortSignal): Promise<T> {
   signal.throwIfAborted();
   return new Promise<T>((resolve, reject) => {
     let settled = false;
@@ -33,7 +33,8 @@ function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
       reject(new ProcessingError("TELEGRAM_OPERATION_ABORTED", true));
     };
     signal.addEventListener("abort", onAbort, { once: true });
-    operation.then(value => { cleanup(); resolve(value); }, error => { cleanup(); reject(error); });
+    Promise.resolve().then(() => { signal.throwIfAborted(); return operation(); })
+      .then(value => { cleanup(); resolve(value); }, error => { cleanup(); reject(error); });
   });
 }
 
@@ -41,16 +42,15 @@ function abortable<T>(operation: Promise<T>, signal: AbortSignal): Promise<T> {
 export class TelegramReader implements ChannelReader {
   constructor(private client: TelegramClient) {}
   async channel(handle: string, signal = new AbortController().signal) {
-    const entity = await abortable(this.client.getEntity(handle), signal);
+    const entity = await abortable(() => this.client.getEntity(handle), signal);
     if (!(entity instanceof Api.Channel) || !entity.broadcast || entity.username?.toLowerCase() !== handle.toLowerCase()) {
       throw new ProcessingError("TELEGRAM_PUBLIC_CHANNEL_REQUIRED");
     }
     return entity.id.toString();
   }
   async messages(handle: string, after: number | null, signal = new AbortController().signal) {
-    const request = this.client.getMessages(handle, after === null
-      ? { limit: 1 } : { limit: 50, minId: after, reverse: true });
-    const result = await abortable(request, signal);
+    const result = await abortable(() => this.client.getMessages(handle, after === null
+      ? { limit: 1 } : { limit: 50, minId: after, reverse: true }), signal);
     return result.map(m => ({ id: m.id, text: m.message ?? "", date: m.date }));
   }
 }

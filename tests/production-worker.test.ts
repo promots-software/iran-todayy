@@ -127,7 +127,7 @@ test('source changes are read dynamically, polling cancellation retains cursor, 
     await pollSources(db,{TELEGRAM:monitor},signal);assert.equal(polls,1);
     await db.source.update({where:{id:source.id},data:{enabled:true,cursor: {before:true}}});
     const stop=new AbortController();
-    await pollSources(db,{TELEGRAM:{id:'offline-cancel',live:false,poll:async(i)=>{if(i.handle===handle)stop.abort();return {posts:[],cursor:{after:true}};}}},stop.signal);
+    await assert.rejects(pollSources(db,{TELEGRAM:{id:'offline-cancel',live:false,poll:async(i)=>{if(i.handle===handle)stop.abort();return {posts:[],cursor:{after:true}};}}},stop.signal));
     assert.deepEqual((await db.source.findUniqueOrThrow({where:{id:source.id}})).cursor,{before:true});
     const post=await db.sourcePost.create({data:{sourceId:source.id,sourcePostId:'1',sourceUrl:source.url,originalContent:'offline original',sourcePublishedAt:new Date()}});
     await db.processingJob.create({data:{sourcePostId:post.id,stage:'PROCESS_V1'}});

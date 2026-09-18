@@ -1,15 +1,16 @@
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
 import {PrismaClient} from '@prisma/client';
-import {Api,type TelegramClient} from 'teleproto';
+import {Api} from 'teleproto';
 import {createTelegramClient} from '../lib/telegram/client';
-import {TelegramMonitor,TelegramReader} from '../lib/telegram/monitor';
+import {TelegramReader} from '../lib/telegram/monitor';
+import {TelegramPoller} from './telegram-poller';
 import {claimJob,processJob,pollSources,json} from '../lib/processing/engine';
 import {ProcessingError} from '../lib/processing/contracts';
 import {assertApprovalMode} from '../lib/processing/shadow';
 import {GeminiLanguageProvider} from '../lib/processing/gemini';
 import {checkpointProvider,databaseCheckpoints} from './checkpoints';
-import {acquireLease,renewLease,releaseLease,workerId,heartbeatMs,workerConfig,assertWorkerSafety,safeWorkerError,backoff,pause,deadline,drainedDeadline,healthStatus,probeAuthorization,TelegramStartupError} from './runtime';
+import {acquireLease,renewLease,releaseLease,workerId,heartbeatMs,workerConfig,assertWorkerSafety,safeWorkerError,backoff,pause,healthStatus,probeAuthorization,TelegramStartupError} from './runtime';
 
 const stop=new AbortController();
 const runId=randomUUID();
@@ -50,10 +51,11 @@ async function main() {
   log('WORKER_STARTING',{provider:'gemini-3.1-flash-lite',shadowMode:true,requireApproval:true,autoPublish:false});
   try {
     while(!stop.signal.aborted) {
-      let owned=false,client:TelegramClient|undefined;
+      let owned=false,poller:TelegramPoller|undefined;
       const cycle=new AbortController();
       const signal=AbortSignal.any([stop.signal,cycle.signal]);
-      let lastRenewed=0,processingSince=0,telegramReady=false,pollErrors=0;
+      let lastRenewed=0,processingSince=0,pollErrors=0;
+      let pollPhase='IDLE',activeSource:string|null=null,lastPollError:string|null=null,lastPollCompletedAt:string|null=null;
       try {
         await safety();
         owned=await acquireLease(db,runId);
@@ -71,24 +73,30 @@ async function main() {
           signal.throwIfAborted();
           if(Date.now()-lastRenewed>=60000)throw new ProcessingError('WORKER_LEASE_LOST');
         };
-        const monitor=new TelegramMonitor({
-          channel:(handle,readSignal)=>{requireLease();return new TelegramReader(client!).channel(handle,readSignal);},
-          messages:(handle,after,readSignal)=>{requireLease();return new TelegramReader(client!).messages(handle,after,readSignal);},
-        });
-        const reconnect=async()=>{
-          telegramReady=false;
-          if(client){await deadline(client.destroy(),new AbortController().signal,10000);client=undefined;}
-        };
+        poller=new TelegramPoller(()=>{
+          const client=createTelegramClient();client.onError=async()=>{};
+          const reader=new TelegramReader(client);
+          return {
+            get connected(){return client.connected;},
+            connect:async()=>{await client.connect();},
+            authorize:()=>probeAuthorization(()=>client.invoke(new Api.updates.GetState())),
+            close:()=>client.destroy(),
+            channel:(handle,readSignal)=>{requireLease();return reader.channel(handle,readSignal);},
+            messages:(handle,after,readSignal)=>{requireLease();return reader.messages(handle,after,readSignal);},
+          };
+        },{requireActive:requireLease,log});
         const heartbeat=async()=>{
           while(!signal.aborted){
             requireLease();await safety();
             if(processingSince && Date.now()-processingSince>210000)throw new ProcessingError('WORKER_JOB_DEADLINE');
+            const telegramReady=poller!.ready;
             await renewLease(db,runId,processingSince?'BUSY':telegramReady?'IDLE':'ERROR',{
               shadowMode:true,requireApproval:true,autoPublish:false,externalPublishingEnabled:false,
               liveMonitoringEnabled:telegramReady,processingEnabled:true,pollErrors,provider:'gemini-3.1-flash-lite',
+              pollPhase,activeSource,lastPollError,lastPollCompletedAt,
             });
             lastRenewed=lastDatabaseCheck=Date.now();
-            log('WORKER_HEARTBEAT',{telegramReady,processing:!!processingSince,pollErrors});
+            log('WORKER_HEARTBEAT',{telegramReady,processing:!!processingSince,pollErrors,pollPhase,activeSource,lastPollError,lastPollCompletedAt});
             await pause(heartbeatMs,signal);
           }
         };
@@ -97,25 +105,27 @@ async function main() {
           while(!signal.aborted){
             try {
               requireLease();await safety();
-              if(!client || !client.connected){
-                await reconnect();client=createTelegramClient();client.onError=async()=>{};
-                await deadline(client.connect(),signal,30000);
-                await probeAuthorization(()=>deadline(client!.invoke(new Api.updates.GetState()),signal,30000));
-                telegramReady=true;log('TELEGRAM_CONNECTED');
-              }
-              const report=await drainedDeadline(pollSignal=>pollSources(db,{TELEGRAM:monitor},pollSignal),reconnect,signal,60000);
+              pollErrors=0;
+              const report=await pollSources(db,{TELEGRAM:poller!},signal,{
+                requireActive:requireLease,
+                onProgress:progress=>{
+                  pollPhase=progress.phase;activeSource=progress.handle;
+                  if(progress.error){pollErrors++;lastPollError=progress.error;}
+                  if(progress.phase==='COMPLETE')lastPollCompletedAt=new Date().toISOString();
+                  log('SOURCE_POLL',progress);
+                },
+              });
+              pollPhase='IDLE';activeSource=null;
               pollErrors=report.filter(r=>r.error).length;
-              for(const row of report)log('SOURCE_POLL',row);
-              if(report.some(r=>r.error==='TELEGRAM_READ_FAILED'||r.error==='TELEGRAM_OPERATION_TIMEOUT'||r.error==='MONITOR_UNAVAILABLE')){
-                await reconnect();throw new ProcessingError('TELEGRAM_RECONNECT_REQUIRED',true);
-              }
-              attempts=0;await pause(30000,signal);
+              if(!pollErrors){lastPollError=null;attempts=0;}
+              await pause(pollErrors?Math.max(30000,backoff(++attempts)):30000,signal);
             } catch(error) {
               if(safeWorkerError(error)==='WORKER_DRAIN_FAILED'){log('WORKER_DRAIN_FAILED');process.exit(1);}
               if(signal.aborted)break;
               const code=safeWorkerError(error);
               if(['TELEGRAM_AUTHORIZATION_REQUIRED','TELEGRAM_SESSION_INVALID','TELEGRAM_SESSION_CONFLICT','TELEGRAM_CREDENTIALS_REQUIRED','SHADOW_MODE_REQUIRED','REQUIRE_APPROVAL_REQUIRED','PUBLISHING_MUST_BE_DISABLED','WORKER_LEASE_LOST'].includes(code))throw error;
-              await reconnect();const delayMs=Math.max(backoff(++attempts),error instanceof TelegramStartupError?error.retryAfterMs:0);log('TELEGRAM_RETRY',{code,delayMs});await pause(delayMs,signal);
+              pollPhase='ERROR';pollErrors=Math.max(1,pollErrors);lastPollError=code;
+              const delayMs=Math.max(backoff(++attempts),error instanceof TelegramStartupError?error.retryAfterMs:0);log('TELEGRAM_RETRY',{code,delayMs});await pause(delayMs,signal);
             }
           }
         };
@@ -124,7 +134,7 @@ async function main() {
           while(!signal.aborted){
             try {
               requireLease();await safety();
-              if(!telegramReady){await pause(5000,signal);continue;}
+              if(!poller!.ready){await pause(5000,signal);continue;}
               const job=await claimJob(db,runId,new Date(),true);
               if(!job){await pause(5000,signal);continue;}
               processingSince=Date.now();
@@ -160,9 +170,9 @@ async function main() {
           fatal=['TELEGRAM_AUTHORIZATION_REQUIRED','TELEGRAM_SESSION_INVALID','TELEGRAM_SESSION_CONFLICT','TELEGRAM_CREDENTIALS_REQUIRED','SHADOW_MODE_REQUIRED','REQUIRE_APPROVAL_REQUIRED','PUBLISHING_MUST_BE_DISABLED'].includes(code);
         }
       } finally {
-        cycle.abort();telegramReady=false;
+        cycle.abort();
         // Release ownership only after both loops drained and Telegram closed.
-        if(client)await deadline(client.destroy(),new AbortController().signal,10000).catch(()=>{log('TELEGRAM_CLOSE_FAILED');process.exit(1);});
+        if(poller)await poller.close().catch(()=>{log('TELEGRAM_CLOSE_FAILED');process.exit(1);});
         if(owned)await releaseLease(db,runId).catch(()=>log('WORKER_RELEASE_FAILED'));
       }
       if(fatal){process.exitCode=1;break;}
