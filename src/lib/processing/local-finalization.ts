@@ -22,7 +22,9 @@ export function finalizeSelection(selection:unknown,content:string,u:Understandi
  // This attests preservation of validated atoms, not independent source truth.
  draft.attestation.factsPreserved=true;
  draft.attestation.attributionChecked=!probe.review.some(r=>r.detail==='النسب الصريح مطلوب في العنوان والمتن');
- draft.attestation.numbersChecked=!probe.review.some(r=>r.code==='FORMAT_REVIEW'||r.detail?.startsWith('رقم في المسودة'));
+ // Evidence-linked digit equality is deterministic. Narrative formatting can
+ // still require human review without falsely becoming unsupported output.
+ draft.attestation.numbersChecked=!probe.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'&&r.detail?.startsWith('رقم في المسودة'));
  // No complete deterministic linguistic/title/terminology oracle exists locally.
  draft.attestation.titlesChecked=false;
  draft.attestation.spellingChecked=false;

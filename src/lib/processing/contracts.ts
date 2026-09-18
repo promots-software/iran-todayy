@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { ruleSet } from "./rules";
+import {renderingReceiptSchema} from './rendering-contract';
 const text = z.string().min(1).max(20000);
 export const sourceProfileSchema = z.object({
   verified: z.boolean(), flagged: z.boolean(),
@@ -34,6 +35,7 @@ export const understandingSchema = z.object({
   names: z.array(z.object({ arabic: text, kind: z.enum(["person", "place", "institution"]), evidence: evidenceSchema }).strict()),
   sensitiveActor: z.boolean(), leaderDeath: z.boolean(), seriousClaim: z.boolean(), rankUnverified: z.boolean(),
   uncoveredTerms: z.array(text),
+  rendering: renderingReceiptSchema.optional(),
 }).strict();
 export type Understanding = z.infer<typeof understandingSchema>;
 export const comparisonSchema = z.object({

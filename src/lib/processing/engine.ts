@@ -7,6 +7,7 @@ import { pipelineOrder, ruleSet } from "./rules";
 import { retryDelay } from "../domain";
 import { assertShadowMode, assertApprovalMode } from "./shadow";
 import {finalizeConstrainedDraft} from './local-finalization';
+import {sourceLanguage} from './source-language';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
 const leaseMs = 300000;
@@ -60,6 +61,8 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
     // Reject stale workers before spending a provider call, not only at commit.
     const active = await client.processingJob.findUniqueOrThrow({where:{id:job.id}});
     if (active.status !== "RUNNING" || active.lockedBy !== job.lockedBy || !active.lockedAt || active.lockedAt.getTime()+leaseMs <= Date.now()) throw new ProcessingError("STALE_CLAIM",true);
+    const detectedLanguage=sourceLanguage(post.originalContent);
+    if(detectedLanguage!=='unknown')await client.sourcePost.update({where:{id:post.id},data:{originalLanguage:detectedLanguage}});
     if (provider.live) {
       assertShadowMode();
       assertApprovalMode((await client.appSettings.findUnique({where:{id:1}}))?.publishingMode);

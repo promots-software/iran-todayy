@@ -4,6 +4,8 @@ import {validateGroundedExtraction,type GroundedExtraction} from './groq-extract
 import {requireArabic,sourceLanguage,validateExtractionLanguageAndSpeakers} from './groq-validation';
 import {supportedClassificationTopics,validateTopicGrounding,validateRationaleGrounding,normalizeInstitutionIdentity} from './classification-grounding';
 import {names} from './rules';
+import {resolveRendering,type RenderingReference} from './evidence-rendering';
+import type {RenderingReceipt} from './rendering-contract';
 
 type Evidence=GroundedExtraction['actors'][number];
 type Entry={id:string;role:string;evidence:Evidence};
@@ -43,21 +45,22 @@ export function idClassificationInput(x:GroundedExtraction,profile:SourceProfile
   sourceReview:{verified:profile.verified,flagged:profile.flagged,approvedAnalyst:profile.approvedAnalyst}}};
 }
 /** Classifier output cannot supply any text to these local factual copies. */
-function copy(e:Evidence|null){
+function copy(id:string,e:Evidence|null,translations:Map<string,string>|null){
  if(!e)return null;
- requireArabic(e.excerpt);
- const label=normalizeInstitutionIdentity(e.excerpt,{key:e.excerpt.normalize('NFKC').toLowerCase().trim(),arabic:e.excerpt,nameKind:null});
- return {key:label.key,arabic:e.excerpt,evidence:{...e}};
+ const arabic=translations?.get(id)??e.excerpt;requireArabic(arabic);
+ const label=normalizeInstitutionIdentity(e.excerpt,{key:e.excerpt.normalize('NFKC').toLowerCase().trim(),arabic,nameKind:null});
+ return {key:label.key,arabic,evidence:{...e}};
 }
-export function preflightIdClassification(x:GroundedExtraction,source:string){
+function renderingReferences(x:GroundedExtraction):RenderingReference[]{return classificationReferences(x).entries.filter(e=>e.role!=='event_time');}
+export function preflightIdClassification(x:GroundedExtraction,source:string,rendering?:RenderingReceipt){
  validateGroundedExtraction(x,source);
- // No new translation may enter classification. Non-Arabic evidence needs a
- // separately validated Arabic rendering before it can use this downstream path.
- if(sourceLanguage(source)!=='ar')throw new ProcessingError('VALIDATED_ARABIC_RENDERING_REQUIRED');
- for(const e of classificationReferences(x).entries)if(e.role!=='event_time')requireArabic(e.evidence.excerpt);
+ const language=sourceLanguage(source);
+ if(language==='unknown')throw new ProcessingError('SOURCE_LANGUAGE_UNCERTAIN');
+ if(language==='ar'){for(const e of renderingReferences(x))requireArabic(e.evidence.excerpt);return null;}
+ return resolveRendering(source,renderingReferences(x),rendering);
 }
-export function adaptIdClassification(x:GroundedExtraction,raw:unknown,source:string):Understanding{
- preflightIdClassification(x,source);
+export function adaptIdClassification(x:GroundedExtraction,raw:unknown,source:string,rendering?:RenderingReceipt):Understanding{
+ const translations=preflightIdClassification(x,source,rendering);
  const parsed=idClassificationSchema(x).safeParse(raw);
  if(!parsed.success)throw new ProcessingError('INVALID_ID_CLASSIFICATION');
  const c=parsed.data,refs=classificationReferences(x);
@@ -74,18 +77,20 @@ export function adaptIdClassification(x:GroundedExtraction,raw:unknown,source:st
  const knownNames:Understanding['names']=[],uncoveredTerms:string[]=[];
  for(const e of [...x.actors,...x.statements.flatMap(f=>f.speaker?[f.speaker]:[])]){
   const kind=names.people.includes(e.excerpt)?'person':names.places.includes(e.excerpt)?'place':names.institutions.includes(e.excerpt)?'institution':null;
-  if(kind)knownNames.push({arabic:e.excerpt,kind,evidence:{...e}});
+  const entry=refs.entries.find(r=>r.evidence.start===e.start&&r.evidence.end===e.end)!;
+  const arabic=translations?.get(entry.id)??e.excerpt;
+  if(kind)knownNames.push({arabic,kind,evidence:{...e}});
   else uncoveredTerms.push(e.excerpt); // Unknown entity type is a review task, never inferred.
  }
- if(x.location)knownNames.push({arabic:x.location.excerpt,kind:'place',evidence:{...x.location}});
+ if(x.location)knownNames.push({arabic:translations?.get('location')??x.location.excerpt,kind:'place',evidence:{...x.location}});
  const literal=x.event_time?.excerpt;
  const iso=literal&&z.iso.datetime({offset:true}).safeParse(literal).success?new Date(literal).toISOString():null;
  const u:Understanding={language:sourceLanguage(source),relevance:x.relevance,filterReason:c.filterReason,topic:c.topic,priority:c.priority,rationale,
   sensitiveActor:c.sensitiveActor,leaderDeath:c.leaderDeath,seriousClaim:c.seriousClaim,rankUnverified:c.rankUnverified,
-  names:knownNames,uncoveredTerms:[...new Set(uncoveredTerms)],
-  event:{actors:x.actors.map(e=>copy(e)!),action:copy(x.action),object:copy(x.object),location:copy(x.location),eventTime:iso&&x.event_time?{iso,evidence:{...x.event_time}}:null,summary:null,
-   facts:x.statements.map(f=>{const labels=c.factLabels.find(l=>l.id===f.id)!;return {id:f.id,key:f.evidence.excerpt.normalize('NFKC').toLowerCase().trim(),arabic:f.evidence.excerpt,evidence:{...f.evidence},
-    kind:labels.kind,speaker:copy(f.speaker),material:labels.material,verified:false};})}};
+  names:knownNames,uncoveredTerms:[...new Set(uncoveredTerms)],...(rendering?{rendering}:{}),
+  event:{actors:x.actors.map((e,i)=>copy(`actor:${i+1}`,e,translations)!),action:copy('action',x.action,translations),object:copy('object',x.object,translations),location:copy('location',x.location,translations),eventTime:iso&&x.event_time?{iso,evidence:{...x.event_time}}:null,summary:null,
+   facts:x.statements.map(f=>{const labels=c.factLabels.find(l=>l.id===f.id)!;return {id:f.id,key:f.evidence.excerpt.normalize('NFKC').toLowerCase().trim(),arabic:translations?.get(f.id)??f.evidence.excerpt,evidence:{...f.evidence},
+    kind:labels.kind,speaker:copy(`${f.id}:speaker`,f.speaker,translations),material:labels.material,verified:false};})}};
  validateUnderstanding(u,source);validateExtractionLanguageAndSpeakers(u,source);
  return u;
 }

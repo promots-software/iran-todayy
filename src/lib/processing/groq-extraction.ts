@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import {validateSpeakerEvidence} from './speaker-evidence';
 import { checkEvidence, evidenceSchema, ProcessingError, understandingSchema, validateUnderstanding, type Understanding } from './contracts';
 import { resolveContextEvidence, requireArabic, validateExtractionLanguageAndSpeakers } from './groq-validation';
 import {validateTopicGrounding,validateInstitutionGrounding,validateNoCountryAddition,validateRationaleGrounding,normalizeInstitutionIdentity,supportedClassificationTopics} from './classification-grounding';
@@ -26,8 +27,7 @@ export function validateMinimalExtraction(raw:unknown,source:string){
     statements:x.statements.map((s,i)=>({id:`f${i+1}`,evidence:resolve(s.evidence)!,speaker:resolve(s.speaker)}))};
   for(const s of result.statements){
     if(!s.speaker)continue;
-    const paragraphStart=source.lastIndexOf('\n',s.evidence.start)+1;
-    if(s.speaker.start<paragraphStart||s.speaker.end>s.evidence.start)throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
+    validateSpeakerEvidence(source,s.evidence,s.speaker);
   }
   return result;
 }
@@ -61,6 +61,7 @@ export function classificationSchemaFor(x:GroundedExtraction){
 export function validateGroundedExtraction(x:GroundedExtraction,source:string){
   requireCompleteExtraction(x);
   for(const e of [...x.actors,x.action,x.object,x.location,x.event_time,...x.statements.map(s=>s.evidence),...x.statements.map(s=>s.speaker)])if(e)checkEvidence(source,e);
+  for(const s of x.statements)if(s.speaker)validateSpeakerEvidence(source,s.evidence,s.speaker);
 }
 
 export function adaptClassification(x:GroundedExtraction,raw:unknown,source:string,language:string):Understanding {

@@ -4,8 +4,8 @@ import {GroqLanguageProvider} from '../src/lib/processing/groq';
 import {fixture,official} from './fixtures/processing';
 import {minimalParts} from './fixtures/groq-minimal';
 import {ruleSet} from '../src/lib/processing/rules';
-import {minimalExtractionSchema,validateMinimalExtraction,requireCompleteExtraction,adaptClassification} from '../src/lib/processing/groq-extraction';
-import {classificationReferences,idClassificationInput} from '../src/lib/processing/id-classification';
+import {minimalExtractionSchema,validateMinimalExtraction,requireCompleteExtraction} from '../src/lib/processing/groq-extraction';
+import {classificationReferences,idClassificationInput,adaptIdClassification} from '../src/lib/processing/id-classification';
 const sample=fixture('split','قال عباس عراقجي في طهران إنه يزور المدينة');
 const input={content:sample.content,publishedAt:new Date(),profile:official,rules:ruleSet};
 const response=(value:unknown)=>Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(value)}}],usage:{prompt_tokens:100,completion_tokens:50}});
@@ -43,8 +43,7 @@ test('invalid or incomplete extraction never reaches classification',async()=>{
 });
 test('classification cannot replace evidence, omit statements, change IDs, or infer absent anchors',()=>{
  const [raw,c]=minimalParts(sample.understanding),x=validateMinimalExtraction(raw,input.content);
- c.topic='UNKNOWN';
- for(const mutate of [(v:typeof c)=>{v.statements=[];},(v:typeof c)=>{v.statements[0].id='invented';},(v:typeof c)=>{v.action=null;}]){
-  const bad=structuredClone(c);mutate(bad);assert.throws(()=>adaptClassification(x,bad,input.content,'ar'),/CLASSIFICATION_EVIDENCE_MISMATCH/);
+ for(const mutate of [(v:typeof c)=>{v.factLabels=[];},(v:typeof c)=>{v.factLabels[0].id='invented';},(v:typeof c)=>{v.anchorIds=v.anchorIds.filter(id=>id!=='action');}]){
+  const bad=structuredClone(c);mutate(bad);assert.throws(()=>adaptIdClassification(x,bad,input.content),/(?:INVALID_ID_CLASSIFICATION|CLASSIFICATION_EVIDENCE_MISMATCH)/);
  }
 });

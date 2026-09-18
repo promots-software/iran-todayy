@@ -1,4 +1,6 @@
 import { ProcessingError, type Understanding } from './contracts';
+import {validateSpeakerEvidence} from './speaker-evidence';
+import {resolveRendering} from './evidence-rendering';
 
 import {sourceLanguage} from './source-language';
 export {sourceLanguage} from './source-language';
@@ -33,16 +35,17 @@ export function validateExtractionLanguageAndSpeakers(u:Pick<Understanding,'lang
   const e=u.event;
   for(const item of [...e.actors,e.action,e.object,e.location,...e.facts,...e.facts.map(f=>f.speaker),...u.names])if(item)requireArabic(item.arabic);
   if(e.summary!==null)requireArabic(e.summary);
+  const renderingRefs=e.facts.flatMap(f=>[
+    {id:f.id,role:'fact',evidence:f.evidence},
+    ...(f.speaker?[{id:`${f.id}:speaker`,role:'speaker',evidence:f.speaker.evidence}]:[]),
+  ]);
+  const translations=language==='fa'?resolveRendering(source,renderingRefs,(u as Understanding).rendering):null;
   for(const fact of e.facts) {
     const speaker=fact.speaker;
     if(!speaker){if(fact.kind==='CLAIM'||fact.kind==='STATEMENT')throw new ProcessingError('SPEAKER_ATTRIBUTION_REQUIRED');continue;}
-    // Speaker and claim must share the same source paragraph, in source order.
-    const paragraphStart=source.lastIndexOf('\n',fact.evidence.start)+1;
-    if(speaker.evidence.start<paragraphStart||speaker.evidence.end>fact.evidence.start)throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
-    // Explicitly supported Persian translation for an unnamed singular serviceman.
-    // Other cross-language identities need a verified mapping; never accept a model's assertion alone.
+    validateSpeakerEvidence(source,fact.evidence,speaker.evidence);
     if(language==='fa') {
-      if(speaker.evidence.excerpt!=='یکی از نظامیان'||! /^(أحد العسكريين|أحد الجنود|عسكري واحد)$/.test(speaker.arabic)||! /^(UNKNOWN_ACTOR|MILITARY_SOURCE|UNNAMED_SERVICEMAN)$/.test(speaker.key))throw new ProcessingError('SPEAKER_TRANSLATION_UNVERIFIED');
+      if(translations?.get(fact.id)!==fact.arabic||translations?.get(`${fact.id}:speaker`)!==speaker.arabic)throw new ProcessingError('SPEAKER_TRANSLATION_UNVERIFIED');
     } else if(speaker.arabic!==speaker.evidence.excerpt)throw new ProcessingError('SPEAKER_TRANSLATION_UNVERIFIED');
   }
 }

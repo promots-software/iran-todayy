@@ -10,6 +10,9 @@ import { ruleSet } from "./rules";
 import { assertShadowMode } from "./shadow";
 import { groqRuleContext, groqSchema } from "./groq-context";
 import { resolveContextEvidence, sourceLanguage, requireArabic } from "./groq-validation";
+import {classificationReferences} from './id-classification';
+import {renderingSchemaFor,renderingReviewSchemaFor,renderingInstructions,renderingReviewInstructions,renderingInput,renderingReviewInput,validateRendering,type RenderingReference} from './evidence-rendering';
+import type {RenderingReceipt} from './rendering-contract';
 
 
 import { minimalExtractionSchema, validateMinimalExtraction, type GroundedExtraction } from "./groq-extraction";
@@ -21,7 +24,7 @@ export const GROQ_PRICES = {
 } as const; // USD / million tokens, https://console.groq.com/docs/models, 2026-09-16.
 
 export type StageUsage = {
-  provider: "groq"; stage: Stage | "extract" | "classify"; model: string; request: number;
+  provider: "groq"; stage: Stage | "extract" | "render" | "review_rendering" | "classify"; model: string; request: number;
   inputTokens: number | null; outputTokens: number | null; totalTokens: number | null;
   estimatedCostUsd: number | null; pricingDate: "2026-09-16";
   outcome: "success" | "error"; errorCode: string | null; durationMs: number;
@@ -43,7 +46,7 @@ export function readLocalGroqKey(path = ".env") {
 }
 
 export class GroqLanguageProvider implements LanguageProvider {
-  get id() { return `groq:${this.extractionModel}:minimal-extraction-v2`; }
+  get id() { return `groq:${this.extractionModel}:minimal-extraction-v3`; }
   readonly live = true;
   readonly draftOnlyAccepted = true;
   readonly constrainedRewrite = true;
@@ -60,13 +63,20 @@ export class GroqLanguageProvider implements LanguageProvider {
     const detectedLanguage=sourceLanguage(input.content);
     if(detectedLanguage === "unknown") throw new ProcessingError("SOURCE_LANGUAGE_UNCERTAIN");
     const extracted = validateMinimalExtraction(await this.request("understand", {...data,detectedLanguage}, rules, signal, "extract"),input.content);
-    return this.classifyExtracted(input,extracted,signal);
+    let rendering:RenderingReceipt|undefined;
+    if(detectedLanguage!=='ar'){
+      const refs=classificationReferences(extracted).entries.filter(e=>e.role!=='event_time') as RenderingReference[];
+      const rendered=await this.request('understand',renderingInput(refs),rules,signal,'render',refs);
+      const reviewed=await this.request('understand',renderingReviewInput(refs,rendered),rules,signal,'review_rendering',refs);
+      rendering=validateRendering(input.content,refs,rendered,reviewed);
+    }
+    return this.classifyExtracted(input,extracted,signal,rendering);
   }
-  async classifyExtracted(input:Parameters<LanguageProvider["understand"]>[0],extracted:GroundedExtraction,signal:AbortSignal){
+  async classifyExtracted(input:Parameters<LanguageProvider["understand"]>[0],extracted:GroundedExtraction,signal:AbortSignal,rendering?:RenderingReceipt){
     // A saved, validated extraction can resume here without a second extraction request.
-    preflightIdClassification(extracted,input.content);
+    preflightIdClassification(extracted,input.content,rendering);
     const classification = await this.request("understand", {extraction:extracted,profile:input.profile}, input.rules, signal, "classify");
-    return adaptIdClassification(extracted,classification,input.content);
+    return adaptIdClassification(extracted,classification,input.content,rendering);
   }
   compare(input: Parameters<LanguageProvider["compare"]>[0], signal: AbortSignal) {
     return this.request("compare", input, ruleSet, signal);
@@ -76,16 +86,20 @@ export class GroqLanguageProvider implements LanguageProvider {
     const { rules, ...data } = input;
     return this.request("draft", data, rules, signal);
   }
-  private async request(stage: Stage, data: unknown, rules: typeof ruleSet, signal: AbortSignal, step?: "extract" | "classify"): Promise<unknown> {
+  private async request(stage: Stage, data: unknown, rules: typeof ruleSet, signal: AbortSignal, step?: "extract" | "render" | "review_rendering" | "classify",renderingRefs:RenderingReference[]=[]): Promise<unknown> {
     assertShadowMode(); signal.throwIfAborted();
     if (this.requests >= 8) throw new ProcessingError("GROQ_REQUEST_LIMIT");
     const atoms=stage==='draft'?buildAtoms((data as Parameters<LanguageProvider['draft']>[0]).content,(data as Parameters<LanguageProvider['draft']>[0]).understanding):null;
     const classificationData=step==='classify'?data as {extraction:GroundedExtraction;profile:Parameters<LanguageProvider['understand']>[0]['profile']}:null;
-    const outputSchema = atoms ? atomSelectionSchema(atoms) : step === "extract" ? minimalExtractionSchema : classificationData ? idClassificationSchema(classificationData.extraction) : schemas[stage];
+    const outputSchema = atoms ? atomSelectionSchema(atoms) : step === "extract" ? minimalExtractionSchema : step==='render' ? renderingSchemaFor(renderingRefs) : step==='review_rendering' ? renderingReviewSchemaFor(renderingRefs) : classificationData ? idClassificationSchema(classificationData.extraction) : schemas[stage];
     const wireSchema = groqSchema(stage, outputSchema);
 
     const task = step === "extract"
       ? extractionTask
+      : step === 'render'
+      ? renderingInstructions
+      : step === 'review_rendering'
+      ? renderingReviewInstructions
       : step === "classify"
       ? idClassificationInstructions
       : atoms ? selectionInstructions : tasks[stage];

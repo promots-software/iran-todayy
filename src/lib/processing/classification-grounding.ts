@@ -4,8 +4,8 @@ const axes:Record<string,RegExp>={
  IRAN_DOMESTIC:/(?:\bIran(?:ian)?\b|إيران|إيراني|ايران|ایران)/iu,
  ISRAEL:/(?:\bIsrael(?:i)?\b|إسرائيل|إسرائيلي|اسرائیل)/iu,
  GULF:/(?:\bGulf\b|الخليج|خلیج)/iu,
- WEST:/(?:\b(?:United States|United Kingdom|Europe|European|Western)\b|الولايات المتحدة|بريطانيا|أوروبا|الغرب)/iu,
- GREAT_POWERS:/(?:\b(?:United States|China|Russia)\b|الولايات المتحدة|الصين|روسيا)/iu,
+ WEST:/(?:\b(?:United States|United Kingdom|Europe|European|Western|America|American)\b|الولايات المتحدة|أميرك|اميرك|آمریکا|بريطانيا|أوروبا|الغرب)/iu,
+ GREAT_POWERS:/(?:\b(?:United States|China|Russia|America|American)\b|الولايات المتحدة|أميرك|اميرك|آمریکا|الصين|روسيا)/iu,
  REGION:/(?:\b(?:Middle East|West Asia)\b|الشرق الأوسط|غرب آسيا)/iu,
 };
 export function validateTopicGrounding(topic:string,excerpt:string|null,validatedExcerpts:string[]){
