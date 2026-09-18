@@ -78,7 +78,9 @@ async function main() {
           const reader=new TelegramReader(client);
           return {
             get connected(){return client.connected;},
-            connect:async()=>{await client.connect();},
+            // connect() itself invokes Telegram RPCs; auth-key failures can
+            // occur here before GetState. Classify them without logging secrets.
+            connect:async()=>{await probeAuthorization(()=>client.connect());},
             authorize:()=>probeAuthorization(()=>client.invoke(new Api.updates.GetState())),
             close:()=>client.destroy(),
             channel:(handle,readSignal)=>{requireLease();return reader.channel(handle,readSignal);},
