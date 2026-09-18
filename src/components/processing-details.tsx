@@ -1,6 +1,7 @@
 import { JsonView, Badge } from "./ui";
 import { date } from "@/lib/labels";
 import type { Prisma } from "@prisma/client";
+import {reviewMessages,type ReasonInput} from '@/lib/processing/editorial-eligibility';
 function record(value: unknown): Record<string, unknown> { return value && typeof value === "object" && !Array.isArray(value) ? value as Record<string, unknown> : {}; }
 export function ProcessingDetails({ value }: { value: Prisma.JsonValue | null }) {
   const data=record(value), draft=record(data.draft), match=record(data.match);
@@ -9,7 +10,7 @@ export function ProcessingDetails({ value }: { value: Prisma.JsonValue | null })
     {typeof data.classification === "string" && <Badge value={data.classification} />}
     <p>{typeof match.rationale === "string" ? match.rationale : "لم تُحسم المطابقة بعد"}</p>
     <p>نسخة القواعد: <bdi>{String(data.ruleSetVersion??"—")}</bdi></p>
-    {reviews.map((r,i)=>{const row=record(r);return <p key={i} className="notice"><bdi>{String(row.code??"")}</bdi> · {String(row.explanation??"")} {String(row.detail??"")}</p>;})}
+    {reviewMessages(reviews.map(r=>{const row=record(r);return {code:String(row.code??''),detail:typeof row.detail==='string'?row.detail:undefined} satisfies ReasonInput;})).map(r=><p key={r} className="notice">{r}</p>)}
     {typeof draft.title === "string" && <><h3>{draft.title}</h3><p className="original">{String(draft.body??"")}</p></>}
     <details><summary>أدلة المطابقة والاستخراج والقواعد المطبّقة</summary><JsonView value={value}/></details>
   </section>;

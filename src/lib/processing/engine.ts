@@ -8,6 +8,7 @@ import { retryDelay } from "../domain";
 import { assertShadowMode, assertApprovalMode } from "./shadow";
 import {finalizeConstrainedDraft} from './local-finalization';
 import {sourceLanguage} from './source-language';
+import {editorialDecision} from './editorial-eligibility';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
 const leaseMs = 300000;
@@ -92,7 +93,7 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
       const rules=await tx.editorialRuleSet.upsert({where:{version:ruleSet.version},update:{},create:{version:ruleSet.version,rules:json(ruleSet),provenance:json(ruleSet.provenance)}});
       const base={originalLanguage:u.language,relevance:u.relevance,relevanceResult:json({topic:u.topic,priority:u.priority,sourceProfile,rationale:u.rationale,ruleSetVersion:ruleSet.version}),processingStartedAt:post.processingStartedAt??current.lockedAt,processingEndedAt:now,error:null,nextRetryAt:null};
       if (filter) {
-        await tx.sourcePost.update({where:{id:post.id},data:{...base,status:"FILTERED",rejectionReason:u.filterReason,processingResult:json({ruleSetVersion:ruleSet.version,filterReason:u.filterReason,review:initialReview(u,sourceProfile),provider:provider.id})}});
+        await tx.sourcePost.update({where:{id:post.id},data:{...base,status:"FILTERED",rejectionReason:u.filterReason,processingResult:json({editorialEligibility:'FILTERED',deliveryDecision:'HOLD',ruleSetVersion:ruleSet.version,filterReason:u.filterReason,review:initialReview(u,sourceProfile,post.originalContent),provider:provider.id})}});
         await audit(tx,post.id,"FILTER_AND_MATCH","استبعاد من مسار النشر",{reason:u.filterReason,rule:"P2.2"});
       } else {
         // Historical candidates are retained; matcher marks probable matches outside 24h for review.
@@ -109,7 +110,7 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
         // Groq's larger model is reserved for accepted new/material stories, never duplicate or unresolved events.
         if (provider.draftOnlyAccepted && (u.relevance !== "POLITICAL_NEWS" || u.priority === "P4" || !u.event.action || !u.event.actors.length || !u.event.facts.length || !["NEW_EVENT","MATERIAL_UPDATE"].includes(match.classification))) {
           const status = match.classification === "DUPLICATE" ? "DUPLICATE" : "NEEDS_REVIEW";
-          const review = initialReview(u,sourceProfile);
+          const review = initialReview(u,sourceProfile,post.originalContent);
           if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
           if (!u.event.action || !u.event.actors.length || !u.event.facts.length) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
           const links = match.classification === "UNCERTAIN_MATCH" ? match.candidates.map(c=>c.revisionId) : match.candidate ? [match.candidate.revisionId] : [];
@@ -125,7 +126,7 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
         }
         const rawDraft=await provider.draft({content:post.originalContent,understanding:u,rules:ruleSet},signal);
         const draft=provider.constrainedRewrite?finalizeConstrainedDraft(rawDraft,post.originalContent,u,sourceProfile):editDraft(rawDraft,post.originalContent,u,sourceProfile);
-        const review=[...draft!.review, ...(provider.live ? [{code:"SHADOW_MODE_REVIEW",explanation:"مسودة حية في وضع الظل؛ يلزم فحص المحرر",reference:"Phase 3A operational safety requirement",detail:undefined}] : [])];
+        const review=[...draft!.review];
         if (!u.event.action || !u.event.actors.length || !u.event.facts.length) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
         if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
         if (match.candidates.some(c=>Array.isArray((c.evidence.semantic as {conflictingFactIds?:string[]})?.conflictingFactIds) && ((c.evidence.semantic as {conflictingFactIds:string[]}).conflictingFactIds.length>0))) review.push(reason("FIGURE_CONFLICT"));
@@ -142,19 +143,21 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
           revisionId=revision.id;
         }
         const reviewState=review.length>0 || match.classification === "UNCERTAIN_MATCH";
+        // This worker is a draft-only service. Eligibility never authorizes a send.
+        const decision=editorialDecision({validated:true,review,filtered:match.classification==='DUPLICATE'},{autoPublish:false,shadowMode:true,requireApproval:true});
         const status=match.classification === "DUPLICATE" ? "DUPLICATE" : reviewState ? "NEEDS_REVIEW" : "PENDING_APPROVAL";
         if (revisionId && match.classification !== "UNCERTAIN_MATCH") {
           const existing=await tx.newsItem.findUnique({where:{eventRevisionId:revisionId}});
           if (match.classification === "DUPLICATE") newsItemId=existing?.id;
           else {
-            const item=await tx.newsItem.create({data:{eventRevisionId:revisionId,title:draft!.title,arabicContent:draft!.body+"\n\n"+draft!.hashtags.join(" "),status,validationStatus:reviewState?"NEEDS_REVIEW":"PASSED",protectedQuotes:json(draft!.protectedQuotes),factualEvidence:json(u.event.facts),validationResult:json({review,applied:draft!.applied,sentenceEvidence:draft!.sentenceEvidence,externalPublishingEnabled:false}),needsReviewReasons:review.map(r=>`${r.code}: ${r.explanation}${r.detail ? " — "+r.detail : ""}`),ruleSetId:rules.id,modeAtProcessing:post.modeAtProcessing,processingStartedAt:base.processingStartedAt,processingEndedAt:now}});
+            const item=await tx.newsItem.create({data:{eventRevisionId:revisionId,title:draft!.title,arabicContent:draft!.body,status,validationStatus:reviewState?"NEEDS_REVIEW":"PASSED",protectedQuotes:json(draft!.protectedQuotes),factualEvidence:json(u.event.facts),validationResult:json({...decision,validated:true,format:match.classification==='MATERIAL_UPDATE'?'UPDATE':draft.format,review,applied:draft!.applied,sentenceEvidence:draft!.sentenceEvidence,externalPublishingEnabled:false}),needsReviewReasons:review.map(r=>`${r.code}: ${r.explanation}${r.detail ? " — "+r.detail : ""}`),ruleSetId:rules.id,modeAtProcessing:post.modeAtProcessing,processingStartedAt:base.processingStartedAt,processingEndedAt:now}});
             newsItemId=item.id;
           }
           if (newsItemId) await tx.newsEvidence.upsert({where:{newsItemId_sourcePostId:{newsItemId,sourcePostId:post.id}},create:{newsItemId,sourcePostId:post.id},update:{}});
         }
         const links=match.classification === "UNCERTAIN_MATCH" ? match.candidates.map(c=>c.revisionId) : revisionId ? [revisionId] : [];
         for (const id of links) await tx.eventMatch.upsert({where:{sourcePostId_eventRevisionId:{sourcePostId:post.id,eventRevisionId:id}},update:{},create:{sourcePostId:post.id,eventRevisionId:id,classification:match.classification,rationale:match.rationale+(match.candidate?.published?" — سبق نشر الحدث":""),evidence:json(match.evidence),matcherVersion:"layered-v1"}});
-        await tx.sourcePost.update({where:{id:post.id},data:{...base,status,processingResult:json({ruleSetVersion:ruleSet.version,provider:provider.id,classification:match.classification,eventRevisionId:revisionId??null,match:{rationale:match.rationale,evidence:match.evidence,candidates:match.candidates},extraction:u,draft,review,externalPublishingEnabled:false})}});
+        await tx.sourcePost.update({where:{id:post.id},data:{...base,status,processingResult:json({...decision,validated:true,ruleSetVersion:ruleSet.version,provider:provider.id,classification:match.classification,eventRevisionId:revisionId??null,match:{rationale:match.rationale,evidence:match.evidence,candidates:match.candidates},extraction:u,draft,review,externalPublishingEnabled:false})}});
         for (const action of pipelineOrder) await audit(tx,post.id,action,action === "PUBLISHING_DECISION"?"المسودة محفوظة؛ الإرسال الخارجي معطل":`اكتملت مرحلة ${action}`,{ruleSetVersion:ruleSet.version,classification:match.classification,status,reviewCodes:review.map(r=>r.code)});
       }
       await tx.processingJob.update({where:{id:job.id},data:{status:"COMPLETED",lockedAt:null,lockedBy:null,lastError:null}});
@@ -168,7 +171,8 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
       const next=new Date(Date.now()+retryDelay(job.attemptCount));
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code}});
       if (changed.count) {
-        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:[reason(code === "PROVIDER_UNAVAILABLE"?"PROVIDER_UNAVAILABLE":"UNSUPPORTED_OUTPUT",code)]})}});
+        const decision=editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({...decision,ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
         await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount});
       }
     });

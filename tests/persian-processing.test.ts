@@ -49,7 +49,7 @@ for(const [name,sample] of Object.entries(cases))test(`Persian ${name} reaches g
  const draft=await provider.draft({content:sample.source,understanding,rules:ruleSet},new AbortController().signal);
  const result=finalizeConstrainedDraft(draft,sample.source,understanding,unknownProfile);
  assert.ok(!result.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'),JSON.stringify(result.review));
- if(name==='bullets')assert.ok(result.review.some(r=>r.code==='FORMAT_REVIEW'));
+ if(name==='bullets')assert.ok(!result.review.some(r=>r.code==='FORMAT_REVIEW'));
  assert.deepEqual(result.sentenceEvidence.flatMap(s=>s.factIds).every(id=>understanding.event.facts.some(f=>f.id===id)),true);
  assert.equal(calls(),5);
 });

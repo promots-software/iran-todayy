@@ -22,6 +22,7 @@ test('grounded attributed draft retains review flags without attribution failure
  assert.deepEqual(d.sentenceEvidence,[
   {text:'قال المتحدث إن أعضاء الفريق لم يتلقوا إشعاراً.',factIds:['scope:visit']},
   {text:'قال المتحدث إن أعضاء الفريق لم يتلقوا إشعاراً',factIds:['scope:visit']},
+  {text:'إيران الآن | قال المتحدث إن أعضاء الفريق لم يتلقوا إشعاراً',factIds:['scope:visit']},
  ]);
  assert.ok(d.sentenceEvidence.some(s=>s.text===d.title));
 });

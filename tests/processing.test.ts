@@ -47,7 +47,7 @@ test("quotes, official names, documents and quoted hashtags remain literal (P5 p
 test("PDF acceptance: official institution retained, geographical phrase transformed (P13.2)",()=>{
   const s=fixture("institution","قناة الشرق الأوسط تنقل عن مصادر في الشرق الأوسط","ar","قناة الشرق الأوسط تنقل عن مصادر في الشرق الأوسط");
   const result=editDraft(s.draft,s.content,s.understanding,official);
-  assert.equal(result.title,"قناة الشرق الأوسط تنقل عن مصادر في غرب آسيا");
+  assert.equal(result.title,"إيران الآن | قناة الشرق الأوسط تنقل عن مصادر في غرب آسيا");
   assert.ok(result.applied.some(r=>r.ruleId === "T58"));
 });
 test("PDF serious quoted claim remains untouched and needs review (R II; P4.5/P13.2)",()=>{
@@ -67,12 +67,12 @@ test("PDF review conditions are explicit and preserve uncovered term (P4.1–7)"
 test("PDF transliteration acceptance and source original immutable (R IV; P13.2)",()=>{
   const s=fixture("names","Pezeshkian يزور Chabahar","ar","Pezeshkian يزور Chabahar");
   const result=editDraft(s.draft,s.content,s.understanding,official);
-  assert.equal(result.title,"مسعود بزشكيان يزور تشابهار");assert.equal(s.content,"Pezeshkian يزور Chabahar");
+  assert.equal(result.title,"إيران الآن | مسعود بزشكيان يزور تشابهار");assert.equal(s.content,"Pezeshkian يزور Chabahar");
 });
 test("contextual sanctions / casualty wording is not blindly replaced (R I.2–3)",()=>{
   const s=fixture("context","العقوبات الدولية على دولة أخرى وضحايا حادث","ar","العقوبات الدولية على دولة أخرى وضحايا حادث");
   const result=editDraft(s.draft,s.content,s.understanding,official);
-  assert.equal(result.title,s.draft.title);assert.ok(result.review.some(r=>r.code === "CONTEXT_REQUIRED"));
+  assert.equal(result.title,"إيران الآن | "+s.draft.title);assert.ok(result.review.some(r=>r.code === "CONTEXT_REQUIRED"));
 });
 test("schema and source offsets reject fabricated evidence before persistence",()=>{
   const u=structuredClone(base.understanding);u.event.facts[0].evidence.excerpt="fabricated";

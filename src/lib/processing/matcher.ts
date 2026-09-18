@@ -6,6 +6,9 @@ const norm = (s: string) => s.normalize("NFKC").toLowerCase().trim();
 const equal = (a: { key: string } | null, b: { key: string } | null) => !!a && !!b && norm(a.key) === norm(b.key);
 export async function matchEvent(incoming: EventData, publishedAt: Date, candidates: Candidate[], provider: LanguageProvider, signal: AbortSignal): Promise<MatchDecision> {
   const results: (MatchDecision & { candidate: Candidate })[] = [];
+  // Only identical semantic input is reused. Each event still gets its own
+  // temporal/conflict decision; multiple matches still require human review.
+  const comparisons=new Map<string,unknown>();
   for (const c of candidates) {
     const old = c.data;
     const actors = incoming.actors.filter(a => old.actors.some(b => equal(a, b))).map(a => a.key);
@@ -19,7 +22,9 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     const factsOverlap = incoming.facts.filter(f => old.facts.some(o => norm(o.key) === norm(f.key))).map(f => f.id);
     // Entities alone never establish sameness. Meaning is checked for every plausible candidate.
     if (!actors.length && !factsOverlap.length) continue;
-    const raw = await provider.compare({ incoming, existing: old }, signal);
+    const comparisonInput={incoming,existing:old},comparisonKey=JSON.stringify(comparisonInput);
+    const raw = comparisons.has(comparisonKey)?comparisons.get(comparisonKey):await provider.compare(comparisonInput, signal);
+    comparisons.set(comparisonKey,raw);
     const parsed = comparisonSchema.safeParse(raw);
     if (!parsed.success) throw new ProcessingError("INVALID_COMPARISON_SCHEMA");
     const semantic = parsed.data;

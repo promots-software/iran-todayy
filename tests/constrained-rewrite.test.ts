@@ -15,15 +15,15 @@ const setup=()=>{
 };
 test('unresolved possessive and audience-specific knowledge remain byte-identical',()=>{
  const {input,selection}=setup();const d=renderSelection(selection,input);
- assert.equal(d.title,input.atoms[0].renderedText.replace(/\.$/u,''));
- assert.equal(d.body,input.atoms[0].renderedText);
- assert.ok(d.body.includes('منشآتنا'));
- assert.ok(d.body.includes('لم يبلغ أعضاء الفريق'));
- assert.ok(!d.body.includes('لم يعلن'));
+ assert.equal(d.title,'إيران الآن | '+input.atoms[0].renderedText.replace(/\.$/u,''));
+ assert.equal(d.body,'');
+ assert.ok(d.title.includes('منشآتنا'));
+ assert.ok(d.title.includes('لم يبلغ أعضاء الفريق'));
+ assert.ok(!d.title.includes('لم يعلن'));
 });
 test('serious claim title attribution is locally rendered and passes existing attribution check',()=>{
  const {f,input,selection}=setup();const d=renderSelection(selection,input);
- assert.ok(d.title.startsWith('قال متحدث'));
+ assert.ok(d.title.startsWith('إيران الآن | قال متحدث'));
  const result=editDraft(d,f.content,f.understanding,official);
  assert.ok(!result.review.some(r=>r.detail==='النسب الصريح مطلوب في العنوان والمتن'));
  assert.ok(result.review.some(r=>r.code==='SERIOUS_CLAIM'));
@@ -37,7 +37,7 @@ test('valid IDs do not license semantic overreach or arbitrary body text',()=>{
  assert.throws(()=>renderSelection({...selection,body:'لم يكشف أحد أي معلومات',factIds:selection.bodyAtomIds},input),/INVALID_ATOM_SELECTION/);
  assert.equal(atomSelectionSchema(input).safeParse({...selection,titleAtomId:'unknown'}).success,false);
  const d=renderSelection(selection,input);
- assert.deepEqual(d.sentences.map(s=>s.factIds),[selection.bodyAtomIds,selection.bodyAtomIds]);
+ assert.deepEqual(d.sentences.map(s=>s.factIds),[selection.bodyAtomIds]);
  assert.deepEqual(d.protectedSpans,[]);
  assert.deepEqual(d.decisions,[]);
 });

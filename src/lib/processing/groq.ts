@@ -88,7 +88,7 @@ export class GroqLanguageProvider implements LanguageProvider {
   }
   private async request(stage: Stage, data: unknown, rules: typeof ruleSet, signal: AbortSignal, step?: "extract" | "render" | "review_rendering" | "classify",renderingRefs:RenderingReference[]=[]): Promise<unknown> {
     assertShadowMode(); signal.throwIfAborted();
-    if (this.requests >= 8) throw new ProcessingError("GROQ_REQUEST_LIMIT");
+    if (this.requests >= 8) throw new ProcessingError("PROVIDER_REQUEST_LIMIT");
     const atoms=stage==='draft'?buildAtoms((data as Parameters<LanguageProvider['draft']>[0]).content,(data as Parameters<LanguageProvider['draft']>[0]).understanding):null;
     const classificationData=step==='classify'?data as {extraction:GroundedExtraction;profile:Parameters<LanguageProvider['understand']>[0]['profile']}:null;
     const outputSchema = atoms ? atomSelectionSchema(atoms) : step === "extract" ? minimalExtractionSchema : step==='render' ? renderingSchemaFor(renderingRefs) : step==='review_rendering' ? renderingReviewSchemaFor(renderingRefs) : classificationData ? idClassificationSchema(classificationData.extraction) : schemas[stage];
@@ -147,7 +147,7 @@ export class GroqLanguageProvider implements LanguageProvider {
       if(!atoms && stage==="draft" && typeof data==="object" && data!==null && "content" in data && typeof data.content==="string")event.evidenceOffsetsAligned=resolveContextEvidence(output,data.content);
       const validated = outputSchema.safeParse(output);
       if (!validated.success) throw new ProcessingError("GROQ_INVALID_SCHEMA");
-      if(atoms) { const draft=renderSelection(validated.data,atoms); requireArabic(draft.title); requireArabic(draft.body); event.outcome="success"; return draft; }
+      if(atoms) { const draft=renderSelection(validated.data,atoms); requireArabic(draft.title); if(draft.body)requireArabic(draft.body); event.outcome="success"; return draft; }
       if(stage==="draft") { const draft=schemas.draft.parse(validated.data); requireArabic(draft.title); requireArabic(draft.body); draft.sentences.forEach(s=>requireArabic(s.text)); }
       event.outcome = "success";
       return validated.data;

@@ -106,7 +106,7 @@ export const reviewReasons = {
 } as const;
 export type ReviewCode = keyof typeof reviewReasons;
 export const pipelineOrder = ["FILTER_AND_MATCH", "CLASSIFY", "PROTECT_QUOTES", "TERMINOLOGY_AUTOMATIC", "TERMINOLOGY_CONTEXTUAL", "ATTRIBUTION", "TITLES", "TRANSLITERATION", "SPELLING_PUNCTUATION_NUMBERS", "ASSEMBLE", "FINAL_VALIDATION", "PUBLISHING_DECISION"] as const;
-export const policy: Rule[] = [
+export const legacyPolicy: Rule[] = [
   { id: "FILTER", category: "eligibility", reference: "P2 pp2–3", instruction: "Political news related to Iran, resistance axis or West Asia. Exclude unrelated, ads, sports, entertainment, satire, unidentifiable rumours, personal opinion without approved analyst, incitement without independent news value. Approved analysis is context, not breaking news." },
   { id: "PRIORITY", category: "priority", reference: "P3 pp3–4", instruction: "P1 impactful event now: immediate editor alert; P2 daily within hour; P3 trusted context daily schedule; P4 history/geography archived without publication." },
   { id: "SOURCES", category: "sourceClassification", reference: "P2.3 p3; P3 p4", instruction: "IRAN_OFFICIAL, RESISTANCE, WESTERN, HEBREW, NEUTRAL. Authority order: Iranian official, international agency, newspaper, approved analyst. Classification is operator-verified, never inferred from a newly added handle. Official figures preferred in a conflict, always attributed." },
@@ -121,8 +121,16 @@ export const policy: Rule[] = [
   { id: "DESCRIPTION", category: "formatting", reference: "P13.1 p19", instruction: "Do not use حلقة or برنامج as description labels. Ambiguous scope versus required البرنامج النووي: retain factual programme terminology; route unresolved description uses to review." },
   { id: "CREDIBILITY", category: "credibility", reference: "R IX p18; P12 p17", instruction: "Restrained news writing, no exaggeration; no overuse of زعم/ادعى; quotations inviolable; verify numbers before terminology; preserve facts; no unsupported information, causes, dates, identity or claims. Uncovered cases require editor and monthly rule update." },
 ];
+const clientInstructions:Record<string,string>={
+ TITLES:'Preserve explicitly sourced titles/ranks without independent current-office verification. Never add, expand or attach a title to an unsupported identity. Genuine identity/title ambiguity requires review.',
+ NAMES:'Use approved spellings where applicable. A clear new name is allowed with faithful source spelling or validated Arabic rendering. Dictionary absence alone is not an ambiguity. Never expand identity or infer nationality/role.',
+ NUMBERS:'Preserve every material number and its factual attachment; digits are allowed. Never invent currency/calendar/unit conversions. Persian month labels follow the client naming convention only; it is not a Gregorian date conversion. Concrete calendar dates require grounded conversion or review.',
+ FORMATS:'Every normal output starts إيران الآن |. No automatic عاجل, hashtags or emojis. Support FLASH, STATEMENT, STANDARD_STORY, MULTI_POINT_REPORT, UNCERTAIN_REPORT, VISUAL, UPDATE, QUOTE_LED. Be concise; no repeated title in body or padding. Preserve material facts and attribution.',
+ CREDIBILITY:'Preserve grounded facts, numbers, names, uncertainty, scope, speaker and direct quotes. Never add identities, relationships or claims. Serious attributed claims, clear new names, sourced titles and valid quotes are not review defects by themselves. Unresolved evidence/meaning requires review. Operational publishing switches never establish editorial quality.',
+};
+export const policy:Rule[]=legacyPolicy.map(r=>clientInstructions[r.id]?{...r,reference:'Owner editorial contract 2026-09-18; supersedes conflicting PDF defaults',instruction:clientInstructions[r.id]}:r);
 export const ruleSet = {
-  version: "iran-today-editorial-2026-08-v1.0.0",
+  version: "iran-now-editorial-2026-09-18-v2",
   provenance: [
     { document: "مرجع المصطلحات - ايران الآن.pdf", pages: 18, precedence: 1, sha256: "942BD453A6578177D6241B457E1AD48F31C89FA2B08B588ABD244C1E0ECCF35E" },
     { document: "Publishing Prompt.pdf", pages: 19, precedence: 2, sha256: "E9475F2ACA9EBE69E6B0E19314D24E3C2D7C0018F9E7D203B1C62DDCDAE7EB8F" },

@@ -44,7 +44,7 @@ export const comparisonSchema = z.object({
 }).strict();
 export type Comparison = z.infer<typeof comparisonSchema>;
 export const draftSchema = z.object({
-  title: text, body: text, format: z.enum(["NEWS", "BREAKING"]),
+  title: text, body: z.string().max(20000), format: z.enum(["NEWS", "BREAKING", "FLASH", "STATEMENT", "STANDARD_STORY", "MULTI_POINT_REPORT", "UNCERTAIN_REPORT", "VISUAL", "UPDATE", "QUOTE_LED"]),
   // Every sentence must be covered by a supported fact; validator checks complete coverage.
   sentences: z.array(z.object({ text, factIds: z.array(text).min(1) }).strict()).min(1),
   protectedSpans: z.array(z.object({ text, kind: z.enum(["QUOTE", "OFFICIAL_NAME", "DOCUMENT", "QUOTED_HASHTAG"]), evidence: evidenceSchema }).strict()),

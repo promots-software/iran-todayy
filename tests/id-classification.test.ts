@@ -52,8 +52,8 @@ test('explicit speaker is copied exactly and serious-claim review and attributio
  const u=adaptIdClassification(x,c,source);
  assert.equal(u.event.facts[0].speaker!.arabic,'متحدث');assert.deepEqual(u.event.facts[0].speaker!.evidence,x.statements[0].speaker);
  const result=finalizeConstrainedDraft(renderSelection({titleAtomId:'f1',bodyAtomIds:['f1']},buildAtoms(source,u)),source,u,unknownProfile);
- assert.ok(result.title.startsWith('قال متحدث'));assert.ok(result.body.includes('منشآتنا'));
- assert.ok(result.review.some(r=>r.code==='SERIOUS_CLAIM'));assert.ok(!result.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
+ assert.ok(result.title.startsWith('إيران الآن | قال متحدث'));assert.ok(result.title.includes('منشآتنا'));
+ assert.ok(!result.review.some(r=>r.code==='SERIOUS_CLAIM'));assert.ok(!result.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
 });
 test('unknown geography stays UNKNOWN; supported topic still requires the correct evidence ID',()=>{
  const {x,c}=sample();assert.throws(()=>adaptIdClassification(x,{...c,topic:'REGION',topicEvidenceId:'f1'},content),/INVALID_ID_CLASSIFICATION/);
@@ -69,12 +69,12 @@ test('classification preserves all facts regardless of returned label order',()=
  assert.deepEqual(result.event.facts.map(f=>f.id),['f1','f2']);
  assert.throws(()=>adaptIdClassification(x,{...c,factLabels:[c.factLabels[0],c.factLabels[0]]},content),/CLASSIFICATION_EVIDENCE_MISMATCH/);
 });
-test('unknown names and human editorial judgments remain review requirements',()=>{
+test('unknown entity types remain unexpanded without manufacturing editorial defects',()=>{
  const {x,c}=sample(),u=adaptIdClassification(x,c,content);
- assert.ok(u.uncoveredTerms.includes('المجلس'));assert.equal(u.event.actors[0].arabic,'المجلس');
+ assert.deepEqual(u.uncoveredTerms,[]);assert.equal(u.event.actors[0].arabic,'المجلس');
  assert.equal(u.names.some(n=>n.kind==='institution'),false);
  const result=finalizeConstrainedDraft(renderSelection({titleAtomId:'f1',bodyAtomIds:['f1']},buildAtoms(content,u)),content,u,unknownProfile);
- for(const code of ['UNVERIFIED_SOURCE','UNCOVERED_TERM','EDITORIAL_ATTESTATION_REQUIRED','CONTEXT_REQUIRED'])assert.ok(result.review.some(r=>r.code===code));
+ assert.deepEqual(result.review.map(r=>r.code),['UNVERIFIED_SOURCE']);
  assert.ok(!result.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
 });
 test('provider calls classification only and its wire response is IDs and labels only',async()=>{

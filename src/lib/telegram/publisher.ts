@@ -15,8 +15,8 @@ export function approvalDigest(item:Pick<NewsItem,'id'|'title'|'arabicContent'|'
  return createHash('sha256').update(JSON.stringify([item.id,item.eventRevisionId,item.title,item.arabicContent,item.factualEvidence,item.validationResult])).digest('hex');
 }
 export function publicationText(item:Pick<NewsItem,'title'|'arabicContent'>){
- if(!item.arabicContent?.trim())throw new ProcessingError('NO_PUBLICATION_CONTENT');
- const text=`${item.title}\n\n${item.arabicContent}`;
+ if(item.arabicContent===null||!item.title.trim())throw new ProcessingError('NO_PUBLICATION_CONTENT');
+ const text=item.arabicContent.trim()?`${item.title}\n\n${item.arabicContent}`:item.title;
  if(text.length>4096)throw new ProcessingError('TELEGRAM_TEXT_TOO_LONG');
  return text;
 }

@@ -1,12 +1,18 @@
 import {buildAtoms,renderSelection} from './constrained-rewrite';
 import {editDraft} from './editorial';
 import {draftSchema,ProcessingError,type SourceProfile,type Understanding} from './contracts';
+import {hasEditorialGrounding,unresolvedTerms} from './editorial-grounding';
+import {newsroomPrefix} from './newsroom-format';
 
 /** Reuse the provider's selection result without accepting its attestations. */
 export function finalizeConstrainedDraft(raw:unknown,content:string,u:Understanding,profile:SourceProfile){
  const d=draftSchema.parse(raw),atoms=buildAtoms(content,u);
- const title=atoms.atoms.find(a=>a.renderedText.replace(/\.$/u,'')===d.title);
- const ids=d.body.split('\n').map(text=>atoms.atoms.find(a=>a.renderedText===text)?.id);
+ const titleLink=d.sentences.find(s=>s.text===d.title);
+ const statement=atoms.format==='STATEMENT';
+ const title=atoms.atoms.find(a=>titleLink?.factIds.length===1&&titleLink.factIds[0]===a.id&&newsroomPrefix+(statement?a.attribution:a.renderedText.replace(/\.$/u,''))===d.title);
+ // Recover selection by immutable provenance, not by splitting prose (an atom
+ // may itself contain paragraphs or the same text as another evidence span).
+ const ids=[...(statement?[]:[title?.id]),...d.sentences.filter(s=>s!==titleLink).map(s=>s.factIds.length===1?atoms.atoms.find(a=>a.id===s.factIds[0]&&(statement?`- ${a.text}`:a.renderedText)===s.text)?.id:undefined)];
  if(!title||ids.some(id=>!id))throw new ProcessingError('CONSTRAINED_TEXT_CHANGED');
  const selection={titleAtomId:title.id,bodyAtomIds:ids};
  const expected=renderSelection(selection,atoms);
@@ -20,18 +26,19 @@ export function finalizeSelection(selection:unknown,content:string,u:Understandi
  const probe=editDraft(draft,content,u,profile);
  const reasons:Record<string,string>={};
  // This attests preservation of validated atoms, not independent source truth.
- draft.attestation.factsPreserved=true;
+ const grounded=hasEditorialGrounding(u,content);
+ draft.attestation.factsPreserved=grounded;
  draft.attestation.attributionChecked=!probe.review.some(r=>r.detail==='النسب الصريح مطلوب في العنوان والمتن');
  // Evidence-linked digit equality is deterministic. Narrative formatting can
  // still require human review without falsely becoming unsupported output.
  draft.attestation.numbersChecked=!probe.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'&&r.detail?.startsWith('رقم في المسودة'));
- // No complete deterministic linguistic/title/terminology oracle exists locally.
- draft.attestation.titlesChecked=false;
- draft.attestation.spellingChecked=false;
- draft.attestation.noUncoveredTerms=false;
- reasons.titlesChecked='Human editorial title/rank verification is not established by local checks.';
- reasons.spellingChecked='The local spelling catalogue cannot establish complete linguistic correctness.';
- reasons.noUncoveredTerms='The finite terminology catalogue cannot establish complete coverage; existing term/name flags remain.';
+ // Attest only source fidelity and the configured deterministic checks, not
+ // independent truth, office currency, perfect style or human approval.
+ draft.attestation.titlesChecked=grounded;
+ draft.attestation.spellingChecked=grounded;
+ draft.attestation.noUncoveredTerms=grounded&&!unresolvedTerms(u,content).length;
+ if(!grounded){reasons.titlesChecked='Title/name fidelity has not been established.';reasons.spellingChecked='Validated Arabic source/rendering is required.';}
+ if(!draft.attestation.noUncoveredTerms)reasons.noUncoveredTerms='Explicit unresolved terminology remains.';
  if(!draft.attestation.attributionChecked)reasons.attributionChecked='Existing explicit attribution check failed.';
  if(!draft.attestation.numbersChecked)reasons.numbersChecked='Existing numeric/format checks require editorial review.';
  const result=editDraft(draft,content,u,profile);

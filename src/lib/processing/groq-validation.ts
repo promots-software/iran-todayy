@@ -39,12 +39,12 @@ export function validateExtractionLanguageAndSpeakers(u:Pick<Understanding,'lang
     {id:f.id,role:'fact',evidence:f.evidence},
     ...(f.speaker?[{id:`${f.id}:speaker`,role:'speaker',evidence:f.speaker.evidence}]:[]),
   ]);
-  const translations=language==='fa'?resolveRendering(source,renderingRefs,(u as Understanding).rendering):null;
+  const translations=language!=='ar'?resolveRendering(source,renderingRefs,(u as Understanding).rendering):null;
   for(const fact of e.facts) {
     const speaker=fact.speaker;
     if(!speaker){if(fact.kind==='CLAIM'||fact.kind==='STATEMENT')throw new ProcessingError('SPEAKER_ATTRIBUTION_REQUIRED');continue;}
     validateSpeakerEvidence(source,fact.evidence,speaker.evidence);
-    if(language==='fa') {
+    if(language!=='ar') {
       if(translations?.get(fact.id)!==fact.arabic||translations?.get(`${fact.id}:speaker`)!==speaker.arabic)throw new ProcessingError('SPEAKER_TRANSLATION_UNVERIFIED');
     } else if(speaker.arabic!==speaker.evidence.excerpt)throw new ProcessingError('SPEAKER_TRANSLATION_UNVERIFIED');
   }
