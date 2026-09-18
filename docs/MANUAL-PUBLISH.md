@@ -42,3 +42,30 @@ The helper blocks external networking and rejects a second transport call.
 Set `TEST_BASE_URL` and matching synthetic admin credentials in the test process.
 This exercises the actual authenticated approval/send Server Actions with no
 real Telegram traffic, including missing confirmation and repeated submissions.
+
+## Human editorial revisions after failed processing
+
+A separate `HumanEditorialDraft` links to either a failed source post or an existing
+news item. The original records, AI output, validation statuses, source text and
+errors are never rewritten. The first edit snapshots the original record; every
+saved human revision is audited with actor, timestamp, text and original failure.
+This is human responsibility, not an automated grounding pass.
+
+On a review item choose **حفظ المسودة**, document editorial/source review, then
+**اعتماد النسخة المحررة** and confirm responsibility. Approval freezes only the
+saved revision. Review its exact preview and destination before the separate
+publish confirmation. These drafts are refused by the legacy/automatic send path.
+
+Changing approved text marks the previous unsent publication `CANCELLED`, retains
+its snapshot/audit, and clears approval. A new approval is required. Stale forms
+fail closed. A common transaction lock serializes editing, approval and durable
+send claims. After any send attempt, editing is locked; sent history is immutable.
+The original AI candidate remains failed or in review; the separate human draft
+is labeled DRAFT / APPROVED / PUBLISHED and appears in the human review/published
+queues. The existing single-admin authentication records the configured admin
+username; it does not distinguish people sharing that account.
+
+Deploy the additive `202609180001_human_editorial` migration before this dashboard
+release. No source/news data is rewritten. Focused tests: `human-editorial.test.ts`
+and `human-editorial-http.test.ts`, using only the local test database and mocked
+transport described above.

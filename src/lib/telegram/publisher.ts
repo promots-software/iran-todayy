@@ -5,6 +5,8 @@ import {z} from 'zod';
 import {assertApprovalMode} from '../processing/shadow';
 import {checkEvidence,eventSchema,ProcessingError} from '../processing/contracts';
 
+import {humanDigest,humanText,lockEditorialPublication} from '../human-editorial-contract';
+
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
 const humanReview=new Set(['UNVERIFIED_SOURCE','FLAGGED_SOURCE','SERIOUS_CLAIM','RANK_UNVERIFIED','UNCOVERED_TERM','UNKNOWN_NAME','EDITORIAL_ATTESTATION_REQUIRED','SHADOW_MODE_REVIEW','SENSITIVE_ACTOR','LEADER_STATUS','SINGLE_UNOFFICIAL_FIGURE']);
 const validationSchema=z.object({review:z.array(z.object({code:z.string(),detail:z.string().optional()})),sentenceEvidence:z.array(z.object({text:z.string().min(1),factIds:z.array(z.string()).min(1)})).min(1)});
@@ -38,6 +40,8 @@ export async function approvePublication(db:PrismaClient,input:ApprovalInput,act
  if(!actor.trim())throw new ProcessingError('AUTHENTICATION_REQUIRED');
  const {chatId}=readPublisherEnv(env); // Approving never calls Telegram and never arms sending.
  return db.$transaction(async tx=>{
+  await lockEditorialPublication(tx);
+  if(await tx.humanEditorialDraft.findUnique({where:{newsItemId:input.newsItemId}}))throw new ProcessingError('HUMAN_DRAFT_REQUIRES_HUMAN_APPROVAL');
   await tx.$queryRaw`SELECT id FROM "NewsItem" WHERE id=${input.newsItemId} FOR UPDATE`;
   assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
   const item=await tx.newsItem.findUniqueOrThrow({where:{id:input.newsItemId},include:{publication:true,eventRevision:true,evidence:{include:{sourcePost:true}}}});
@@ -99,10 +103,15 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
  const config=readPublisherEnv(env);
  const intent=await db.$transaction(async tx=>{
   assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
-  const p=await tx.publication.findUniqueOrThrow({where:{id},include:{newsItem:true}});
+  await lockEditorialPublication(tx);
+  const p=await tx.publication.findUniqueOrThrow({where:{id},include:{newsItem:true,humanDraft:true}});
+  if(p.humanDraft&&!manual)throw new ProcessingError('HUMAN_PUBLICATION_MANUAL_ONLY');
   if(manual&&(p.idempotencyKey!==manual.digest||p.destination!==manual.destination))throw new ProcessingError('PUBLICATION_PREVIEW_CHANGED');
   if(p.status!=='PENDING')return null; // SENT / UNKNOWN / FAILED / SENDING are never retried implicitly.
-  if(p.destination!==config.chatId||p.newsItem.status!=='APPROVED'||!['PASSED','NEEDS_REVIEW'].includes(p.newsItem.validationStatus)||p.newsItem.error||!p.newsItem.approvedAt||!p.newsItem.approvedBy||p.idempotencyKey!==approvalDigest(p.newsItem)||p.contentSnapshot!==publicationText(p.newsItem))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
+  if(p.humanDraft){
+   const d=p.humanDraft;
+   if(d.status!=='APPROVED'||!d.approvedBy||!d.approvedAt||!d.approvalNote||p.destination!==config.chatId||p.idempotencyKey!==humanDigest(d)||p.contentSnapshot!==humanText(d))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
+  }else if(!p.newsItem||p.destination!==config.chatId||p.newsItem.status!=='APPROVED'||!['PASSED','NEEDS_REVIEW'].includes(p.newsItem.validationStatus)||p.newsItem.error||!p.newsItem.approvedAt||!p.newsItem.approvedBy||p.idempotencyKey!==approvalDigest(p.newsItem)||p.contentSnapshot!==publicationText(p.newsItem))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
   const claimed=await tx.publication.updateMany({where:{id,status:'PENDING',attemptCount:0},data:{status:'SENDING',attemptCount:1,claimedAt:new Date(),nextRetryAt:null}});
   if(!claimed.count)return null;
   await tx.publicationAttempt.create({data:{publicationId:id,attempt:1}});
@@ -117,7 +126,8 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   const changed=await tx.publication.updateMany({where:{id,status:'SENDING',attemptCount:1},data:{status:outcome.status,telegramMessageId:outcome.status==='SENT'?outcome.messageId:null,telegramResult:json(outcome),error:outcome.status==='SENT'?null:outcome.error,sentAt:outcome.status==='SENT'?new Date():null}});
   if(changed.count!==1)throw new ProcessingError('PUBLICATION_STATE_CHANGED');
   await tx.publicationAttempt.update({where:{publicationId_attempt:{publicationId:id,attempt:1}},data:{finishedAt:new Date(),result:json(outcome),error:outcome.status==='SENT'?null:outcome.error}});
-  await tx.newsItem.update({where:{id:intent.newsItemId},data:{status:outcome.status==='SENT'?'PUBLISHED':'APPROVED'}});
+  if(intent.newsItemId)await tx.newsItem.update({where:{id:intent.newsItemId},data:{status:outcome.status==='SENT'?'PUBLISHED':'APPROVED'}});
+  if(intent.humanDraftId&&outcome.status==='SENT')await tx.humanEditorialDraft.update({where:{id:intent.humanDraftId},data:{status:'PUBLISHED'}});
   await tx.auditLog.create({data:{action:`PUBLICATION_${outcome.status}`,actor:manual?.actor,entityType:'Publication',entityId:id,message:outcome.status==='SENT'?'Telegram message ID persisted':'Delivery stopped; operator reconciliation required',metadata:json(outcome)}});
  });
  return outcome;

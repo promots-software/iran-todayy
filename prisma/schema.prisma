@@ -58,7 +58,14 @@ enum ValidationStatus {
   NEEDS_REVIEW
 }
 
+enum HumanEditorialStatus {
+  DRAFT
+  APPROVED
+  PUBLISHED
+}
+
 enum PublicationStatus {
+  CANCELLED
   PENDING
   SENDING
   SENT
@@ -139,6 +146,7 @@ model SourcePost {
   retryCount          Int              @default(0)
   nextRetryAt         DateTime?
   updatedAt           DateTime         @updatedAt
+  humanDraft          HumanEditorialDraft?
   matches             EventMatch[]
   evidence            NewsEvidence[]
   jobs                ProcessingJob[]
@@ -222,6 +230,7 @@ model NewsItem {
   processingStartedAt DateTime?
   processingEndedAt   DateTime?
   evidence            NewsEvidence[]
+  humanDraft          HumanEditorialDraft?
   publication         Publication?
 
   @@index([status, createdAt])
@@ -249,8 +258,10 @@ model EditorialRuleSet {
 
 model Publication {
   id                String               @id @default(cuid())
-  newsItemId        String               @unique
-  newsItem          NewsItem             @relation(fields: [newsItemId], references: [id], onDelete: Restrict)
+  newsItemId        String?              @unique
+  newsItem          NewsItem?            @relation(fields: [newsItemId], references: [id], onDelete: Restrict)
+  humanDraftId      String?
+  humanDraft        HumanEditorialDraft? @relation(fields: [humanDraftId], references: [id], onDelete: Restrict)
   idempotencyKey    String               @unique
   status            PublicationStatus    @default(PENDING)
   contentSnapshot   String               @db.Text
@@ -266,6 +277,7 @@ model Publication {
   updatedAt         DateTime             @updatedAt
   attempts          PublicationAttempt[]
 
+  @@index([humanDraftId])
   @@unique([destination, telegramMessageId])
   @@index([status, nextRetryAt])
 }
@@ -326,4 +338,25 @@ model WorkerHeartbeat {
   intervalMs Int         @default(15000)
   lastError  String?
   metadata   Json?
+}
+
+// Human-authored text never replaces automated output or validation status.
+model HumanEditorialDraft {
+  id               String @id @default(cuid())
+  sourcePostId     String? @unique
+  sourcePost       SourcePost? @relation(fields: [sourcePostId], references: [id], onDelete: Restrict)
+  newsItemId       String? @unique
+  newsItem         NewsItem? @relation(fields: [newsItemId], references: [id], onDelete: Restrict)
+  title            String
+  body             String @db.Text
+  revision         Int @default(1)
+  status           HumanEditorialStatus @default(DRAFT)
+  originalSnapshot Json
+  editedBy         String
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  approvedBy       String?
+  approvedAt       DateTime?
+  approvalNote     String? @db.Text
+  publications     Publication[]
 }

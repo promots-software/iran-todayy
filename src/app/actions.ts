@@ -9,6 +9,8 @@ import { saveSource, changeSource, changeMode } from "@/lib/source-service";
 import { saveSourceProfile } from "@/lib/processing/source-profile";
 import {approvePublication,publishApprovedManually} from '@/lib/telegram/publisher';
 
+import {saveHumanDraft,approveHumanDraft} from '@/lib/human-editorial';
+
 export type ActionState = { ok: boolean; message: string };
 async function actor() {
   if (!authenticated((await headers()).get("authorization"))) throw new Error("UNAUTHORIZED");
@@ -78,4 +80,19 @@ export async function publishPublicationAction(_:ActionState,form:FormData):Prom
   revalidatePath('/', 'layout');
   return {ok:false,message:'تعذر إتمام الإرسال. حدّث الصفحة وراجع حالة المنشور؛ قد يكون الإرسال قد بدأ. لا تنشئ نسخة أخرى. تحقق من الاعتماد والوجهة وإعداد النشر اليدوي.'};
  }
+}
+
+export async function saveHumanDraftAction(_:ActionState,form:FormData):Promise<ActionState>{
+ try{
+  const user=await actor();
+  await saveHumanDraft(db,{kind:z.enum(['post','news']).parse(form.get('kind')),id:z.string().min(1).max(100).parse(form.get('id')),revision:z.coerce.number().int().min(0).parse(form.get('revision')),title:z.string().parse(form.get('title')),body:z.string().parse(form.get('body'))},user);
+  revalidatePath('/', 'layout');return {ok:true,message:'حُفظت النسخة البشرية. يلزم اعتمادها صراحة؛ نتائج المعالجة الأصلية لم تتغير.'};
+ }catch{return {ok:false,message:'تعذر الحفظ. حدّث الصفحة: قد تكون النسخة قد تغيرت أو بدأ إرسالها. يلزم عنوان ونص عربيان لا يتجاوز مجموعهما 4096 حرفاً.'};}
+}
+export async function approveHumanDraftAction(_:ActionState,form:FormData):Promise<ActionState>{
+ try{
+  const user=await actor();
+  await approveHumanDraft(db,{id:z.string().min(1).max(100).parse(form.get('draftId')),digest:z.string().regex(/^[a-f0-9]{64}$/).parse(form.get('digest')),confirmed:form.get('confirmHuman')==='on',note:z.string().max(5000).parse(form.get('note'))},user);
+  revalidatePath('/', 'layout');return {ok:true,message:'اعتُمدت النسخة البشرية وجُمّدت المعاينة. لم تُرسل رسالة.'};
+ }catch{return {ok:false,message:'تعذر الاعتماد. احفظ النص أولاً، وحدّث الصفحة، ووثّق المراجعة والمسؤولية البشرية صراحة.'};}
 }
