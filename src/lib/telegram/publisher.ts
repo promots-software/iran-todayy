@@ -122,4 +122,3 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
  });
  return outcome;
 }
-
