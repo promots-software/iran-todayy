@@ -1,3 +1,4 @@
+import {requireUser} from "@/lib/session";
 import { SourceProfileForm } from "@/components/source-profile-form";
 import { db } from "@/lib/db";
 import { readDatabase } from "@/lib/queries";
@@ -5,6 +6,7 @@ import { date } from "@/lib/labels";
 import { AddSourceForm, SourceControls } from "@/components/forms";
 import { PageTitle, DatabaseNotice, SourceLink, EmptyState } from "@/components/ui";
 export default async function SourcesPage() {
+ await requireUser(true);
   const result = await readDatabase(() => db.source.findMany({ where: { deletedAt: null }, orderBy: [{ platform: "asc" }, { createdAt: "asc" }] }));
   return <><PageTitle title="المصادر" description="أضف حسابات Telegram وX، وتحكّم في تفعيلها من هنا." />
     {result.available ? <><AddSourceForm /><section className="panel"><div className="section-title"><h2>قائمة المصادر</h2><span className="muted">{result.data.length.toLocaleString("ar")} مصادر</span></div>

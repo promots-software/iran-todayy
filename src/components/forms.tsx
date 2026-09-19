@@ -33,11 +33,11 @@ export function SourceControls({ id, enabled }: { id: string; enabled: boolean }
 export function ModeForm({ mode }: { mode: "REQUIRE_APPROVAL" | "AUTO_PUBLISH" }) {
   const [state, action, pending] = useActionState(modeAction, initial);
   return <form action={action} className="panel form-panel">
-    <h2>وضع النشر</h2>
+    <h2>طريقة النشر</h2>
     <fieldset>
       <legend className="muted">اختر آلية اعتماد الأخبار</legend>
-      <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>الموافقة اليدوية</strong><small>كل خبر ينتظر الاعتماد قبل النشر. الوضع الافتراضي للاختبار.</small></span></label>
-      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" disabled /><span><strong>النشر التلقائي</strong><small>معطل أثناء اختبار الاستقبال الحي في وضع الظل.</small></span></label>
+      <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>يدوي</strong><small>كل خبر ينتظر الاعتماد قبل النشر. الوضع الافتراضي للاختبار.</small></span></label>
+      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" disabled /><span><strong>تلقائي</strong><small>معطل أثناء اختبار الاستقبال الحي في وضع الظل.</small></span></label>
     </fieldset>
     <p className="notice">الموافقة اليدوية إلزامية. النشر التلقائي معطل؛ إرسال الرسالة المعتمدة يتطلب تأكيداً منفصلاً في صفحة الخبر.</p>
     <button disabled={pending}>{pending ? "جارٍ الحفظ…" : "حفظ الإعدادات"}</button>

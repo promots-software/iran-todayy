@@ -1,15 +1,14 @@
-import { NextRequest, NextResponse } from "next/server";
-import { authenticated } from "./lib/auth";
-
-export function proxy(request: NextRequest) {
-  if (!process.env.ADMIN_USERNAME || !process.env.ADMIN_PASSWORD) {
-    return new NextResponse("Dashboard authentication is not configured.", { status: 503 });
-  }
-  if (!authenticated(request.headers.get("authorization"))) {
-    return new NextResponse("Authentication required.", { status: 401, headers: { "WWW-Authenticate": 'Basic realm="Iran Today", charset="UTF-8"', "Cache-Control": "no-store" } });
-  }
-  const response = NextResponse.next();
-  response.headers.set("Cache-Control", "no-store");
-  return response;
+import {NextRequest,NextResponse} from 'next/server';
+import {db} from './lib/db';
+import {allowed,sessionCookie,sessionUser} from './lib/dashboard-auth';
+export async function proxy(request:NextRequest){
+ const path=request.nextUrl.pathname;
+ if(path==='/login')return NextResponse.next();
+ try{
+  const user=await sessionUser(db,request.cookies.get(sessionCookie)?.value);
+  if(!user)return NextResponse.redirect(new URL('/login',request.url));
+  if(!allowed(user.role,path))return new NextResponse('غير مصرح',{status:403});
+  const response=NextResponse.next();response.headers.set('Cache-Control','private, no-store, max-age=0');return response;
+ }catch{return new NextResponse('تعذر التحقق من الجلسة',{status:503,headers:{'Cache-Control':'no-store'}});}
 }
-export const config = { matcher: ["/((?!_next/static|_next/image|favicon.ico|api/health$).*)"] };
+export const config={matcher:['/((?!_next/static|_next/image|favicon.ico|api/health$).*)']};

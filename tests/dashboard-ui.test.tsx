@@ -1,0 +1,9 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {renderToStaticMarkup} from 'react-dom/server';
+import {NewsCard} from '../src/components/news-card';
+import {statusTone} from '../src/lib/labels';
+test('read-only news cards expose content and written status without actions',()=>{const html=renderToStaticMarkup(<NewsCard title="خبر الاختبار" body="نص الخبر" source="المصدر" time={new Date('2026-01-01')} status="NEEDS_REVIEW"/>);assert(html.includes('يحتاج مراجعة'));assert(html.includes('data-tone="review"'));assert(!/<(form|button|a)\b/.test(html));assert(!html.includes('href='));});
+test('status styles distinguish duplicate/rejected/ready without full-card color',()=>{assert.equal(statusTone('DUPLICATE'),'neutral');assert.equal(statusTone('REJECTED'),'red');assert.equal(statusTone('READY_TO_PUBLISH'),'green');});
+test('editorial routes stay separate and protected actions declare server authorization',()=>{const root='src/app/';const overview=readFileSync(root+'page.tsx','utf8'),review=readFileSync(root+'review/page.tsx','utf8'),approvals=readFileSync(root+'approvals/page.tsx','utf8');assert(!overview.includes('Action'));assert(review.includes('mode="review"'));assert(approvals.includes('mode="approval"'));const actions=readFileSync(root+'actions.ts','utf8');for(const name of ['addSourceAction','sourceAction','modeAction','sourceProfileAction']){const body=actions.split('export async function '+name)[1].split('export async function')[0];assert(body.includes('actor(true)'));}for(const name of ['saveHumanDraftAction','approveHumanDraftAction','publishPublicationAction','uploadPublicationImage','rejectEditorialAction']){const body=actions.split('export async function '+name)[1].split('export async function')[0];assert(body.includes('await actor()'));}});

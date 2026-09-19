@@ -36,9 +36,9 @@ export function assertSendEnabled(env:Record<string,string|undefined>=process.en
  if(env.TELEGRAM_PUBLISH_ENABLED!=='true'||env.SHADOW_MODE!=='false')throw new ProcessingError('TELEGRAM_PUBLISH_DISABLED');
 }
 export type ApprovalInput={newsItemId:string;digest:string;resolutions:{key:string;note:string}[]};
-export async function approvePublication(db:PrismaClient,input:ApprovalInput,actor:string,env:Record<string,string|undefined>=process.env){
+export async function approvePublication(db:PrismaClient,input:ApprovalInput,actor:string,env:Record<string,string|undefined>=process.env,target:'TELEGRAM'|'WEB'='TELEGRAM'){
  if(!actor.trim())throw new ProcessingError('AUTHENTICATION_REQUIRED');
- const {chatId}=readPublisherEnv(env); // Approving never calls Telegram and never arms sending.
+ const chatId=target==='WEB'?'WEB':readPublisherEnv(env).chatId; // Approving never calls Telegram and never arms sending.
  return db.$transaction(async tx=>{
   await lockEditorialPublication(tx);
   if(await tx.humanEditorialDraft.findUnique({where:{newsItemId:input.newsItemId}}))throw new ProcessingError('HUMAN_DRAFT_REQUIRES_HUMAN_APPROVAL');
@@ -47,7 +47,7 @@ export async function approvePublication(db:PrismaClient,input:ApprovalInput,act
   const item=await tx.newsItem.findUniqueOrThrow({where:{id:input.newsItemId},include:{publication:true,eventRevision:true,evidence:{include:{sourcePost:true}}}});
   const digest=approvalDigest(item);
   if(digest!==input.digest)throw new ProcessingError('DRAFT_CHANGED_REVIEW_AGAIN');
-  if(item.publication){if(item.publication.idempotencyKey===digest)return item.publication;throw new ProcessingError('PUBLICATION_ALREADY_EXISTS');}
+  if(item.publication){if(item.publication.destination!==chatId)throw new ProcessingError('PUBLICATION_DESTINATION_LOCKED');if(item.publication.idempotencyKey===digest)return item.publication;throw new ProcessingError('PUBLICATION_ALREADY_EXISTS');}
   if(!['NEEDS_REVIEW','PENDING_APPROVAL'].includes(item.status)||!['NEEDS_REVIEW','PASSED'].includes(item.validationStatus)||item.error)throw new ProcessingError('DRAFT_NOT_APPROVABLE');
   const validation=validationSchema.parse(item.validationResult);
   if(validation.review.some(r=>!humanReview.has(r.code)))throw new ProcessingError('UNRESOLVED_VALIDATION_FAILURE');

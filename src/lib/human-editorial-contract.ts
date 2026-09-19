@@ -11,6 +11,6 @@ export function humanText(d:Pick<HumanEditorialDraft,'title'|'body'>){
  if(!/\p{Script=Arabic}/u.test(d.title)||!/\p{Script=Arabic}/u.test(d.body))throw new ProcessingError('ARABIC_HUMAN_DRAFT_REQUIRED');
  return text;
 }
-export function humanDigest(d:Pick<HumanEditorialDraft,'id'|'title'|'body'|'revision'|'originalSnapshot'>){
- return createHash('sha256').update(JSON.stringify(['HUMAN_EDITED',d.id,d.revision,d.title,d.body,d.originalSnapshot])).digest('hex');
+export function humanDigest(d:Pick<HumanEditorialDraft,'id'|'title'|'body'|'revision'|'originalSnapshot'> & {publicationImageId?:string|null;mediaDecisionAt?:Date|null}){
+ return createHash('sha256').update(JSON.stringify(['HUMAN_EDITED',d.id,d.revision,d.title,d.body,d.originalSnapshot,...(d.publicationImageId||d.mediaDecisionAt?[d.publicationImageId??null,d.mediaDecisionAt?.toISOString()??null]:[])])).digest('hex');
 }

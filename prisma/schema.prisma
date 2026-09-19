@@ -264,6 +264,7 @@ model Publication {
   humanDraft        HumanEditorialDraft? @relation(fields: [humanDraftId], references: [id], onDelete: Restrict)
   idempotencyKey    String               @unique
   status            PublicationStatus    @default(PENDING)
+  publicationImageId String?
   contentSnapshot   String               @db.Text
   destination       String
   telegramMessageId String?
@@ -359,4 +360,48 @@ model HumanEditorialDraft {
   approvedAt       DateTime?
   approvalNote     String? @db.Text
   publications     Publication[]
+  publicationImageId String?
+  mediaDecisionAt DateTime?
+}
+
+enum DashboardRole {
+  ADMIN
+  EDITOR
+}
+
+model DashboardUser {
+  id String @id @default(cuid())
+  username String @unique
+  displayName String
+  passwordHash String
+  role DashboardRole
+  enabled Boolean @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  sessions DashboardSession[]
+}
+
+model DashboardSession {
+  tokenHash String @id
+  userId String
+  user DashboardUser @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  @@index([expiresAt])
+}
+
+model LoginThrottle {
+  key String @id
+  attempts Int @default(0)
+  windowStart DateTime @default(now())
+}
+
+// Small, immutable publication images. Never source-media storage.
+model PublicationImage {
+  id String @id @default(cuid())
+  bytes Bytes
+  mime String
+  digest String
+  createdBy String
+  createdAt DateTime @default(now())
 }

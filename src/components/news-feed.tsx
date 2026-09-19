@@ -1,19 +1,14 @@
-import Link from "next/link";
-import type { Prisma } from "@prisma/client";
-import { db } from "@/lib/db";
-import { readDatabase } from "@/lib/queries";
-import { date } from "@/lib/labels";
-import { DatabaseNotice, EmptyState } from "./ui";
-import {EditorialState} from './editorial-state';
-
-export async function NewsFeed({ where = {} }: { where?: Prisma.NewsItemWhereInput }) {
-  const result = await readDatabase(() => db.newsItem.findMany({ where, take: 100, orderBy: { createdAt: "desc" }, include: { eventRevision: { include: { event: true } }, evidence: { include: { sourcePost: { include: { source: true } } } } } }));
-  if (!result.available) return <DatabaseNotice />;
-  if (!result.data.length) return <EmptyState />;
-  return <div>{result.data.map(item => <article className="news-row" key={item.id}>
-    <div className="section-title"><EditorialState value={item.validationResult} status={item.status} error={item.error}/><time>{date(item.createdAt)}</time></div>
-    <h3><Link href={`/news/${item.id}`}>{item.title}</Link></h3>
-    <p className="excerpt">{item.arabicContent ?? "لم تُنتج الصياغة العربية بعد"}</p>
-    <div className="row-meta"><span>{[...new Set(item.evidence.map(e => e.sourcePost.source.name))].join(" · ") || "لم يُربط مصدر بعد"}</span><span>حدث {item.eventRevision.event.id.slice(-8)} / إصدار {item.eventRevision.revision}</span><Link className="text-link" href={`/news/${item.id}`}>تفاصيل الخبر ←</Link></div>
-  </article>)}<p className="muted small">أحدث ١٠٠ خبر بحسب وقت الإنشاء.</p></div>;
+import {readEditorialState} from '@/lib/processing/editorial-eligibility';
+import {RejectStory} from './reject-story';
+import Link from 'next/link';
+import type {Prisma} from '@prisma/client';
+import {db} from '@/lib/db';
+import {readDatabase} from '@/lib/queries';
+import {DatabaseNotice,EmptyState} from './ui';
+import {NewsCard} from './news-card';
+import {sourceHasMedia} from '@/lib/publication-media';
+export async function NewsFeed({where={},mode='readonly'}:{where?:Prisma.NewsItemWhereInput;mode?:'readonly'|'review'|'approval'}){
+ const result=await readDatabase(()=>db.newsItem.findMany({where:{AND:[where,...(mode==='review'?[{OR:[{humanDraft:{is:null}},{humanDraft:{is:{status:'DRAFT' as const}}}]}]:[])]},take:100,orderBy:{createdAt:'desc'},include:{humanDraft:true,evidence:{include:{sourcePost:{include:{source:true}}}}}}));
+ if(!result.available)return <DatabaseNotice/>;if(!result.data.length)return <EmptyState/>;
+ return <div>{result.data.filter(item=>{const media=item.evidence.some(e=>sourceHasMedia(e.sourcePost.metadata));const ready=readEditorialState(item.validationResult,item.status,item.error)==='READY_TO_PUBLISH';return mode==='approval'?!media&&(ready||item.status==='APPROVED'):mode==='review'?media||!ready:true;}).map(item=><NewsCard key={item.id} title={item.title} body={item.arabicContent} status={item.status} time={item.createdAt} source={[...new Set(item.evidence.map(e=>e.sourcePost.source.name))].join(' · ')} actions={mode!=='readonly'?<div className="controls"><Link className="text-link" href={`/news/${item.id}`}>{mode==='review'?'تعديل':'نشر'}</Link>{mode==='review'&&<RejectStory kind="news" id={item.id}/>}</div>:undefined}/>)}</div>;
 }

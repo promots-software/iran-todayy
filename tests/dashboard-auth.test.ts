@@ -1,0 +1,13 @@
+/* eslint-disable @typescript-eslint/no-explicit-any -- Minimal in-memory Prisma transaction doubles; never production inputs. */
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import type {PrismaClient} from '@prisma/client';
+import {hashPassword,verifyPassword,login,sessionUser,tokenHash} from '../src/lib/dashboard-auth';
+import {allowed,assertRole} from '../src/lib/dashboard-permissions';
+test('salted password hashes and safe invalid-password handling',async()=>{const a=await hashPassword('offline password 123!'),b=await hashPassword('offline password 123!');assert.notEqual(a,b);assert(!a.includes('offline'));assert(await verifyPassword('offline password 123!',a));assert.equal(await verifyPassword('wrong',a),false);await assert.rejects(hashPassword('short'));assert.equal(await verifyPassword('anything','bad'),false);});
+test('roles reject direct admin routes and actions',()=>{for(const p of ['/','/review','/approvals','/published','/news/example','/posts/example','/media/example'])assert(allowed('EDITOR',p));for(const p of ['/sources','/settings','/system','/logs','/events','/filtered','/api/users']){assert(!allowed('EDITOR',p));assert(allowed('ADMIN',p));}assert.throws(()=>assertRole('EDITOR',true),/FORBIDDEN/);assert.doesNotThrow(()=>assertRole('ADMIN',true));});
+test('login creates hashed-token session; invalid, expired, disabled, revoked sessions fail closed',async()=>{
+ const user={id:'u1',username:'editor',displayName:'محرر',role:'EDITOR',enabled:true,passwordHash:await hashPassword('offline password 123!')};let session:any=null,attempts=0;const tx:any={$queryRaw:async()=>[],loginThrottle:{findUnique:async()=>({attempts,windowStart:new Date()}),upsert:async()=>{attempts++;}},dashboardUser:{findUnique:async()=>user},dashboardSession:{create:async({data}:any)=>{session={...data,user};},findUnique:async({where}:any)=>session?.tokenHash===where.tokenHash?session:null},auditLog:{create:async()=>({})}};tx.$transaction=async(fn:any)=>fn(tx);const db=tx as PrismaClient;
+ assert.equal(await login(db,'editor','wrong'),null);const result=await login(db,'editor','offline password 123!');assert(result);assert.equal(session.tokenHash,tokenHash(result.token));assert.notEqual(session.tokenHash,result.token);assert.equal((await sessionUser(db,result.token))?.id,'u1');assert.equal(await sessionUser(db),null);assert.equal(await sessionUser(db,'forged'),null);
+ user.enabled=false;assert.equal(await sessionUser(db,result.token),null);user.enabled=true;session.expiresAt=new Date(0);assert.equal(await sessionUser(db,result.token),null);session=null;assert.equal(await sessionUser(db,result.token),null);attempts=10;assert.equal(await login(db,'editor','offline password 123!'),null);
+});

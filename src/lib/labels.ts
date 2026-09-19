@@ -14,3 +14,5 @@ export function label(value: string) { return labels[value] ?? value; }
 export function date(value: Date | null | undefined) {
   return value ? new Intl.DateTimeFormat("ar", { dateStyle: "medium", timeStyle: "short", timeZone: "Asia/Beirut" }).format(value) : "—";
 }
+
+export function statusTone(value:string){return ['SENT','PUBLISHED','PASSED','READY_TO_PUBLISH','PENDING_APPROVAL','APPROVED'].includes(value)?'green':['FAILED','ERROR','REJECTED','FILTERED','PROCESSING_ERROR'].includes(value)?'red':value==='DUPLICATE'?'neutral':'orange';}

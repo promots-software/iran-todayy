@@ -1,3 +1,4 @@
+import {sourceHasMedia} from '../publication-media';
 import { createHash, randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
 import { incomingSchema, sourceProfileSchema, unknownProfile, eventSchema, validateUnderstanding, ProcessingError, type LanguageProvider, type Monitor } from "./contracts";
@@ -142,6 +143,7 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
           const revision=await tx.eventRevision.create({data:{eventId:match.candidate.id,revision:match.candidate.revision+1,facts:json(merged),materialChange:match.newFactIds.map(id=>u.event.facts.find(f=>f.id===id)!.arabic).join("؛ ")}});
           revisionId=revision.id;
         }
+        if(sourceHasMedia(post.metadata))review.push(reason('EDITORIAL_ATTESTATION_REQUIRED','SOURCE_MEDIA_DECISION_REQUIRED: يحتوي المصدر على وسائط؛ يلزم اختيار صورة النشر أو النشر دون صورة'));
         const reviewState=review.length>0 || match.classification === "UNCERTAIN_MATCH";
         // This worker is a draft-only service. Eligibility never authorizes a send.
         const decision=editorialDecision({validated:true,review,filtered:match.classification==='DUPLICATE'},{autoPublish:false,shadowMode:true,requireApproval:true});

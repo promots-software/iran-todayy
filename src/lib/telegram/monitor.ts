@@ -5,7 +5,7 @@ import { assertShadowMode } from "../processing/shadow";
 
 const cursorSchema = z.object({ kind: z.literal("telegram-shadow-v1"), channelId: z.string().regex(/^\d+$/), lastId: z.number().int().nonnegative() }).strict();
 export type TelegramCursor = z.infer<typeof cursorSchema>;
-export type ReadMessage = { id: number; text: string; date: number };
+export type ReadMessage = { id: number; text: string; date: number; hasMedia?:boolean; hasPhoto?:boolean };
 export interface ChannelReader {
   /** The signal is part of the reader contract so a timed-out RPC cannot
    * leave the poll promise pending while the worker is trying to reconnect. */
@@ -51,7 +51,7 @@ export class TelegramReader implements ChannelReader {
   async messages(handle: string, after: number | null, signal = new AbortController().signal) {
     const result = await abortable(() => this.client.getMessages(handle, after === null
       ? { limit: 1 } : { limit: 50, minId: after, reverse: true }), signal);
-    return result.map(m => ({ id: m.id, text: m.message ?? "", date: m.date }));
+    return result.map(m => ({ id: m.id, text: m.message ?? "", date: m.date, hasMedia:!!m.media, hasPhoto:m.media instanceof Api.MessageMediaPhoto }));
   }
 }
 
@@ -83,7 +83,7 @@ export class TelegramMonitor implements Monitor {
         if (!previous || !message.text.trim()) continue;
         posts.push({ externalId: String(message.id), url: `https://t.me/${input.handle}/${message.id}`,
           content: message.text, publishedAt: new Date(message.date * 1000),
-          metadata: { transport: this.id, channelId, shadowMode: true } });
+          metadata: { transport: this.id, channelId, shadowMode: true, hasMedia:message.hasMedia===true, hasPhoto:message.hasPhoto===true } });
       }
       return { posts, cursor: { kind: "telegram-shadow-v1", channelId, lastId } satisfies TelegramCursor };
     } catch (error) {
