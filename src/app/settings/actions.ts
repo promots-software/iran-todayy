@@ -16,5 +16,5 @@ export async function manageUserAction(_:ActionState,form:FormData):Promise<Acti
   if(old)await tx.dashboardSession.deleteMany({where:{userId:id}});
   await tx.auditLog.create({data:{actor:`user:${actor.id}`,action:old?'USER_UPDATED':'USER_CREATED',entityType:'DashboardUser',entityId:user.id,message:old?'تحديث حساب مستخدم':'إضافة مستخدم',metadata:{username,displayName,role,enabled}}});
  });revalidatePath('/settings');return {ok:true,message:'تم حفظ الحساب. تغييرات الحساب تنهي جلساته السابقة.'};
- }catch{return {ok:false,message:'تعذر حفظ الحساب. يلزم اسم فريد وكلمة مرور من 12 إلى 256 حرفاً، ولا يمكن تعطيل آخر مدير.'};}
+ }catch(error){if(error&&typeof error==='object'&&'code' in error&&error.code==='P2002')return {ok:false,message:'اسم المستخدم مستخدم بالفعل. اختر اسماً آخر.'};return {ok:false,message:'تعذر حفظ الحساب. يلزم اسم فريد وكلمة مرور من 12 إلى 256 حرفاً، ولا يمكن تعطيل آخر مدير.'};}
 }
