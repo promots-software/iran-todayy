@@ -7,9 +7,11 @@ import {official} from './fixtures/processing';
 import {claimJob,ingest,processJob,json} from '../src/lib/processing/engine';
 import {renderSelection,buildAtoms} from '../src/lib/processing/constrained-rewrite';
 import {approvePublication,approvalDigest} from '../src/lib/telegram/publisher';
+import {newsroom} from './fixtures/newsroom';
 test('ready flash remains held, explicit approval freezes title-only text without transport',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const url=process.env.TEST_DATABASE_URL!;assert.ok(['127.0.0.1','localhost'].includes(new URL(url).hostname));
  const db=new PrismaClient({datasourceUrl:url}),tag=randomUUID(),c=cleanCases()[0];
+ c.source='أعلن البرلمان في طهران في بيان أن الجلسة ستعقد في موعدها.';c.u=newsroom(c.source,[c.source]);
  const source=await db.source.create({data:{handle:tag,name:'Offline newsroom',platform:'TELEGRAM',url:'https://t.me/offline',editorialProfile:json(official)}});
  let eventId:string|undefined,itemId:string|undefined;
  try{

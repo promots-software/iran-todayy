@@ -52,7 +52,7 @@ test('provider signal respected, strict deterministic failures do not open provi
  for(const code of ['AMBIGUOUS_EVIDENCE_CONTEXT','SPEAKER_ATTRIBUTION_MISMATCH','UNSUPPORTED_OUTPUT','UNCERTAIN_SCOPE']){
   const p=failurePolicy(code,1);assert.equal(p.retryable,false);assert.equal(p.providerFailure,false);
  }
- const worker=readFileSync('src/worker/production.ts','utf8');assert.ok(!worker.includes('pause(300000'));assert.ok(worker.includes('providerAdmissionDelay(db)'));assert.ok(worker.includes('guardedTransport(db'));
+ const worker=readFileSync('src/worker/production.ts','utf8');assert.ok(!worker.includes('pause(300000'));assert.ok(!worker.includes('providerAdmissionDelay(db)'));assert.ok(worker.includes('guardedTransport(db'));
 });
 test('hour/day/cost limits fail closed, never reset on process restart',()=>{
  const now=1e9;assert.equal(budgetDecision([],1000,now).allowed,true);

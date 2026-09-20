@@ -11,7 +11,8 @@ import {ProcessingError} from '../lib/processing/contracts';
 import {assertApprovalMode} from '../lib/processing/shadow';
 import {GeminiLanguageProvider} from '../lib/processing/gemini';
 import {checkpointProvider,databaseCheckpoints} from './checkpoints';
-import {guardedTransport,providerAdmissionDelay} from './provider-guard';
+import {guardedTransport,providerCapacitySnapshot} from './provider-guard';
+import {latencySnapshot} from './latency';
 import {acquireLease,renewLease,releaseLease,workerId,heartbeatMs,workerConfig,assertWorkerSafety,safeWorkerError,backoff,pause,healthStatus,probeAuthorization,TelegramStartupError} from './runtime';
 
 const stop=new AbortController();
@@ -34,10 +35,11 @@ async function main() {
   const config=workerConfig();
   const db=new PrismaClient({datasourceUrl:config.databaseUrl});
   let lastDatabaseCheck=0,role='starting',fatal=false;
+  let processingCapacity:Awaited<ReturnType<typeof providerCapacitySnapshot>>|null=null;
   const server=createServer((req,res)=>{
     if(req.url!=='/healthz'){res.writeHead(404).end();return;}
     const status=healthStatus(lastDatabaseCheck,stop.signal.aborted);
-    res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({status:status===200?'ok':'unavailable',role,publishingEnabled:false}));
+    res.writeHead(status,{'Content-Type':'application/json','Cache-Control':'no-store'}).end(JSON.stringify({status:status===200?'ok':'unavailable',role,processingState:processingCapacity?.state??'UNKNOWN',publishingEnabled:false}));
   });
   await new Promise<void>((resolve,reject)=>{server.once('error',reject);server.listen(config.port,'0.0.0.0',resolve);});
   // A DB stall must terminate the old holder before its lease can be taken over.
@@ -99,9 +101,10 @@ async function main() {
               shadowMode:true,requireApproval:true,autoPublish:false,externalPublishingEnabled:false,
               telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:true,pollErrors,provider:'gemini-3.1-flash-lite',
               pollPhase,activeSource,lastPollError,lastPollCompletedAt,
+              processingCapacity,
             });
             lastRenewed=lastDatabaseCheck=Date.now();
-            log('WORKER_HEARTBEAT',{telegramReady,processing:processing.size>0,processingCount:processing.size,pollErrors,pollPhase,activeSource,lastPollError,lastPollCompletedAt});
+            log('WORKER_HEARTBEAT',{telegramReady,processing:processing.size>0,processingCount:processing.size,processingState:processingCapacity?.state??'UNKNOWN',capacityReason:processingCapacity?.reason??null,pollErrors,pollPhase,activeSource,lastPollError,lastPollCompletedAt});
             await pause(heartbeatMs,signal);
           }
         };
@@ -139,10 +142,10 @@ async function main() {
           while(!signal.aborted){
             try {
               requireLease();await safety();
-              const admissionDelay=await providerAdmissionDelay(db);
-              if(admissionDelay){await pause(Math.min(60000,admissionDelay),signal);continue;}
+              // Local checks and checkpoint replay never wait for AI capacity.
+              // Only an actual uncached network stage obtains provider capacity.
               const job=await claimJob(db,runId,new Date(),true,[],true);
-              if(!job){await pause(5000,signal);continue;}
+              if(!job){await pause(1000,signal);continue;}
               processing.set(lane,Date.now());
               await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'Bounded two-lane processing; durable fairness and per-request cost protection'}});
               const provider=checkpointProvider(new GeminiLanguageProvider(config.geminiKey,guardedTransport(db,job.sourcePostId,async(url,init)=>{
@@ -162,12 +165,13 @@ async function main() {
               if(signal.aborted)break;
               const code=safeWorkerError(error);
               if(['SHADOW_MODE_REQUIRED','REQUIRE_APPROVAL_REQUIRED','PUBLISHING_MUST_BE_DISABLED','WORKER_LEASE_LOST'].includes(code))throw error;
-              const delayMs=backoff(++attempts);log('PROCESSING_RETRY',{code,delayMs});await pause(delayMs,signal);
+              const delayMs=Math.min(5000,backoff(++attempts));log('PROCESSING_RETRY',{code,delayMs});await pause(delayMs,signal);
             }
           }
         };
         let firstFailure:unknown;
-        const tasks=[heartbeat(),ingestLoop(),...processingLanes(processingLoop)].map(async task=>{try{await task;}catch(e){if(!cycle.signal.aborted)firstFailure=e;cycle.abort();throw e;}});
+        const observe=async()=>{while(!signal.aborted){try{processingCapacity=await providerCapacitySnapshot(db);const metrics=await latencySnapshot(db);log(metrics.alerts.length||processingCapacity.state==='CAPACITY_WAIT'?'PROCESSING_SLO_ALERT':'PROCESSING_SLO',{...metrics,activeLanes:processing.size,provider:processingCapacity});}catch{if(!signal.aborted)log('PROCESSING_METRICS_UNAVAILABLE');}await pause(30000,signal);}};
+        const tasks=[heartbeat(),ingestLoop(),...processingLanes(processingLoop),observe()].map(async task=>{try{await task;}catch(e){if(!cycle.signal.aborted)firstFailure=e;cycle.abort();throw e;}});
         await Promise.allSettled(tasks);
         if(firstFailure)throw firstFailure;
       } catch(error) {

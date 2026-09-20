@@ -51,7 +51,7 @@ for(const [name,sample] of Object.entries(cases))test(`Persian ${name} reaches g
  assert.ok(!result.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'),JSON.stringify(result.review));
  if(name==='bullets')assert.ok(!result.review.some(r=>r.code==='FORMAT_REVIEW'));
  assert.deepEqual(result.sentenceEvidence.flatMap(s=>s.factIds).every(id=>understanding.event.facts.some(f=>f.id===id)),true);
- assert.equal(calls(),5);
+ assert.equal(calls(),4,'extraction, rendering, independent rendering review, classification; final draft stays local');
 });
 
 test('speaker heading scope survives bullet layout while a different intervening voice is rejected',()=>{

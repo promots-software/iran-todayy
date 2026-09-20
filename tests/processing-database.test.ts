@@ -49,7 +49,7 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
     await db.publicationAttempt.create({data:{publicationId:publication.id,attempt:1}});
     await assert.rejects(db.publicationAttempt.create({data:{publicationId:publication.id,attempt:1}}));
     assert.equal(await db.publication.count({where:{createdAt:{gte:started}}}),1,"engine itself never creates publication intents");
-    const ordered=await db.auditLog.findMany({where:{entityId:updated.id},orderBy:{createdAt:"asc"}});assert.deepEqual(ordered.map(l=>l.action),["PROCESSING_ATTEMPT_STARTED",...pipelineOrder]);
+    const ordered=await db.auditLog.findMany({where:{entityId:updated.id},orderBy:{createdAt:"asc"}});assert.deepEqual(ordered.map(l=>l.action),["PROCESSING_ATTEMPT_STARTED",...pipelineOrder,'PROCESSING_ATTEMPT_FINISHED','PROCESSING_DECISION_COMMITTED']);
     assert.ok(await db.editorialRuleSet.findUnique({where:{version:ruleSet.version}}));
     // New enabled Sources enter poll without a hardcoded handle list; cursor replay is idempotent.
     const monitor=new FixtureMonitor({[x.handle]:[{externalId:"poll",content:scenarios[0].content,publishedAt:new Date("2026-08-10T10:00:00Z"),url:"https://x.com/fixture/status/99",metadata:{}}]});

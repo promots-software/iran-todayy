@@ -7,7 +7,7 @@ import {TelegramReader, TelegramMonitor, type ReadMessage} from '../src/lib/tele
 import {TelegramPoller, type PollConnection} from '../src/worker/telegram-poller';
 import {pollSources, type PollProgress} from '../src/lib/processing/engine';
 import {ProcessingError} from '../src/lib/processing/contracts';
-import {providerAdmissionDelay} from '../src/worker/provider-guard';
+import {providerRequestDelay} from '../src/worker/provider-guard';
 import {readFileSync} from 'node:fs';
 
 const signal=new AbortController().signal;
@@ -240,20 +240,20 @@ test('non-advancing provider page fails closed rather than skipping or looping f
 
 for(const code of ['GEMINI_HTTP_429','GEMINI_HTTP_503','GEMINI_TRANSPORT_FAILED','PROVIDER_COOLDOWN','PROVIDER_REQUEST_LIMIT','PROVIDER_BUDGET_EXHAUSTED'])test(`processing hold ${code} does not throttle collection`,async()=>{
  const state=database();const now=Date.now();
- const rows=code.includes('LIMIT')||code.includes('BUDGET')?[{action:'PROVIDER_RESERVED',metadata:{usd:1},createdAt:new Date(now)}]:[{action:'PROVIDER_COOLDOWN',metadata:{code,until:now+3600000},createdAt:new Date(now)}];
+ const rows=code.includes('LIMIT')||code.includes('BUDGET')?[{action:'PROVIDER_RESERVED',metadata:{usd:1},createdAt:new Date(now)}]:[{action:'PROVIDER_CAPACITY_BLOCKED',metadata:{resource:'generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',code,until:now+3600000},createdAt:new Date(now)}];
  Object.assign(state.db,{auditLog:{findMany:async()=>rows}});
- assert.ok(await providerAdmissionDelay(state.db)>0,'processor remains held');
+ assert.ok(await providerRequestDelay(state.db)>0,'only the uncached provider request remains held');
  const history=new Map([['source_alpha',Array.from({length:501},(_,i)=>message(i+11))],['source_beta',Array.from({length:103},(_,i)=>message(i+11))]]);
  const transport=connections(history),worker=new TelegramPoller(transport.factory);
  await pollSources(state.db,{TELEGRAM:worker},signal);assert.equal(state.posts.size,604);assert.equal(state.jobs.size,604);
- assert.ok(await providerAdmissionDelay(state.db)>0);await worker.close();
+ assert.ok(await providerRequestDelay(state.db)>0);await worker.close();
 });
 
 test('production runs ingestion and processing concurrently; admission limiter is processing-only',()=>{
  const worker=readFileSync('src/worker/production.ts','utf8');
  const ingestLoop=worker.slice(worker.indexOf('const ingestLoop='),worker.indexOf('const processingLoop='));
- assert.ok(ingestLoop.includes('pollSources('));assert.ok(!/providerAdmissionDelay|guardedTransport|processJob|jobIntervalMs/.test(ingestLoop));
- assert.ok(worker.includes('[heartbeat(),ingestLoop(),...processingLanes(processingLoop)]'));
+ assert.ok(ingestLoop.includes('pollSources('));assert.ok(!/providerRequestDelay|guardedTransport|processJob|jobIntervalMs/.test(ingestLoop));
+ assert.ok(worker.includes('[heartbeat(),ingestLoop(),...processingLanes(processingLoop),observe()]'));
 });
 
 test('a continuously busy source cannot starve a caught-up source with later arrivals',async()=>{

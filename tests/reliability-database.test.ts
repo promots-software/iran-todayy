@@ -4,7 +4,7 @@ import {randomUUID} from 'node:crypto';
 import {PrismaClient} from '@prisma/client';
 import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
 import {ProcessingError,type LanguageProvider} from '../src/lib/processing/contracts';
-import {guardedTransport,providerAdmissionDelay} from '../src/worker/provider-guard';
+import {guardedTransport,providerRequestDelay} from '../src/worker/provider-guard';
 import {fixture,fixtureProvider} from './fixtures/processing';
 test('offline database: bounded retry preserves source and audits; later success cannot duplicate events/news/publications',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const url=process.env.TEST_DATABASE_URL!;assert.equal(new URL(url).hostname,'127.0.0.1');
@@ -30,7 +30,7 @@ test('offline database: bounded retry preserves source and audits; later success
  // Every finite attempt is persisted; exhausted provider errors retain a manual recovery state.
  const exhausted=await make('exhaust','افتتاح مستشفى آخر في طهران');
  const e=await claimJob(db,'exhaust');assert.ok(e);await db.processingJob.update({where:{id:e.id},data:{maxAttempts:1}});await processJob(db,{...e,maxAttempts:1},failed,signal);
- const last=await db.sourcePost.findUniqueOrThrow({where:{id:exhausted.id}});assert.equal(last.status,'NEEDS_REVIEW');assert.match(JSON.stringify(last.processingResult),/MANUAL_RECOVERY_REQUIRED/);
+ const last=await db.sourcePost.findUniqueOrThrow({where:{id:exhausted.id}});assert.equal(last.status,'FAILED');assert.match(JSON.stringify(last.processingResult),/SCHEDULED_RETRY/);
  assert.equal(await claimJob(db,'again'),null);assert.equal(await db.publication.count(),before[2]);await db.$disconnect();
 });
 test('durable native checkpoints survive new adapter, 429 opens circuit, ambiguous transport requires reconciliation',{skip:!process.env.TEST_DATABASE_URL},async()=>{
@@ -38,11 +38,11 @@ test('durable native checkpoints survive new adapter, 429 opens circuit, ambiguo
  const baseline=await db.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget'}});
  let calls=0;const init={method:'POST',body:JSON.stringify({offline:true})};const postId=randomUUID();
  const fetchMock:typeof fetch=async()=>{calls++;return Response.json({candidates:[],usageMetadata:{}});};
- await guardedTransport(db,postId,fetchMock)('https://offline.invalid',init);
- const replay=await guardedTransport(db,postId,fetchMock)('https://offline.invalid',init);assert.equal(calls,1);assert.equal(replay.headers.get('x-worker-checkpoint-replayed'),'true');
- await assert.rejects(guardedTransport(db,randomUUID(),async()=>{calls++;return new Response('unavailable',{status:429,headers:{'retry-after':'120'}});})('https://offline.invalid',init),/GEMINI_HTTP_429/);
- assert.ok(await providerAdmissionDelay(db)>0);
- await assert.rejects(guardedTransport(db,randomUUID(),fetchMock)('https://offline.invalid',init),/PROVIDER_COOLDOWN/);assert.equal(calls,2);
+ await guardedTransport(db,postId,fetchMock)('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init);
+ const replay=await guardedTransport(db,postId,fetchMock)('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init);assert.equal(calls,1);assert.equal(replay.headers.get('x-worker-checkpoint-replayed'),'true');
+ await assert.rejects(guardedTransport(db,randomUUID(),async()=>{calls++;return new Response('unavailable',{status:429,headers:{'retry-after':'120'}});})('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init),/GEMINI_HTTP_429/);
+ assert.ok(await providerRequestDelay(db)>0);
+ await assert.rejects(guardedTransport(db,randomUUID(),fetchMock)('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init),/PROVIDER_CAPACITY_WAIT/);assert.equal(calls,2);
  assert.equal(await db.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget'}}),baseline+2);
  await db.$disconnect();
 });
