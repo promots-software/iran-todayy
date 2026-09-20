@@ -3,7 +3,9 @@
 export type Geography='IRAN'|'SYRIA'|'LEBANON'|'PALESTINE'|'IRAQ'|'YEMEN';
 export type Scope={status:'IN_SCOPE'|'OUT_OF_SCOPE'|'UNCERTAIN_SCOPE';geographies:Geography[];evidence:string[];version:'six-geographies-v1'};
 const places:Record<Geography,string[]>={
- IRAN:['إيران','ايران','ایران','إيرانية','الإيراني','ایرانی','Iran','Iranian','طهران','تهران','Tehran','اصفهان','أصفهان','شيراز','شیراز'],
+ // Hormuz borders both Iran and Oman: coverage relevance only, never ownership
+ // or institutional identity. EIA World Oil Transit Chokepoints, Hormuz section.
+ IRAN:['إيران','ايران','ایران','إيرانية','الإيراني','ایرانی','Iran','Iranian','طهران','تهران','Tehran','اصفهان','أصفهان','شيراز','شیراز','مضيق هرمز','تنگه هرمز','Strait of Hormuz'],
  SYRIA:['سوريا','سورية','السوري','السورية','Syria','Syrian','دمشق','Damascus','حلب','Aleppo','اللاذقية'],
  LEBANON:['لبنان','اللبناني','اللبنانية','Lebanon','Lebanese','بيروت','Beirut','بعلبك','النبطية'],
  PALESTINE:['فلسطين','فلسطينية','الفلسطيني','الفلسطينية','Palestine','Palestinian','جنين','Jenin','رام الله','Ramallah','نابلس','Nablus','غزة','Gaza','قطاع غزة','Gaza Strip'],

@@ -6,6 +6,12 @@ import {checkpointCall,databaseCheckpoints} from './checkpoints';
 import {json} from '../lib/processing/engine';
 export const limits={hourRequests:12,dayRequests:48,dayReservedUsd:1,requestBytes:600000,outputTokens:4096,jobIntervalMs:60000} as const;
 type Reservation={at:number;usd:number};
+export function budgetRetryDelay(reservations:Reservation[],bytes:number,now:number){
+ if(budgetDecision(reservations,bytes,now).allowed)return 0;
+ const boundaries=[...new Set(reservations.flatMap(r=>[r.at+3600000,r.at+86400000]))].filter(t=>t>now).sort((a,b)=>a-b);
+ const available=boundaries.find(t=>budgetDecision(reservations,bytes,t).allowed);
+ return available===undefined?86400000:Math.max(1000,available-now);
+}
 export function budgetDecision(reservations:Reservation[],bytes:number,now:number){
  const cost=(bytes*0.25+limits.outputTokens*1.5)/1e6;
  const day=reservations.filter(r=>r.at>now-86400000),hour=day.filter(r=>r.at>now-3600000);
@@ -29,8 +35,9 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     const rows=await tx.auditLog.findMany({where:{entityType:'ProviderBudget',entityId:'gemini',createdAt:{gt:new Date(nowMs-86400000)}},select:{action:true,metadata:true,createdAt:true}});
     const cooldown=Math.max(0,...rows.filter(r=>r.action==='PROVIDER_COOLDOWN').map(r=>Number((r.metadata as {until:number}).until)||0));
     if(cooldown>nowMs)throw new ProcessingError('PROVIDER_COOLDOWN',true,undefined,cooldown-nowMs);
-    const decision=budgetDecision(rows.filter(r=>r.action==='PROVIDER_RESERVED').map(r=>({at:r.createdAt.getTime(),usd:Number((r.metadata as {usd:number}).usd)})),bytes,nowMs);
-    if(!decision.allowed)throw new ProcessingError('PROVIDER_BUDGET_EXHAUSTED',true,undefined,3600000);
+    const reservations=rows.filter(r=>r.action==='PROVIDER_RESERVED').map(r=>({at:r.createdAt.getTime(),usd:Number((r.metadata as {usd:number}).usd)}));
+    const decision=budgetDecision(reservations,bytes,nowMs);
+    if(!decision.allowed)throw new ProcessingError('PROVIDER_BUDGET_EXHAUSTED',true,undefined,budgetRetryDelay(reservations,bytes,nowMs));
     await tx.auditLog.create({data:{action:'PROVIDER_RESERVED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Conservative input-byte/output-token budget; no credentials',metadata:json({usd:decision.reservedUsd,bytes,postId,key})}});
    });
    try {

@@ -8,9 +8,8 @@ export function pageHref(path:string,params:PageParams,key:string,page:number){c
 // Mirrors readEditorialState, including historical fallback. Eligibility is SQL
 // BEFORE both count and LIMIT; delivery HOLD and publishing switches are absent.
 const ready=Prisma.sql`CASE WHEN n."validationResult"->>'editorialEligibility' IN ('READY_TO_PUBLISH','NEEDS_REVIEW','FILTERED','PROCESSING_ERROR') THEN n."validationResult"->>'editorialEligibility'='READY_TO_PUBLISH' ELSE n.error IS NULL AND n.status='PENDING_APPROVAL' AND n."validationResult"->'validated'='true'::jsonb END`;
-const media=Prisma.sql`EXISTS (SELECT 1 FROM "NewsEvidence" e JOIN "SourcePost" p ON p.id=e."sourcePostId" WHERE e."newsItemId"=n.id AND (p.metadata->'hasMedia'='true'::jsonb OR p.metadata->'hasPhoto'='true'::jsonb))`;
 export async function newsPage(db:PrismaClient,mode:'readonly'|'review'|'approval',requested:number){
- const eligible=mode==='approval'?Prisma.sql`n.status IN ('PENDING_APPROVAL','APPROVED','NEEDS_REVIEW') AND n.error IS NULL AND n."validationStatus" IN ('PASSED','NEEDS_REVIEW') AND NOT (${media}) AND (COALESCE(${ready},false) OR n.status='APPROVED')`:mode==='review'?Prisma.sql`n.status='NEEDS_REVIEW' AND NOT EXISTS (SELECT 1 FROM "HumanEditorialDraft" d WHERE d."newsItemId"=n.id AND d.status<>'DRAFT') AND (${media} OR NOT COALESCE(${ready},false))`:Prisma.sql`true`;
+ const eligible=mode==='approval'?Prisma.sql`n.status IN ('PENDING_APPROVAL','APPROVED','NEEDS_REVIEW') AND n.error IS NULL AND n."validationStatus" IN ('PASSED','NEEDS_REVIEW') AND (COALESCE(${ready},false) OR n.status='APPROVED')`:mode==='review'?Prisma.sql`n.status='NEEDS_REVIEW' AND NOT EXISTS (SELECT 1 FROM "HumanEditorialDraft" d WHERE d."newsItemId"=n.id AND d.status<>'DRAFT') AND NOT COALESCE(${ready},false)`:Prisma.sql`true`;
  return db.$transaction(async tx=>{
   const [count]=await tx.$queryRaw<{total:number}[]>(Prisma.sql`SELECT count(*)::int AS total FROM "NewsItem" n WHERE ${eligible}`);
   const paging=pageWindow(requested,count.total);

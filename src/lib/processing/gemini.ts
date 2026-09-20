@@ -1,6 +1,7 @@
 import {GroqLanguageProvider} from './groq';
 import {failurePolicy,retryAfter} from './failure-policy';
 import {ProcessingError,type LanguageProvider} from './contracts';
+import {buildAtoms,renderSelection} from './constrained-rewrite';
 export {readLocalGeminiKey} from './gemini-key';
 export type GeminiUsage={stage:string;attempt:number;httpStatus:number|null;inputTokens:number|null;outputTokens:number|null;thinkingTokens:number|null;estimatedCostUsd:number|null;replayed?:boolean};
 /** Native Gemini transport, shared extraction/classification/atom validators. No fallback provider. */
@@ -39,5 +40,11 @@ export class GeminiLanguageProvider implements LanguageProvider{
  understand(i:Parameters<LanguageProvider['understand']>[0],s:AbortSignal){return this.delegate.understand(i,s);}
  classifyExtracted(...args:Parameters<GroqLanguageProvider['classifyExtracted']>){return this.delegate.classifyExtracted(...args);}
  compare(i:Parameters<LanguageProvider['compare']>[0],s:AbortSignal){return this.delegate.compare(i,s);}
- draft(i:Parameters<LanguageProvider['draft']>[0],s:AbortSignal){return this.delegate.draft(i,s);}
+ async draft(i:Parameters<LanguageProvider['draft']>[0],s:AbortSignal){
+  s.throwIfAborted();
+  if(i.understanding.relevance!=='POLITICAL_NEWS'||i.understanding.priority==='P4')throw new ProcessingError('DRAFT_NOT_ACCEPTED');
+  const atoms=buildAtoms(i.content,i.understanding);
+  // Retain validated source order and every fact; selection adds no new wording.
+  return renderSelection({titleAtomId:atoms.atoms[0].id,bodyAtomIds:atoms.atoms.map(a=>a.id)},atoms);
+ }
 }

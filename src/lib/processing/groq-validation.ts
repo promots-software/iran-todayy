@@ -15,8 +15,16 @@ export function resolveContextEvidence(value:unknown,source:string):number {
     if(Array.isArray(node)){node.forEach(visit);return;}
     const o=node as Record<string,unknown>;
     if(typeof o.excerpt==='string') {
-      const excerpt=o.excerpt,context=o.context;
-      if(typeof context!=='string'||!context||!excerpt)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
+      const excerpt=o.excerpt,rawContext=o.context;
+      if(typeof rawContext!=='string'||!rawContext||!excerpt)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
+      let context=rawContext;
+      // Repair only equal-length space-codepoint changes in surrounding context.
+      // Never normalize the factual excerpt, punctuation, words or source text.
+      if(!source.includes(context)){
+        const spaces=(text:string)=>text.replace(/[\u00a0\u202f]/gu,' ');
+        const normalized=spaces(source),needle=spaces(context),at=normalized.indexOf(needle);
+        if(at>=0&&normalized.lastIndexOf(needle)===at)context=source.slice(at,at+context.length);
+      }
       const base=source.indexOf(context),relative=context.indexOf(excerpt);
       if(base<0||source.lastIndexOf(context)!==base||relative<0||context.lastIndexOf(excerpt)!==relative)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
       const start=base+relative,end=start+excerpt.length;

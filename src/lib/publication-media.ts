@@ -16,3 +16,8 @@ export function validateImage(bytes:Buffer,claimed:string){
  return {mime:png?'image/png':'image/jpeg',digest:createHash('sha256').update(bytes).digest('hex')};
 }
 export function sourceHasMedia(metadata:unknown):boolean{if(!metadata||typeof metadata!=='object')return false;const m=metadata as Record<string,unknown>;return m.hasMedia===true||m.hasPhoto===true;}
+/** Attachment presence is not a request to publish an image. Text that depends
+ * explicitly on unseen visual evidence still requires editorial review. */
+export function sourceMediaReviewRequired(metadata:unknown,content:string):boolean{
+ return sourceHasMedia(metadata)&&/(?:كما (?:تظهر|توضح|تشاهد)|في (?:الصورة|الفيديو|المقطع) (?:تظهر|نشاهد)|شاهد(?:وا)? (?:الفيديو|الصور)|در (?:تصویر|ویدیو|فیلم)|(?:as (?:shown|seen)|see (?:the )?(?:image|video|photo)))/iu.test(content);
+}
