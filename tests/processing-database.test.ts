@@ -13,9 +13,9 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
   const db=new PrismaClient({datasourceUrl:url});const signal=new AbortController().signal;
   const tag=randomUUID().replaceAll("-","").slice(0,8);const sourceIds:string[]=[];
   const started=new Date();
-  const sport=fixture("sport","فاز فريق كرة قدم أوروبي","ar","فاز فريق كرة قدم أوروبي");sport.understanding.relevance="IRRELEVANT";sport.understanding.filterReason="SPORT";
-  const uncovered=fixture("uncovered","ظهر مصطلح سياسي جديد","ar","ظهر مصطلح سياسي جديد");uncovered.understanding.uncoveredTerms=["مصطلح سياسي جديد"];
-  const figures=fixture("figures","وردت أنباء عن 5 ضحايا","ar","وردت أنباء عن 5 ضحايا");figures.understanding.event.facts[0].kind="FIGURE";
+  const sport=fixture("sport","إعلان تجاري عن متجر في طهران","ar","إعلان تجاري عن متجر في طهران");sport.understanding.relevance="IRRELEVANT";sport.understanding.filterReason="ADVERTISING";
+  const uncovered=fixture("uncovered","ظهر مصطلح سياسي جديد في طهران","ar","ظهر مصطلح سياسي جديد في طهران");uncovered.understanding.uncoveredTerms=["مصطلح سياسي جديد"];
+  const figures=fixture("figures","وردت أنباء عن 5 ضحايا في طهران","ar","وردت أنباء عن 5 ضحايا في طهران");figures.understanding.event.facts[0].kind="FIGURE";
   const records=[...scenarios,sport,uncovered,figures];const provider=fixtureProvider(records);
   async function createSource(platform:"TELEGRAM"|"X",i:number){const s=await db.source.create({data:{platform,handle:`p2${tag}${i}`,name:"اختبار المرحلة الثانية",url:`https://${platform === "X"?"x.com":"t.me"}/p2${tag}${i}`,editorialProfile:json(official)}});sourceIds.push(s.id);return s;}
   async function incoming(sourceId:string,id:string,index=0){const f=records.find(r=>r.id===id)!;return ingest(db,sourceId,{externalId:id,url:`https://t.me/fixture/${index+1}`,content:f.content,publishedAt:new Date("2026-08-10T10:00:00Z"),metadata:{fixture:id}});}
@@ -49,7 +49,7 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
     await db.publicationAttempt.create({data:{publicationId:publication.id,attempt:1}});
     await assert.rejects(db.publicationAttempt.create({data:{publicationId:publication.id,attempt:1}}));
     assert.equal(await db.publication.count({where:{createdAt:{gte:started}}}),1,"engine itself never creates publication intents");
-    const ordered=await db.auditLog.findMany({where:{entityId:updated.id},orderBy:{createdAt:"asc"}});assert.deepEqual(ordered.map(l=>l.action),[...pipelineOrder]);
+    const ordered=await db.auditLog.findMany({where:{entityId:updated.id},orderBy:{createdAt:"asc"}});assert.deepEqual(ordered.map(l=>l.action),["PROCESSING_ATTEMPT_STARTED",...pipelineOrder]);
     assert.ok(await db.editorialRuleSet.findUnique({where:{version:ruleSet.version}}));
     // New enabled Sources enter poll without a hardcoded handle list; cursor replay is idempotent.
     const monitor=new FixtureMonitor({[x.handle]:[{externalId:"poll",content:scenarios[0].content,publishedAt:new Date("2026-08-10T10:00:00Z"),url:"https://x.com/fixture/status/99",metadata:{}}]});

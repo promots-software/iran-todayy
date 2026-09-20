@@ -3,10 +3,12 @@ import assert from 'node:assert/strict';
 import {setTimeout as sleep} from 'node:timers/promises';
 import {PrismaClient} from '@prisma/client';
 import {Api, type TelegramClient} from 'teleproto';
-import {TelegramReader, type ReadMessage} from '../src/lib/telegram/monitor';
+import {TelegramReader, TelegramMonitor, type ReadMessage} from '../src/lib/telegram/monitor';
 import {TelegramPoller, type PollConnection} from '../src/worker/telegram-poller';
 import {pollSources, type PollProgress} from '../src/lib/processing/engine';
 import {ProcessingError} from '../src/lib/processing/contracts';
+import {providerAdmissionDelay} from '../src/worker/provider-guard';
+import {readFileSync} from 'node:fs';
 
 const signal=new AbortController().signal;
 const cursor=(lastId:number)=>({kind:'telegram-shadow-v1',channelId:'123',lastId});
@@ -14,12 +16,16 @@ const message=(id:number)=>({id,text:`original ${id}`,date:1700000000+id});
 function database() {
   const sources=['source_alpha','source_beta'].map(handle=>({id:handle,handle,platform:'TELEGRAM',enabled:true,deletedAt:null,cursor:cursor(10),lastError:null as string|null}));
   const posts=new Map<string,Record<string,unknown>>(),jobs=new Set<string>();
-  const controls={delayMs:0,failId:'',afterCommit:()=>{}};
+  const controls={delayMs:0,failId:'',failCursorAt:0,afterCommit:()=>{},afterCursorCommit:()=>{}};
   const settings={findUnique:async()=>({publishingMode:'REQUIRE_APPROVAL'})};
   const mock={
     source:{
       findMany:async()=>sources.filter(s=>s.enabled&&!s.deletedAt).map(s=>structuredClone(s)),
-      update:async({where,data}:{where:{id:string};data:Record<string,unknown>})=>Object.assign(sources.find(s=>s.id===where.id)!,data),
+      update:async({where,data}:{where:{id:string};data:Record<string,unknown>})=>{
+        if(data.cursor&&controls.failCursorAt===(data.cursor as {lastId:number}).lastId)throw Error('offline checkpoint persistence failure');
+        const source=Object.assign(sources.find(s=>s.id===where.id)!,data);
+        if(data.cursor)controls.afterCursorCommit();return source;
+      },
     },
     appSettings:settings,
     $transaction:async(callback:(tx:unknown)=>Promise<unknown>)=>{
@@ -49,7 +55,7 @@ function database() {
   };
   return {db:mock as unknown as PrismaClient,sources,posts,jobs,controls};
 }
-function connections(history:Map<string,ReadMessage[]>,stuckFirst=false) {
+function connections(history:Map<string,ReadMessage[]>,stuckFirst=false,pageCeiling=50) {
   let created=0,closed=0,live=0,maxLive=0;
   const reads:string[]=[],events:string[]=[];
   const factory=():PollConnection=>{
@@ -62,7 +68,7 @@ function connections(history:Map<string,ReadMessage[]>,stuckFirst=false) {
       },
       getMessages:async(handle:string,options:{minId?:number;limit:number})=>{
         reads.push(handle);
-        return (history.get(handle)??[]).filter(m=>m.id>(options.minId??0)).slice(0,options.limit)
+        return (history.get(handle)??[]).filter(m=>m.id>(options.minId??0)).slice(0,Math.min(options.limit,pageCeiling))
           .map(m=>({id:m.id,message:m.text,date:m.date}));
       },
     } as unknown as TelegramClient;
@@ -161,4 +167,104 @@ test('pre-aborted reader never issues an RPC and failed transport drain forbids 
   await assert.rejects(worker.poll({handle:'source_alpha',cursor:cursor(10)},signal),/WORKER_DRAIN_FAILED/);
   await assert.rejects(worker.poll({handle:'source_alpha',cursor:cursor(10)},signal),/WORKER_DRAIN_FAILED/);
   assert.equal(factories,1);assert.equal(worker.ready,false);
+});
+
+
+for(const pageSize of [1,7,50])for(const size of [...new Set([0,1,pageSize-1,pageSize,pageSize+1,pageSize*2+3,501,1507])]){
+ test(`burst invariant: ${size} messages with API pages up to ${pageSize}, no per-cycle cap`,async()=>{
+  const state=database();
+  const messages=Array.from({length:size},(_,i)=>message(11+i*2)); // Real IDs need not be contiguous.
+  const history=new Map([['source_alpha',messages],['source_beta',[message(11)]]]);
+  const transport=connections(history,false,pageSize),worker=new TelegramPoller(transport.factory);
+  state.controls.afterCursorCommit=()=>{
+   for(const source of state.sources)for(const m of history.get(source.handle)!.filter(m=>m.id<=source.cursor.lastId)){
+    assert.ok(state.posts.has(source.id+':'+m.id),'cursor must not cover an unpersisted available message');
+    assert.ok(state.jobs.has(source.id+':'+m.id),'every covered message has a job');
+   }
+  };
+  const result=await pollSources(state.db,{TELEGRAM:worker},signal);
+  assert.ok(result.every(r=>!r.error));assert.equal(state.posts.size,size+1);assert.equal(state.jobs.size,size+1);
+  assert.equal(state.sources[0].cursor.lastId,messages.at(-1)?.id??10);
+  if(size>pageSize)assert.deepEqual(transport.reads.slice(0,3),['source_alpha','source_beta','source_alpha'],'pages rotate between sources');
+  await pollSources(state.db,{TELEGRAM:worker},signal);assert.equal(state.posts.size,size+1);await worker.close();
+ });
+}
+
+test('partial later page failure and restart retain prior page checkpoint and all originals',async()=>{
+ const state=database(),history=new Map([['source_alpha',Array.from({length:131},(_,i)=>message(i+11))],['source_beta',[message(11)]]]);
+ state.controls.failId='source_alpha:73';const transport=connections(history),worker=new TelegramPoller(transport.factory);
+ const failed=await pollSources(state.db,{TELEGRAM:worker},signal);assert.equal(failed[0].error,'SOURCE_PERSIST_FAILED');
+ assert.equal(state.sources[0].cursor.lastId,60);assert.equal(state.jobs.has('source_alpha:72'),true);assert.equal(state.posts.has('source_alpha:73'),false);
+ await worker.close();state.controls.failId='';history.get('source_alpha')!.push(message(142));
+ const restarted=new TelegramPoller(transport.factory);await pollSources(state.db,{TELEGRAM:restarted},signal);
+ assert.equal(state.posts.size,133);assert.equal(state.jobs.size,133);assert.equal(state.sources[0].cursor.lastId,142);
+ for(const m of history.get('source_alpha')!)assert.equal(state.posts.get('source_alpha:'+m.id)!.originalContent,m.text);
+ await restarted.close();
+});
+
+test('checkpoint failure before write or lost acknowledgement after write is replay-safe',async()=>{
+ for(const afterWrite of [false,true]){
+  const state=database(),history=new Map([['source_alpha',Array.from({length:111},(_,i)=>message(i+11))],['source_beta',[message(11)]]]);
+  const transport=connections(history),worker=new TelegramPoller(transport.factory);
+  if(afterWrite){let fired=false;state.controls.afterCursorCommit=()=>{if(!fired){fired=true;throw Error('lost acknowledgement');}};}else state.controls.failCursorAt=60;
+  await pollSources(state.db,{TELEGRAM:worker},signal);
+  assert.equal(state.sources[0].cursor.lastId,afterWrite?60:10);assert.equal(state.jobs.has('source_alpha:60'),true);
+  state.controls.failCursorAt=0;state.controls.afterCursorCommit=()=>{};await worker.close();
+  const restarted=new TelegramPoller(transport.factory);await pollSources(state.db,{TELEGRAM:restarted},signal);
+  assert.equal(state.posts.size,112);assert.equal(state.jobs.size,112);assert.equal(state.sources[0].cursor.lastId,121);await restarted.close();
+ }
+});
+
+test('arrivals during pagination and newly enabled sources are collected in following rounds',async()=>{
+ const state=database();state.sources[1].enabled=false;
+ const history=new Map([['source_alpha',Array.from({length:51},(_,i)=>message(i+11))],['source_beta',[message(11),message(12)]]]);
+ const transport=connections(history),worker=new TelegramPoller(transport.factory);let added=false;
+ state.controls.afterCursorCommit=()=>{if(!added){added=true;history.get('source_alpha')!.push(...Array.from({length:79},(_,i)=>message(i+62)));state.sources[1].enabled=true;}};
+ await pollSources(state.db,{TELEGRAM:worker},signal);assert.equal(state.posts.size,132);assert.equal(state.jobs.size,132);assert.equal(state.sources[1].cursor.lastId,12);await worker.close();
+});
+
+test('no checkpoint never means skip history; media-only and service messages remain traceable',async()=>{
+ const state=database();Object.assign(state.sources[0],{cursor:null});state.sources[1].enabled=false;
+ const messages:ReadMessage[]=[{...message(1),text:'',hasMedia:true,hasPhoto:true},{...message(4),text:'',service:true},{...message(9),text:'  '},message(20)];
+ const monitor=new TelegramMonitor({channel:async()=> '123',messages:async(_h,after)=>messages.filter(m=>m.id>(after??0)).slice(0,2)});
+ await pollSources(state.db,{TELEGRAM:monitor},signal);assert.equal(state.posts.size,4);assert.equal(state.jobs.size,4);assert.equal(state.sources[0].cursor.lastId,20);
+ assert.equal(state.posts.get('source_alpha:1')!.originalContent,'');assert.equal(state.posts.get('source_alpha:9')!.originalContent,'  ');
+ await pollSources(state.db,{TELEGRAM:monitor},signal);assert.equal(state.posts.size,4);
+});
+
+test('non-advancing provider page fails closed rather than skipping or looping forever',async()=>{
+ const state=database();state.sources[1].enabled=false;
+ const monitor=new TelegramMonitor({channel:async()=> '123',messages:async()=>[message(10)]});
+ const report=await pollSources(state.db,{TELEGRAM:monitor},signal);assert.equal(report[0].error,'TELEGRAM_CURSOR_STALLED');assert.equal(state.sources[0].cursor.lastId,10);assert.equal(state.posts.size,0);
+});
+
+for(const code of ['GEMINI_HTTP_429','GEMINI_HTTP_503','GEMINI_TRANSPORT_FAILED','PROVIDER_COOLDOWN','PROVIDER_REQUEST_LIMIT','PROVIDER_BUDGET_EXHAUSTED'])test(`processing hold ${code} does not throttle collection`,async()=>{
+ const state=database();const now=Date.now();
+ const rows=code.includes('LIMIT')||code.includes('BUDGET')?[{action:'PROVIDER_RESERVED',metadata:{usd:1},createdAt:new Date(now)}]:[{action:'PROVIDER_COOLDOWN',metadata:{code,until:now+3600000},createdAt:new Date(now)}];
+ Object.assign(state.db,{auditLog:{findMany:async()=>rows}});
+ assert.ok(await providerAdmissionDelay(state.db)>0,'processor remains held');
+ const history=new Map([['source_alpha',Array.from({length:501},(_,i)=>message(i+11))],['source_beta',Array.from({length:103},(_,i)=>message(i+11))]]);
+ const transport=connections(history),worker=new TelegramPoller(transport.factory);
+ await pollSources(state.db,{TELEGRAM:worker},signal);assert.equal(state.posts.size,604);assert.equal(state.jobs.size,604);
+ assert.ok(await providerAdmissionDelay(state.db)>0);await worker.close();
+});
+
+test('production runs ingestion and processing concurrently; admission limiter is processing-only',()=>{
+ const worker=readFileSync('src/worker/production.ts','utf8');
+ const ingestLoop=worker.slice(worker.indexOf('const ingestLoop='),worker.indexOf('const processingLoop='));
+ assert.ok(ingestLoop.includes('pollSources('));assert.ok(!/providerAdmissionDelay|guardedTransport|processJob|jobIntervalMs/.test(ingestLoop));
+ assert.ok(worker.includes('[heartbeat(),ingestLoop(),processingLoop()]'));
+});
+
+test('a continuously busy source cannot starve a caught-up source with later arrivals',async()=>{
+ const state=database(),stop=new AbortController();let now=0,hotId=10,coldReads=0;
+ const monitor=new TelegramMonitor({channel:async()=> '123',messages:async(handle,after)=>{
+  if(handle==='source_alpha'){now+=10000;return [message(++hotId)];}
+  coldReads++;
+  return now>=30000&&after===10?[message(11)]:[];
+ }});
+ state.controls.afterCursorCommit=()=>{if(state.sources[1].cursor.lastId===11)stop.abort();};
+ await pollSources(state.db,{TELEGRAM:monitor},stop.signal,{now:()=>now});
+ assert.ok(coldReads>=2);assert.ok(state.posts.has('source_beta:11'));assert.ok(state.jobs.has('source_beta:11'));
+ assert.ok(hotId<20,'cold source is revisited without waiting for hot source exhaustion');
 });

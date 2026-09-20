@@ -21,14 +21,15 @@ test("shadow defaults safe, explicit opt-out fails, approval mandatory, publicat
   assertApprovalMode("REQUIRE_APPROVAL");
   assert.equal(externalPublicationDecision().allowed, false);
 });
-test("first poll sets boundary; subsequent text and captions preserve exact content and source IDs", async () => {
+test("first poll collects available history; subsequent text and non-text messages preserve source IDs", async () => {
   const messages = [{ id: 8, text: "old", date: 1700000000 }];
   const monitor = new TelegramMonitor(reader(messages));
   const first = await monitor.poll({ handle: "irna_arabic", cursor: null }, signal);
-  assert.deepEqual(first.posts, []); assert.equal(first.cursor.lastId, 8);
+  assert.equal(first.posts.length, 1); assert.equal(first.posts[0].content,'old'); assert.equal(first.cursor.lastId, 8);
   messages.push({ id: 9, text: "  نص أصلي\nquote  ", date: 1700000001 }, { id: 10, text: "", date: 1700000002 });
   const next = await monitor.poll({ handle: "irna_arabic", cursor: first.cursor }, signal);
-  assert.equal(next.posts.length, 1); assert.equal(next.posts[0].content, messages[1].text);
+  assert.equal(next.posts.length, 2); assert.equal(next.posts[0].content, messages[1].text);
+  assert.equal(next.posts[1].content,'');assert.equal(next.posts[1].metadata.messageKind,'EMPTY');
   assert.equal(next.posts[0].url, "https://t.me/irna_arabic/9");
   assert.equal(next.posts[0].metadata.shadowMode, true); assert.equal(next.cursor.lastId, 10);
   assert.deepEqual((await monitor.poll({ handle: "irna_arabic", cursor: next.cursor }, signal)).posts, []);

@@ -8,8 +8,10 @@ import { pipelineOrder, ruleSet } from "./rules";
 import { retryDelay } from "../domain";
 import { assertShadowMode, assertApprovalMode } from "./shadow";
 import {finalizeConstrainedDraft} from './local-finalization';
-import {sourceLanguage} from './source-language';
+import {sourceLanguage,detectSourceLanguage} from './source-language';
 import {editorialDecision} from './editorial-eligibility';
+import {editorialScope} from './editorial-scope';
+import {failurePolicy} from './failure-policy';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
 const leaseMs = 300000;
@@ -17,6 +19,7 @@ export type PollProgress = {sourceId:string;handle:string;phase:'READING'|'PERSI
 export type PollSourcesOptions = {
   requireActive?: () => void;
   onProgress?: (progress:PollProgress) => void;
+  now?: () => number;
 };
 const audit = (tx: Prisma.TransactionClient, id: string, action: string, message: string, metadata: unknown) => tx.auditLog.create({ data: { action, actor: "processing-engine", entityType: "SourcePost", entityId: id, message, metadata: json(metadata) } });
 export async function ingest(client: PrismaClient, sourceId: string, raw: unknown, live = false) {
@@ -25,6 +28,7 @@ export async function ingest(client: PrismaClient, sourceId: string, raw: unknow
   return client.$transaction(async tx=>{
     const source=await tx.source.findUniqueOrThrow({where:{id:sourceId}});
     if (!source.enabled || source.deletedAt) throw new ProcessingError("SOURCE_DISABLED");
+    if(!p.content.trim()&&!(source.platform==='TELEGRAM'&&p.metadata.transport==='telegram-shadow-v1'&&['MEDIA_ONLY','SERVICE','EMPTY'].includes(String(p.metadata.messageKind))))throw new ProcessingError('SOURCE_TEXT_REQUIRED');
     const mode=(await tx.appSettings.findUnique({where:{id:1}}))?.publishingMode ?? "REQUIRE_APPROVAL";
     if (live) {
       assertApprovalMode((await tx.appSettings.findUnique({where:{id:1}}))?.publishingMode);
@@ -64,18 +68,40 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
     const active = await client.processingJob.findUniqueOrThrow({where:{id:job.id}});
     if (active.status !== "RUNNING" || active.lockedBy !== job.lockedBy || !active.lockedAt || active.lockedAt.getTime()+leaseMs <= Date.now()) throw new ProcessingError("STALE_CLAIM",true);
     const detectedLanguage=sourceLanguage(post.originalContent);
-    if(detectedLanguage!=='unknown')await client.sourcePost.update({where:{id:post.id},data:{originalLanguage:detectedLanguage}});
+    await client.$transaction(async tx=>{
+      await tx.$queryRaw`SELECT id FROM "ProcessingJob" WHERE id=${job.id} FOR UPDATE`;
+      const owner=await tx.processingJob.findUniqueOrThrow({where:{id:job.id}});
+      if(owner.status!=='RUNNING'||owner.lockedBy!==job.lockedBy)throw new ProcessingError('STALE_CLAIM');
+      if(detectedLanguage!=='unknown')await tx.sourcePost.update({where:{id:post.id},data:{originalLanguage:detectedLanguage}});
+      await audit(tx,post.id,'PROCESSING_ATTEMPT_STARTED','حفظ حالة المحاولة السابقة قبل المعالجة',{attempt:job.attemptCount,language:detectSourceLanguage(post.originalContent),priorError:post.error,priorProcessingResult:post.processingResult});
+    });
     if (provider.live) {
       assertShadowMode();
       assertApprovalMode((await client.appSettings.findUnique({where:{id:1}}))?.publishingMode);
       const source=await client.source.findUniqueOrThrow({where:{id:post.sourceId}});
       if (source.platform !== "TELEGRAM" || !source.enabled || source.deletedAt) throw new ProcessingError("LIVE_SOURCE_DISABLED");
     }
+    const scope=editorialScope(post.originalContent);
+    if(scope.status!=='IN_SCOPE') {
+      return await client.$transaction(async tx=>{
+        await tx.$queryRaw`SELECT id FROM "ProcessingJob" WHERE id=${job.id} FOR UPDATE`;
+        const current=await tx.processingJob.findUniqueOrThrow({where:{id:job.id}});
+        if(current.status!=='RUNNING'||current.lockedBy!==job.lockedBy||!current.lockedAt||current.lockedAt.getTime()+leaseMs<=Date.now())throw new ProcessingError('STALE_CLAIM');
+        const source=await tx.source.findUniqueOrThrow({where:{id:post.sourceId}});
+        if(!source.enabled||source.deletedAt)throw new ProcessingError('SOURCE_DISABLED');
+        const filtered=scope.status==='OUT_OF_SCOPE',code=filtered?'OUTSIDE_EDITORIAL_SCOPE':'UNCERTAIN_SCOPE';
+        await tx.sourcePost.update({where:{id:post.id},data:{status:filtered?'FILTERED':'NEEDS_REVIEW',rejectionReason:filtered?code:null,error:filtered?null:code,processingEndedAt:new Date(),nextRetryAt:null,relevanceResult:json({scope,detectedLanguage}),processingResult:json({validated:false,editorialEligibility:filtered?'FILTERED':'NEEDS_REVIEW',deliveryDecision:'HOLD',scope,review:filtered?[]:[{code,detail:'لم تثبت صلة جغرافية واضحة بنطاق التغطية'}],externalPublishingEnabled:false})}});
+        await tx.processingJob.update({where:{id:job.id},data:{status:'COMPLETED',lockedAt:null,lockedBy:null,lastError:null}});
+        await audit(tx,post.id,'EDITORIAL_SCOPE',code,{scope,detectedLanguage,priorProcessingResult:post.processingResult});
+        return {postId:post.id,filtered};
+      });
+    }
     const u=validateUnderstanding(await provider.understand({content:post.originalContent,publishedAt:post.sourcePublishedAt,profile:sourceProfile,rules:ruleSet},signal),post.originalContent);
     // Assign provenance ourselves; never trust a provider-supplied database identity.
     for(const value of [...u.event.actors,u.event.action,u.event.object,u.event.location,u.event.eventTime,...u.event.facts,...u.event.facts.map(f=>f.speaker),...u.names]) if(value)value.evidence.sourcePostId=post.id;
     // Verify numeric evidence at extraction, before terminology (R IX.4).
-    const filter=u.relevance === "IRRELEVANT" || ["UNRELATED","ADVERTISING","SPORT","ENTERTAINMENT","SATIRE","RUMOUR","INCITEMENT"].includes(u.filterReason) || (u.filterReason === "OPINION" && !sourceProfile.approvedAnalyst);
+    if(['SPORT','ENTERTAINMENT'].includes(u.filterReason))throw new ProcessingError('COVERAGE_CONTRACT_MISMATCH');
+    const filter=u.relevance === "IRRELEVANT" || ["UNRELATED","ADVERTISING","SATIRE","RUMOUR","INCITEMENT"].includes(u.filterReason) || (u.filterReason === "OPINION" && !sourceProfile.approvedAnalyst);
     signal.throwIfAborted();
     return await client.$transaction(async tx=>{
       // One project, one serial event decision boundary. Read candidates AFTER taking the lock.
@@ -92,7 +118,7 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
       }
       const now=new Date();
       const rules=await tx.editorialRuleSet.upsert({where:{version:ruleSet.version},update:{},create:{version:ruleSet.version,rules:json(ruleSet),provenance:json(ruleSet.provenance)}});
-      const base={originalLanguage:u.language,relevance:u.relevance,relevanceResult:json({topic:u.topic,priority:u.priority,sourceProfile,rationale:u.rationale,ruleSetVersion:ruleSet.version}),processingStartedAt:post.processingStartedAt??current.lockedAt,processingEndedAt:now,error:null,nextRetryAt:null};
+      const base={originalLanguage:u.language,relevance:u.relevance,relevanceResult:json({scope,topic:u.topic,priority:u.priority,sourceProfile,rationale:u.rationale,ruleSetVersion:ruleSet.version}),processingStartedAt:post.processingStartedAt??current.lockedAt,processingEndedAt:now,error:null,nextRetryAt:null};
       if (filter) {
         await tx.sourcePost.update({where:{id:post.id},data:{...base,status:"FILTERED",rejectionReason:u.filterReason,processingResult:json({editorialEligibility:'FILTERED',deliveryDecision:'HOLD',ruleSetVersion:ruleSet.version,filterReason:u.filterReason,review:initialReview(u,sourceProfile,post.originalContent),provider:provider.id})}});
         await audit(tx,post.id,"FILTER_AND_MATCH","استبعاد من مسار النشر",{reason:u.filterReason,rule:"P2.2"});
@@ -167,15 +193,16 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
     },{timeout:provider.live?190000:45000,maxWait:10000});
   } catch (error) {
     const code=error instanceof ProcessingError?error.code:signal.aborted?"WORKER_INTERRUPTED":"PROCESSING_FAILED";
-    const retryable=!(error instanceof ProcessingError) || error.retryable;
+    const policy=failurePolicy(code,job.attemptCount,error instanceof ProcessingError?error.retryAfterMs:0);
+    const retryable=policy.retryable || !(error instanceof ProcessingError) || error.retryable;
     await client.$transaction(async tx=>{
       const terminal=!retryable || job.attemptCount>=job.maxAttempts;
-      const next=new Date(Date.now()+retryDelay(job.attemptCount));
+      const next=new Date(Date.now()+Math.max(retryDelay(job.attemptCount),policy.delayMs));
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code}});
       if (changed.count) {
         const decision=editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
-        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({...decision,ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
-        await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({...decision,recovery:{state:terminal?(retryable?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
+        await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(retryable?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
       }
     });
     return {postId:post.id,error:code};
@@ -183,7 +210,18 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
 }
 export async function pollSources(client: PrismaClient, monitors: Partial<Record<"TELEGRAM"|"X",Monitor>>, signal: AbortSignal, options: PollSourcesOptions = {}) {
   const report: {sourceId:string;posts:number;error:string|null}[] = [];
-  const sources=await client.source.findMany({where:{enabled:true,deletedAt:null},orderBy:[{lastPollAt:'asc'},{id:'asc'}]});
+  const exhausted=new Map<string,number>();
+  const now=options.now??Date.now;
+  const record=(sourceId:string,posts:number,error:string|null)=>{
+    const row=report.find(r=>r.sourceId===sourceId);
+    if(row){row.posts+=posts;row.error=error;}else report.push({sourceId,posts,error});
+  };
+  // Round-robin durable pages: no total/per-minute message cap, no provider
+  // admission dependency. Refresh enabled sources and persisted cursors each
+  // round so a hot source cannot monopolize the other enabled channels.
+  while(!signal.aborted){
+  const sources=(await client.source.findMany({where:{enabled:true,deletedAt:null},orderBy:[{lastPollAt:'asc'},{id:'asc'}]})).filter(s=>(!exhausted.has(s.id)||now()-exhausted.get(s.id)!>=30000)&&monitors[s.platform]);
+  if(!sources.length)break;
   for (const source of sources) {
     if (signal.aborted) break;
     const adapter=monitors[source.platform];
@@ -210,7 +248,11 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       signal.throwIfAborted();options.requireActive?.();
       await client.source.update({where:{id:source.id},data:{cursor:batch.cursor == null?Prisma.DbNull:json(batch.cursor),lastPollAt:new Date(),lastError:null}});
       phase='COMPLETE';progress(null,batch.cursor);
-      report.push({sourceId:source.id,posts,error:null});
+      record(source.id,posts,null);
+      // A perpetually busy source must not prevent periodic rechecks of a
+      // previously empty source. This is idle polling cadence, never a cap on
+      // how many messages can be collected from an active source.
+      if(!batch.hasMore)exhausted.set(source.id,now());
     } catch (error) {
       if (signal.aborted) throw error;
       const authoredCode=error instanceof ProcessingError ? error.code : null;
@@ -222,8 +264,9 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       options.requireActive?.();
       await client.source.update({where:{id:source.id},data:{lastPollAt:new Date(),lastError:code}});
       phase='ERROR';progress(code);
-      report.push({sourceId:source.id,posts,error:code});
+      record(source.id,posts,code);exhausted.set(source.id,now());
     }
+  }
   }
   return report;
 }

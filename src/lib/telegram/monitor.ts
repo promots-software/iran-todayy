@@ -5,7 +5,9 @@ import { assertShadowMode } from "../processing/shadow";
 
 const cursorSchema = z.object({ kind: z.literal("telegram-shadow-v1"), channelId: z.string().regex(/^\d+$/), lastId: z.number().int().nonnegative() }).strict();
 export type TelegramCursor = z.infer<typeof cursorSchema>;
-export type ReadMessage = { id: number; text: string; date: number; hasMedia?:boolean; hasPhoto?:boolean };
+export type ReadMessage = { id: number; text: string; date: number; hasMedia?:boolean; hasPhoto?:boolean; service?:boolean };
+/** RPC page size, not a stories-per-minute or collection limit. */
+export const telegramPageSize=50;
 export interface ChannelReader {
   /** The signal is part of the reader contract so a timed-out RPC cannot
    * leave the poll promise pending while the worker is trying to reconnect. */
@@ -49,9 +51,9 @@ export class TelegramReader implements ChannelReader {
     return entity.id.toString();
   }
   async messages(handle: string, after: number | null, signal = new AbortController().signal) {
-    const result = await abortable(() => this.client.getMessages(handle, after === null
-      ? { limit: 1 } : { limit: 50, minId: after, reverse: true }), signal);
-    return result.map(m => ({ id: m.id, text: m.message ?? "", date: m.date, hasMedia:!!m.media, hasPhoto:m.media instanceof Api.MessageMediaPhoto }));
+    const result = await abortable(() => this.client.getMessages(handle,
+      { limit: telegramPageSize, minId: after ?? 0, reverse: true }), signal);
+    return result.map(m => ({ id: m.id, text: m.message ?? "", date: m.date, hasMedia:!!m.media, hasPhoto:m.media instanceof Api.MessageMediaPhoto, service:m instanceof Api.MessageService }));
   }
 }
 
@@ -71,7 +73,9 @@ export class TelegramMonitor implements Monitor {
     try {
       const channelId = await this.reader.channel(input.handle, signal);
       if (previous && previous.channelId !== channelId) throw new ProcessingError("TELEGRAM_CHANNEL_CHANGED");
-      const messages = await this.reader.messages(input.handle, previous?.lastId ?? null, signal);
+      // With no safe checkpoint, start at the oldest available history. Never
+      // manufacture a latest-message boundary that discards unseen messages.
+      const messages = await this.reader.messages(input.handle, previous?.lastId ?? 0, signal);
       signal.throwIfAborted();
       const posts: Incoming[] = [];
       let lastId = previous?.lastId ?? 0;
@@ -79,13 +83,15 @@ export class TelegramMonitor implements Monitor {
         if (!Number.isSafeInteger(message.id) || message.id <= 0) throw new ProcessingError("TELEGRAM_MESSAGE_INVALID");
         if (previous && message.id <= previous.lastId) continue;
         lastId = Math.max(lastId, message.id);
-        // Initial poll establishes the live boundary. No historical backfill is performed.
-        if (!previous || !message.text.trim()) continue;
         posts.push({ externalId: String(message.id), url: `https://t.me/${input.handle}/${message.id}`,
           content: message.text, publishedAt: new Date(message.date * 1000),
-          metadata: { transport: this.id, channelId, shadowMode: true, hasMedia:message.hasMedia===true, hasPhoto:message.hasPhoto===true } });
+          metadata: { transport: this.id, channelId, shadowMode: true, hasMedia:message.hasMedia===true, hasPhoto:message.hasPhoto===true,
+            messageKind:message.service?'SERVICE':message.text.trim()?'TEXT':message.hasMedia?'MEDIA_ONLY':'EMPTY' } });
       }
-      return { posts, cursor: { kind: "telegram-shadow-v1", channelId, lastId } satisfies TelegramCursor };
+      if(messages.length&&lastId<=(previous?.lastId??0))throw new ProcessingError('TELEGRAM_CURSOR_STALLED',true);
+      // Even a short page may be followed by more available IDs. Probe again
+      // only AFTER this page's posts/jobs and checkpoint have been persisted.
+      return { posts, hasMore:messages.length>0, cursor: { kind: "telegram-shadow-v1", channelId, lastId } satisfies TelegramCursor };
     } catch (error) {
       const seconds = typeof error === "object" && error !== null && "seconds" in error ? Number(error.seconds) : 0;
       if (Number.isFinite(seconds) && seconds > 0) {

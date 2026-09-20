@@ -10,6 +10,7 @@ import {ProcessingError} from '../lib/processing/contracts';
 import {assertApprovalMode} from '../lib/processing/shadow';
 import {GeminiLanguageProvider} from '../lib/processing/gemini';
 import {checkpointProvider,databaseCheckpoints} from './checkpoints';
+import {guardedTransport,providerAdmissionDelay} from './provider-guard';
 import {acquireLease,renewLease,releaseLease,workerId,heartbeatMs,workerConfig,assertWorkerSafety,safeWorkerError,backoff,pause,healthStatus,probeAuthorization,TelegramStartupError} from './runtime';
 
 const stop=new AbortController();
@@ -137,22 +138,24 @@ async function main() {
             try {
               requireLease();await safety();
               if(!poller!.ready){await pause(5000,signal);continue;}
+              const admissionDelay=await providerAdmissionDelay(db);
+              if(admissionDelay){await pause(Math.min(60000,admissionDelay),signal);continue;}
               const job=await claimJob(db,runId,new Date(),true);
               if(!job){await pause(5000,signal);continue;}
               processingSince=Date.now();
-              const provider=checkpointProvider(new GeminiLanguageProvider(config.geminiKey,async(url,init)=>{
+              await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'One job per minute; request and cost reservations additionally enforced'}});
+              const provider=checkpointProvider(new GeminiLanguageProvider(config.geminiKey,guardedTransport(db,job.sourcePostId,async(url,init)=>{
                 requireLease();await safety();
                 return fetch(url,init);
-              },async usage=>{
+              }),async usage=>{
                 log('AI_STAGE_USAGE',{postId:job.sourcePostId,...usage});
                 await db.auditLog.create({data:{action:'AI_STAGE_USAGE',actor:workerId,entityType:'SourcePost',entityId:job.sourcePostId,message:'Provider token/cost accounting',metadata:json(usage)}});
               }),databaseCheckpoints(db,job.sourcePostId));
               const outcome=await processJob(db,job,provider,AbortSignal.any([signal,AbortSignal.timeout(180000)]));
               processingSince=0;attempts=0;
               log('JOB_FINISHED',outcome);
-              // A failed job retains its strict error/review state. Avoid rapidly
-              // spending across the backlog during provider/configuration failures.
-              if('error' in outcome)await pause(300000,signal);
+              // Next admission is governed by durable throughput, request/cost
+              // limits and provider cooldown, not a blanket story-error penalty.
             } catch(error) {
               processingSince=0;
               if(signal.aborted)break;

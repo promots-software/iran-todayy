@@ -2,6 +2,7 @@ import type { ruleSet } from "./rules";
 import { z } from "zod";
 import type { Stage } from "./openai";
 import { structuredSchema } from "./openai";
+import {coverageInstructions} from './editorial-scope';
 
 /** Strict structure on the wire; all value/format constraints remain enforced by local Zod. */
 export function groqSchema(stage: Stage, contract?: z.ZodType) {
@@ -33,7 +34,7 @@ export function groqSchema(stage: Stage, contract?: z.ZodType) {
 /** Stage-specific context, not new policy. Rewriting still receives every editorial rule. */
 export function groqRuleContext(stage: Stage, rules: typeof ruleSet) {
   if (stage === "compare") return {version:rules.version,duplicateWindowHours:rules.duplicateWindowHours};
-  if (stage === "understand") return {version:rules.version,policy:rules.policy.filter(r=>["FILTER","PRIORITY","SOURCES","TITLES","CREDIBILITY"].includes(r.id)),names:rules.names,reviewReasons:rules.reviewReasons,ambiguities:rules.ambiguities};
+  if (stage === "understand") return {version:rules.version,coverageVersion:'six-geographies-v1',policy:rules.policy.filter(r=>["FILTER","PRIORITY","SOURCES","TITLES","CREDIBILITY"].includes(r.id)).map(r=>r.id==='FILTER'?{...r,reference:'User coverage override six-geographies-v1; original safety exclusions retained',instruction:coverageInstructions+' Exclude advertising, satire, unidentifiable rumours, personal opinion without an approved analyst, and incitement without independent news value. Approved analysis is context, not breaking news.'}:r),names:rules.names,reviewReasons:rules.reviewReasons,ambiguities:rules.ambiguities};
   return {version:rules.version,pipelineOrder:rules.pipelineOrder,policy:rules.policy.map(({id,instruction})=>({id,instruction})),
     // instruction repeats from/to; category/reference are provenance, not operative requirements.
     terminology:rules.terminology.map(({id,mode,from,to,condition})=>({id,mode,from,to,condition})),names:rules.names,ambiguities:rules.ambiguities,externalPublishingEnabled:false};

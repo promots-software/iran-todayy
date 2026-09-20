@@ -12,7 +12,9 @@ export type SourceProfile = z.infer<typeof sourceProfileSchema>;
 export const unknownProfile: SourceProfile = { verified: false, flagged: false, classification: "UNKNOWN", authority: "UNKNOWN", approvedAnalyst: false, evidence: "لم يقدم تصنيف موثق للمصدر" };
 export const incomingSchema = z.object({
   externalId: z.string().min(1).max(300), url: z.url().refine(v => new URL(v).protocol === "https:"),
-  content: text, publishedAt: z.coerce.date(), metadata: z.record(z.string(), z.json()).default({}),
+  // Telegram can expose media/service messages without text. Ingest validates
+  // their transport metadata locally; factual evidence still requires text.
+  content: z.string().max(20000), publishedAt: z.coerce.date(), metadata: z.record(z.string(), z.json()).default({}),
 }).strict();
 export type Incoming = z.infer<typeof incomingSchema>;
 export const evidenceSchema = z.object({ excerpt: text, start: z.number().int().nonnegative(), end: z.number().int().positive(), sourcePostId: z.string().optional() }).strict();
@@ -65,10 +67,10 @@ export interface LanguageProvider {
 export interface Monitor {
   readonly id: string;
   readonly live: boolean;
-  poll(input: { handle: string; cursor: unknown }, signal: AbortSignal): Promise<{ posts: Incoming[]; cursor: unknown; retryAfterMs?: number }>;
+  poll(input: { handle: string; cursor: unknown }, signal: AbortSignal): Promise<{ posts: Incoming[]; cursor: unknown; retryAfterMs?: number; hasMore?: boolean }>;
 }
 export class ProcessingError extends Error {
-  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}) { super(code); }
+  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}, public readonly retryAfterMs=0) { super(code); }
 }
 export function checkEvidence(content: string, evidence: z.infer<typeof evidenceSchema>) {
   if (content.slice(evidence.start, evidence.end) !== evidence.excerpt) throw new ProcessingError("INVALID_EVIDENCE");

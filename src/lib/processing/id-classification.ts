@@ -26,7 +26,7 @@ export function idClassificationSchema(x:GroundedExtraction){
  return z.object({
   anchorIds:array(refs.requiredAnchorIds),
   factLabels:z.array(factLabels.length>1?z.union(factLabels):factLabels[0]??z.object({id:z.string(),kind:z.literal('FACT'),material:z.boolean()}).strict()).length(x.statements.length),
-  filterReason:understandingSchema.shape.filterReason,
+  filterReason:z.enum(['NONE','UNRELATED','ADVERTISING','SATIRE','RUMOUR','OPINION','INCITEMENT']),
   topic:z.enum(supportedClassificationTopics(understandingSchema.shape.topic.options,refs.entries.map(e=>e.evidence.excerpt))),
   topicEvidenceId:ids.length?z.enum(ids).nullable():z.null(),
   priority:understandingSchema.shape.priority,
