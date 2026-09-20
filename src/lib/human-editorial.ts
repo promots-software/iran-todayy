@@ -47,9 +47,10 @@ export async function saveHumanDraft(db:PrismaClient,input:EditorialTarget & {re
   return draft;
  });
 }
-export async function approveHumanDraft(db:PrismaClient,input:{id:string;digest:string;confirmed:boolean;note:string},actor:string,env:Record<string,string|undefined>=process.env,target:'TELEGRAM'|'WEB'='TELEGRAM'){
+export async function approveHumanDraft(db:PrismaClient,input:{id:string;digest:string;confirmed:boolean;note?:string},actor:string,env:Record<string,string|undefined>=process.env,target:'TELEGRAM'|'WEB'='TELEGRAM'){
  if(!actor.trim())throw new ProcessingError('AUTHENTICATION_REQUIRED');
- if(!input.confirmed||input.note.trim().length<20||input.note.length>5000)throw new ProcessingError('HUMAN_RESPONSIBILITY_REQUIRED');
+ if(!input.confirmed)throw new ProcessingError('HUMAN_RESPONSIBILITY_REQUIRED');
+ const note=z.string().max(5000).parse(input.note??'');
  const chatId=target==='WEB'?'WEB':readPublisherEnv(env).chatId;
  return db.$transaction(async tx=>{
   await lockEditorialPublication(tx);assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
@@ -63,8 +64,8 @@ export async function approveHumanDraft(db:PrismaClient,input:{id:string;digest:
   const hasMedia='metadata' in snapshot?sourceHasMedia(snapshot.metadata):snapshot.evidence.some(e=>sourceHasMedia(e.sourcePost.metadata));
   if(hasMedia&&!d.mediaDecisionAt)throw new ProcessingError('SOURCE_MEDIA_DECISION_REQUIRED');
   const p=await tx.publication.create({data:{humanDraftId:d.id,idempotencyKey:humanPublicationDigest(d,chatId),destination:chatId,publicationImageId:d.publicationImageId,contentSnapshot:humanText(d)}});
-  await tx.humanEditorialDraft.update({where:{id:d.id},data:{status:'APPROVED',approvedBy:actor,approvedAt:new Date(),approvalNote:input.note}});
-  await tx.auditLog.create({data:{actor,action:'HUMAN_EDIT_APPROVED',entityType:'Publication',entityId:p.id,message:'Editor explicitly approves human-authored revision, not failed AI output',metadata:json({draftId:d.id,revision:d.revision,note:input.note,digest:input.digest,originalSnapshot:d.originalSnapshot})}});
+  await tx.humanEditorialDraft.update({where:{id:d.id},data:{status:'APPROVED',approvedBy:actor,approvedAt:new Date(),approvalNote:note}});
+  await tx.auditLog.create({data:{actor,action:'HUMAN_EDIT_APPROVED',entityType:'Publication',entityId:p.id,message:'Editor explicitly approves human-authored revision, not failed AI output',metadata:json({draftId:d.id,revision:d.revision,note,digest:input.digest,originalSnapshot:d.originalSnapshot})}});
   return p;
  });
 }

@@ -111,7 +111,7 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   if(p.status!=='PENDING')return null; // SENT / UNKNOWN / FAILED / SENDING are never retried implicitly.
   if(p.humanDraft){
    const d=p.humanDraft;
-   if(d.status!=='APPROVED'||!d.approvedBy||!d.approvedAt||!d.approvalNote||p.destination!==config.chatId||!matchesHumanPublication(d,p)||p.contentSnapshot!==humanText(d))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
+   if(d.status!=='APPROVED'||!d.approvedBy||!d.approvedAt||p.destination!==config.chatId||!matchesHumanPublication(d,p)||p.contentSnapshot!==humanText(d))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
   }else if(!p.newsItem||p.destination!==config.chatId||p.newsItem.status!=='APPROVED'||!['PASSED','NEEDS_REVIEW'].includes(p.newsItem.validationStatus)||p.newsItem.error||!p.newsItem.approvedAt||!p.newsItem.approvedBy||p.idempotencyKey!==approvalDigest(p.newsItem)||p.contentSnapshot!==publicationText(p.newsItem))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
   const claimed=await tx.publication.updateMany({where:{id,status:'PENDING',attemptCount:0},data:{status:'SENDING',attemptCount:1,claimedAt:new Date(),nextRetryAt:null}});
   if(!claimed.count)return null;
