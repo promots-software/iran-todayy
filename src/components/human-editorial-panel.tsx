@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import {db} from '@/lib/db';
 import {humanDigest} from '@/lib/human-editorial-contract';
+import {renderPublicationText} from '@/lib/publication-text';
 import {assertManualSendEnabled,readPublisherEnv} from '@/lib/telegram/publisher';
 import {HumanEditor} from './human-editor';
 import {PublicationSend} from './publication-send';
@@ -14,11 +15,13 @@ export async function HumanEditorialPanel({kind,id,initialTitle='',initialBody='
  const name=(actor:string|null|undefined)=>people.find(p=>`user:${p.id}`===actor)?.displayName??actor??'لم يعتمد';
  const active=draft?.publications.find(p=>p.status!=='CANCELLED');
  const locked=!!active&&(active.status!=='PENDING'||active.attemptCount>0);
+ const stalePreview=!!active&&!!draft&&active.contentSnapshot!==renderPublicationText(draft.title,draft.body);
  let enabled=false;try{assertManualSendEnabled(process.env);readPublisherEnv();enabled=true;}catch{}
  return <>
  <HumanEditor key={`${draft?.id??id}:${draft?.revision??0}:${draft?.status??''}`} kind={kind} id={id} revision={draft?.revision??0} title={draft?.title??initialTitle} body={draft?.body??initialBody} draftId={draft?.id} digest={draft?humanDigest(draft):undefined} status={draft?.status} publicationImageId={draft?.publicationImageId??null} locked={locked}/>
  {active?.publicationImageId&&<Image unoptimized width={800} height={450} className="media-preview" src={`/media/${active.publicationImageId}`} alt="صورة النشر المجمدة"/>}
- {active?.status==='PENDING'&&draft?.status==='APPROVED'&&<PublicationSend id={active.id} digest={active.idempotencyKey} destination={active.destination} content={active.contentSnapshot} enabled={active.destination==='WEB'||enabled}/>}
+ {active?.status==='PENDING'&&stalePreview&&<p role="alert">المعاينة المعتمدة تحتاج إلى تصحيح. احفظ النص دون تكرار ثم اعتمده مجدداً؛ تبقى النسخة السابقة محفوظة في السجل.</p>}
+ {active?.status==='PENDING'&&draft?.status==='APPROVED'&&<PublicationSend id={active.id} digest={active.idempotencyKey} destination={active.destination} content={active.contentSnapshot} enabled={!stalePreview&&(active.destination==='WEB'||enabled)}/>}
  {draft&&<details className="panel"><summary>سجل المراجعة</summary><p>المحرر: {name(draft.editedBy)} · الاعتماد: {name(draft.approvedBy)}</p><p>{draft.approvalNote}</p>
  {draft.publications.map(p=><article key={p.id}><Badge value={p.status}/><p className="original">{p.contentSnapshot}</p><p>الوجهة: <bdi>{p.destination}</bdi> · رسالة Telegram: {p.telegramMessageId??'—'}</p><p>{p.error}</p></article>)}
  <details><summary>تفاصيل المعالجة الأصلية</summary><JsonView value={draft.originalSnapshot}/></details></details>}

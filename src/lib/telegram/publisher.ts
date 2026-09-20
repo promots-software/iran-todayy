@@ -4,6 +4,7 @@ import {Prisma,type PrismaClient,type NewsItem} from '@prisma/client';
 import {z} from 'zod';
 import {assertApprovalMode} from '../processing/shadow';
 import {checkEvidence,eventSchema,ProcessingError} from '../processing/contracts';
+import {renderPublicationText} from '../publication-text';
 
 import {humanDigest,humanText,lockEditorialPublication} from '../human-editorial-contract';
 
@@ -16,7 +17,7 @@ export function approvalDigest(item:Pick<NewsItem,'id'|'title'|'arabicContent'|'
 }
 export function publicationText(item:Pick<NewsItem,'title'|'arabicContent'>){
  if(item.arabicContent===null||!item.title.trim())throw new ProcessingError('NO_PUBLICATION_CONTENT');
- const text=item.arabicContent.trim()?`${item.title}\n\n${item.arabicContent}`:item.title;
+ const text=renderPublicationText(item.title,item.arabicContent);
  if(text.length>4096)throw new ProcessingError('TELEGRAM_TEXT_TOO_LONG');
  return text;
 }

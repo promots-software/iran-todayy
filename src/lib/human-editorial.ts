@@ -5,6 +5,7 @@ import {ProcessingError} from './processing/contracts';
 import {assertApprovalMode} from './processing/shadow';
 import {humanDigest,humanText,lockEditorialPublication} from './human-editorial-contract';
 import {readPublisherEnv} from './telegram/publisher';
+import {publicationParts} from './publication-text';
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
 const targetSchema=z.object({kind:z.enum(['post','news']),id:z.string().min(1).max(100)});
 export type EditorialTarget=z.infer<typeof targetSchema>;
@@ -23,7 +24,8 @@ async function origin(tx:Prisma.TransactionClient,target:EditorialTarget){
 export async function saveHumanDraft(db:PrismaClient,input:EditorialTarget & {revision:number;title:string;body:string;publicationImageId?:string|null;mediaDecision?:boolean},actor:string){
  if(!actor.trim())throw new ProcessingError('AUTHENTICATION_REQUIRED');
  const target=targetSchema.parse(input);z.number().int().min(0).parse(input.revision);
- const text={title:z.string().min(1).max(4096).parse(input.title),body:z.string().min(1).max(4096).parse(input.body)};humanText(text);
+ const raw={title:z.string().min(1).max(4096).parse(input.title),body:z.string().max(4096).parse(input.body)};humanText(raw);
+ const text=publicationParts(raw.title,raw.body);
  return db.$transaction(async tx=>{
   await lockEditorialPublication(tx);assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
   const source=await origin(tx,target);

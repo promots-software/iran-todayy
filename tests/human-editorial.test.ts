@@ -13,9 +13,11 @@ test('human revisions preserve failed AI, revoke approval, freeze exact text and
   await db.appSettings.upsert({where:{id:1},create:{id:1,publishingMode:'REQUIRE_APPROVAL'},update:{publishingMode:'REQUIRE_APPROVAL'}});
   const source=await db.source.create({data:{platform:'TELEGRAM',handle:randomUUID(),name:'offline',url:'https://t.me/offline'}});sourceId=source.id;
   const post=await db.sourcePost.create({data:{sourceId,sourcePostId:'1',sourceUrl:'https://t.me/offline/1',originalContent:'قال المتحدث إن الاجتماع انتهى.',sourcePublishedAt:new Date(),status:'NEEDS_REVIEW',error:'UNSUPPORTED_OUTPUT',rejectionReason:'AMBIGUOUS_EVIDENCE_CONTEXT',processingResult:{aiOutput:'failed original AI text',errors:['UNSUPPORTED_OUTPUT']}}});postId=post.id;
-  const input={kind:'post' as const,id:post.id,revision:0,title:'انتهاء الاجتماع',body:'قال المتحدث إن الاجتماع انتهى.'};
+  const input={kind:'post' as const,id:post.id,revision:0,title:'قال المتحدث إن الاجتماع انتهى.',body:'قال المتحدث إن الاجتماع انتهى.'};
   await assert.rejects(saveHumanDraft(db,input,''),/AUTHENTICATION/);
   const [d,duplicate]=await Promise.all([saveHumanDraft(db,input,'editor'),saveHumanDraft(db,input,'editor')]);draftId=d.id;assert.equal(d.id,duplicate.id);assert.equal(d.revision,1);
+  assert.equal(d.body,'');assert.equal(humanText(d),input.title);
+  assert.equal((await saveHumanDraft(db,{...input,revision:1,body:''},'editor')).revision,1);
   const approve=(id:string,digest:string)=>approveHumanDraft(db,{id,digest,confirmed:true,note:'Human editor checked the original source, attribution and language.'},'editor',env);
   await assert.rejects(approveHumanDraft(db,{id:d.id,digest:humanDigest(d),confirmed:false,note:'No confirmation'},'editor',env),/HUMAN_RESPONSIBILITY/);
   const [p,p2]=await Promise.all([approve(d.id,humanDigest(d)),approve(d.id,humanDigest(d))]);pubIds.push(p.id);assert.equal(p.id,p2.id);
