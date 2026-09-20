@@ -64,7 +64,7 @@ export async function approvePublicationAction(_:ActionState,form:FormData):Prom
   const newsItemId=z.string().min(1).max(100).parse(form.get('id'));
   const digest=z.string().regex(/^[a-f0-9]{64}$/).parse(form.get('digest'));
   const keys=form.getAll('reviewKey').map(v=>z.string().max(10000).parse(v));
-  await approvePublication(db,{newsItemId,digest,resolutions:keys.map((key,i)=>({key,note:String(form.get(`resolution-${i}`)??'')}))},user,process.env,'WEB');
+  await approvePublication(db,{newsItemId,digest,resolutions:keys.map((key,i)=>({key,note:String(form.get(`resolution-${i}`)??'')}))},user,process.env,z.enum(['WEB','TELEGRAM']).parse(form.get('target')));
   revalidatePath(`/news/${newsItemId}`);
   return {ok:true,message:'حُفظ الاعتماد والمحتوى المحدد. لم تُرسل أي رسالة؛ الإرسال إجراء منفصل.'};
  }catch{return {ok:false,message:'تعذر الاعتماد. تحقق من اكتمال المراجعة، وثبات المسودة، وإعداد وجهة Telegram. أخطاء الأدلة تمنع الاعتماد.'};}
@@ -95,7 +95,7 @@ export async function saveHumanDraftAction(_:ActionState,form:FormData):Promise<
 export async function approveHumanDraftAction(_:ActionState,form:FormData):Promise<ActionState>{
  try{
   const user=await actor();
-  await approveHumanDraft(db,{id:z.string().min(1).max(100).parse(form.get('draftId')),digest:z.string().regex(/^[a-f0-9]{64}$/).parse(form.get('digest')),confirmed:form.get('confirmHuman')==='on',note:z.string().max(5000).parse(form.get('note'))},user,process.env,'WEB');
+  await approveHumanDraft(db,{id:z.string().min(1).max(100).parse(form.get('draftId')),digest:z.string().regex(/^[a-f0-9]{64}$/).parse(form.get('digest')),confirmed:form.get('confirmHuman')==='on',note:z.string().max(5000).parse(form.get('note'))},user,process.env,z.enum(['WEB','TELEGRAM']).parse(form.get('target')));
   revalidatePath('/', 'layout');return {ok:true,message:'اعتُمدت النسخة البشرية وجُمّدت المعاينة. لم تُرسل رسالة.'};
  }catch{return {ok:false,message:'تعذر الاعتماد. احفظ النص أولاً، وحدّث الصفحة، ووثّق المراجعة والمسؤولية البشرية صراحة.'};}
 }

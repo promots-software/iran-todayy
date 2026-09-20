@@ -15,3 +15,11 @@ export function humanText(d:Pick<HumanEditorialDraft,'title'|'body'>){
 export function humanDigest(d:Pick<HumanEditorialDraft,'id'|'title'|'body'|'revision'|'originalSnapshot'> & {publicationImageId?:string|null;mediaDecisionAt?:Date|null}){
  return createHash('sha256').update(JSON.stringify(['HUMAN_EDITED',d.id,d.revision,d.title,d.body,d.originalSnapshot,...(d.publicationImageId||d.mediaDecisionAt?[d.publicationImageId??null,d.mediaDecisionAt?.toISOString()??null]:[])])).digest('hex');
 }
+
+/** New frozen approvals bind content to a destination; legacy records stay immutable. */
+export function humanPublicationDigest(d:Parameters<typeof humanDigest>[0],destination:string){
+ return createHash('sha256').update(JSON.stringify(['HUMAN_DESTINATION_V1',humanDigest(d),destination])).digest('hex');
+}
+export function matchesHumanPublication(d:Parameters<typeof humanDigest>[0],p:{idempotencyKey:string;destination:string}){
+ return p.idempotencyKey===humanPublicationDigest(d,p.destination)||p.idempotencyKey===humanDigest(d);
+}

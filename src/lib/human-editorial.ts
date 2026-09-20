@@ -3,7 +3,7 @@ import {Prisma,type PrismaClient} from '@prisma/client';
 import {z} from 'zod';
 import {ProcessingError} from './processing/contracts';
 import {assertApprovalMode} from './processing/shadow';
-import {humanDigest,humanText,lockEditorialPublication} from './human-editorial-contract';
+import {humanDigest,humanText,lockEditorialPublication,humanPublicationDigest,matchesHumanPublication} from './human-editorial-contract';
 import {readPublisherEnv} from './telegram/publisher';
 import {publicationParts} from './publication-text';
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
@@ -57,14 +57,30 @@ export async function approveHumanDraft(db:PrismaClient,input:{id:string;digest:
   if(target==='TELEGRAM'&&d.publicationImageId)throw new ProcessingError('IMAGE_WEB_ONLY');
   if(humanDigest(d)!==input.digest)throw new ProcessingError('STALE_EDITORIAL_DRAFT');
   const existing=d.publications.find(p=>p.status!=='CANCELLED');
-  if(existing){if(existing.destination!==chatId)throw new ProcessingError('PUBLICATION_DESTINATION_LOCKED');if(existing.idempotencyKey===input.digest)return existing;throw new ProcessingError('PUBLICATION_LOCKED');}
+  if(existing){if(existing.destination!==chatId)throw new ProcessingError('PUBLICATION_DESTINATION_LOCKED');if(matchesHumanPublication(d,existing))return existing;throw new ProcessingError('PUBLICATION_LOCKED');}
   const original=await origin(tx,{kind:d.newsItemId?'news':'post',id:d.newsItemId??d.sourcePostId!});
   const snapshot=original.snapshot;
   const hasMedia='metadata' in snapshot?sourceHasMedia(snapshot.metadata):snapshot.evidence.some(e=>sourceHasMedia(e.sourcePost.metadata));
   if(hasMedia&&!d.mediaDecisionAt)throw new ProcessingError('SOURCE_MEDIA_DECISION_REQUIRED');
-  const p=await tx.publication.create({data:{humanDraftId:d.id,idempotencyKey:humanDigest(d),destination:chatId,publicationImageId:d.publicationImageId,contentSnapshot:humanText(d)}});
+  const p=await tx.publication.create({data:{humanDraftId:d.id,idempotencyKey:humanPublicationDigest(d,chatId),destination:chatId,publicationImageId:d.publicationImageId,contentSnapshot:humanText(d)}});
   await tx.humanEditorialDraft.update({where:{id:d.id},data:{status:'APPROVED',approvedBy:actor,approvedAt:new Date(),approvalNote:input.note}});
   await tx.auditLog.create({data:{actor,action:'HUMAN_EDIT_APPROVED',entityType:'Publication',entityId:p.id,message:'Editor explicitly approves human-authored revision, not failed AI output',metadata:json({draftId:d.id,revision:d.revision,note:input.note,digest:input.digest,originalSnapshot:d.originalSnapshot})}});
   return p;
+ });
+}
+
+/** Explicit withdrawal only: never changes frozen text, destination or revision. */
+export async function cancelUnsentHumanPublication(db:PrismaClient,input:{id:string;digest:string;confirmed:boolean},actor:string){
+ if(!actor.trim()||!input.confirmed)throw new ProcessingError('EXPLICIT_CONFIRMATION_REQUIRED');
+ return db.$transaction(async tx=>{
+  await lockEditorialPublication(tx);assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
+  const p=await tx.publication.findUniqueOrThrow({where:{id:input.id},include:{humanDraft:true,attempts:true}});
+  if(!p.humanDraft||p.idempotencyKey!==input.digest)throw new ProcessingError('PUBLICATION_PREVIEW_CHANGED');
+  if(p.status==='CANCELLED')return p;
+  if(p.humanDraft.status!=='APPROVED'||!matchesHumanPublication(p.humanDraft,p)||p.status!=='PENDING'||p.attemptCount!==0||p.attempts.length||p.sentAt||p.telegramMessageId)throw new ProcessingError('PUBLICATION_LOCKED');
+  const cancelled=await tx.publication.update({where:{id:p.id},data:{status:'CANCELLED',error:'HUMAN_DESTINATION_APPROVAL_WITHDRAWN'}});
+  await tx.humanEditorialDraft.update({where:{id:p.humanDraft.id},data:{status:'DRAFT',approvedAt:null,approvedBy:null,approvalNote:null}});
+  await tx.auditLog.create({data:{actor,action:'HUMAN_APPROVAL_INVALIDATED',entityType:'Publication',entityId:p.id,message:'Explicit withdrawal of unsent destination approval; frozen history preserved',metadata:json({destination:p.destination,digest:p.idempotencyKey,draftId:p.humanDraft.id,revision:p.humanDraft.revision,previousApprovedAt:p.humanDraft.approvedAt,previousApprovedBy:p.humanDraft.approvedBy,previousApprovalNote:p.humanDraft.approvalNote})}});
+  return cancelled;
  });
 }

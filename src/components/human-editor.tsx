@@ -1,4 +1,5 @@
 'use client';
+import {ApprovalDestination} from './approval-destination';
 import Image from 'next/image';
 import {useActionState,useId,useRef,useState} from 'react';
 import {saveHumanDraftAction,approveHumanDraftAction,uploadPublicationImage} from '@/app/actions';
@@ -28,6 +29,7 @@ export function HumanEditor({kind,id,revision,title,body,draftId,digest,status,l
  </form>
  {draftId&&status==='DRAFT'&&<dialog ref={dialog}><h2>اعتماد الخبر</h2><p className="original">{renderPublicationText(title,body)}</p><form action={approve} className="form-panel">
  <input type="hidden" name="draftId" value={draftId}/><input type="hidden" name="digest" value={digest}/>
+ <ApprovalDestination/>
  <label>ملاحظة المراجعة<textarea name="note" required minLength={20} maxLength={5000} placeholder="دوّن ما راجعته وأي تصحيح أجريته"/></label>
  <label><input name="confirmHuman" type="checkbox" required/> راجعت المصدر والنص وأتحمل مسؤولية اعتماد الخبر.</label>
  <div className="controls"><button disabled={approving}>تأكيد الاعتماد</button><button type="button" className="secondary" onClick={()=>dialog.current?.close()}>إلغاء</button></div>{approved.message&&<p role="status">{approved.message}</p>}
