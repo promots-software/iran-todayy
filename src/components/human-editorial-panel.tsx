@@ -1,3 +1,4 @@
+import {requireUser} from '@/lib/session';
 import {pageNumber,pageWindow,type PageParams} from '@/lib/dashboard-pagination';
 import {Pagination} from './pagination';
 import Image from 'next/image';
@@ -10,6 +11,7 @@ import {HumanEditor} from './human-editor';
 import {PublicationSend} from './publication-send';
 import {Badge,JsonView} from './ui';
 export async function HumanEditorialPanel({kind,id,initialTitle='',initialBody=''}:{kind:'post'|'news';id:string;initialTitle?:string;initialBody?:string}){
+ const user=await requireUser();
  const draft=await db.humanEditorialDraft.findFirst({where:kind==='post'?{sourcePostId:id}:{newsItemId:id},include:{publications:{orderBy:{createdAt:'desc'}}}});
  const people=await db.dashboardUser.findMany({where:{id:{in:[draft?.editedBy,draft?.approvedBy].filter((v):v is string=>!!v&&v.startsWith('user:')).map(v=>v.slice(5))}},select:{id:true,displayName:true}});
  const name=(actor:string|null|undefined)=>people.find(p=>`user:${p.id}`===actor)?.displayName??actor??'لم يعتمد';
@@ -24,7 +26,7 @@ export async function HumanEditorialPanel({kind,id,initialTitle='',initialBody='
  {active?.status==='PENDING'&&draft?.status==='APPROVED'&&<PublicationSend id={active.id} digest={active.idempotencyKey} destination={active.destination} content={active.contentSnapshot} enabled={!stalePreview&&(active.destination==='WEB'||enabled)}/>}
  {draft&&<details className="panel"><summary>سجل المراجعة</summary><p>المحرر: {name(draft.editedBy)} · الاعتماد: {name(draft.approvedBy)}</p><p>{draft.approvalNote}</p>
  {draft.publications.map(p=><article key={p.id}><Badge value={p.status}/><p className="original">{p.contentSnapshot}</p><p>الوجهة: <bdi>{p.destination}</bdi> · رسالة Telegram: {p.telegramMessageId??'—'}</p><p>{p.error}</p></article>)}
- <details><summary>تفاصيل المعالجة الأصلية</summary><JsonView value={draft.originalSnapshot}/></details></details>}
+ {user.role==='ADMIN'&&<details><summary>تفاصيل تقنية</summary><JsonView value={draft.originalSnapshot}/></details>}</details>}
  </>;
 }
 export async function HumanEditorialQueue({published=false,approved=false,params={}}:{published?:boolean;approved?:boolean;params?:PageParams}){

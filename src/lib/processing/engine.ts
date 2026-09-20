@@ -12,6 +12,7 @@ import {sourceLanguage,detectSourceLanguage} from './source-language';
 import {editorialDecision} from './editorial-eligibility';
 import {editorialScope} from './editorial-scope';
 import {failurePolicy} from './failure-policy';
+import {nextClaimSlot,oldestSlot} from '../../worker/newsroom-scheduler';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
 const leaseMs = 300000;
@@ -40,10 +41,16 @@ export async function ingest(client: PrismaClient, sourceId: string, raw: unknow
     return post;
   });
 }
-export async function claimJob(client: PrismaClient, workerId: string, now=new Date(), telegramOnly=false, excludePostIds:string[] = []) {
+export async function claimJob(client: PrismaClient, workerId: string, now=new Date(), telegramOnly=false, excludePostIds:string[] = [], newsroom=false) {
   // A fresh opaque claim token fences stale processes after restart or lease recovery.
   const token=`${workerId}:${randomUUID()}`;
   return client.$transaction(async tx=>{
+    let slot=0;
+    if(newsroom){
+      await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(20916013)`;
+      const previous=await tx.auditLog.findFirst({where:{action:'NEWSROOM_JOB_CLAIMED',entityType:'QueueScheduler',entityId:'newsroom'},orderBy:[{createdAt:'desc'},{id:'desc'}],select:{metadata:true}});
+      slot=nextClaimSlot(Number((previous?.metadata as {slot?:number}|null)?.slot??-1));
+    }
     const expired=await tx.processingJob.findMany({where:{stage,status:"RUNNING",lockedAt:{lt:new Date(now.getTime()-leaseMs)},...(telegramOnly?{sourcePost:{source:{platform:"TELEGRAM"}}}:{})}});
     for(const job of expired) {
       const exhausted=job.attemptCount>=job.maxAttempts;
@@ -52,8 +59,14 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
     }
     const scope = telegramOnly ? Prisma.sql`AND EXISTS (SELECT 1 FROM "SourcePost" p JOIN "Source" s ON s."id" = p."sourceId" WHERE p."id" = "ProcessingJob"."sourcePostId" AND p."status" IN ('INGESTED','FAILED') AND s."platform" = 'TELEGRAM' AND s."enabled" = true AND s."deletedAt" IS NULL)` : Prisma.empty;
     const exclusions = excludePostIds.length ? Prisma.sql`AND "sourcePostId" NOT IN (${Prisma.join(excludePostIds)})` : Prisma.empty;
-    const rows=await tx.$queryRaw<{id:string}[]>`SELECT "id" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND "availableAt" <= ${now} AND "attemptCount" < "maxAttempts" ${scope} ${exclusions} ORDER BY "availableAt", "id" FOR UPDATE SKIP LOCKED LIMIT 1`;
+    const ordering=newsroom&&!oldestSlot(slot)?Prisma.sql`"createdAt" DESC,"id"`:Prisma.sql`"availableAt","createdAt","id"`;
+    const rows=await tx.$queryRaw<{id:string}[]>`SELECT "id" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND "availableAt" <= ${now} AND "attemptCount" < "maxAttempts" ${scope} ${exclusions} ORDER BY ${ordering} FOR UPDATE SKIP LOCKED LIMIT 1`;
     if (!rows.length) return null;
+    if(newsroom){
+      // Transaction start time may precede an earlier holder of the lock.
+      const [clock]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() AS now`;
+      await tx.auditLog.create({data:{createdAt:clock.now,action:'NEWSROOM_JOB_CLAIMED',actor:workerId,entityType:'QueueScheduler',entityId:'newsroom',message:'Durable 3 fresh / 1 oldest-due allocation',metadata:{slot,jobId:rows[0].id}}});
+    }
     return tx.processingJob.update({where:{id:rows[0].id},data:{status:"RUNNING",lockedAt:now,lockedBy:token,attemptCount:{increment:1}},include:{sourcePost:{include:{source:true}}}});
   });
 }
@@ -195,10 +208,11 @@ export async function processJob(client: PrismaClient, job: ClaimedJob, provider
     const code=error instanceof ProcessingError?error.code:signal.aborted?"WORKER_INTERRUPTED":"PROCESSING_FAILED";
     const policy=failurePolicy(code,job.attemptCount,error instanceof ProcessingError?error.retryAfterMs:0);
     const retryable=policy.retryable || !(error instanceof ProcessingError) || error.retryable;
+    const budgetHold=['PROVIDER_BUDGET_EXHAUSTED','PROVIDER_COOLDOWN'].includes(code);
     await client.$transaction(async tx=>{
-      const terminal=!retryable || job.attemptCount>=job.maxAttempts;
+      const terminal=!retryable || (!budgetHold&&job.attemptCount>=job.maxAttempts);
       const next=new Date(Date.now()+Math.max(retryDelay(job.attemptCount),policy.delayMs));
-      const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code}});
+      const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code,...(budgetHold?{attemptCount:{decrement:1}}:{})}});
       if (changed.count) {
         const decision=editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
         await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({...decision,recovery:{state:terminal?(retryable?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});

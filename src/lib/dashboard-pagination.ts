@@ -9,7 +9,7 @@ export function pageHref(path:string,params:PageParams,key:string,page:number){c
 // BEFORE both count and LIMIT; delivery HOLD and publishing switches are absent.
 const ready=Prisma.sql`CASE WHEN n."validationResult"->>'editorialEligibility' IN ('READY_TO_PUBLISH','NEEDS_REVIEW','FILTERED','PROCESSING_ERROR') THEN n."validationResult"->>'editorialEligibility'='READY_TO_PUBLISH' ELSE n.error IS NULL AND n.status='PENDING_APPROVAL' AND n."validationResult"->'validated'='true'::jsonb END`;
 export async function newsPage(db:PrismaClient,mode:'readonly'|'review'|'approval',requested:number){
- const eligible=mode==='approval'?Prisma.sql`n.status IN ('PENDING_APPROVAL','APPROVED','NEEDS_REVIEW') AND n.error IS NULL AND n."validationStatus" IN ('PASSED','NEEDS_REVIEW') AND (COALESCE(${ready},false) OR n.status='APPROVED')`:mode==='review'?Prisma.sql`n.status='NEEDS_REVIEW' AND NOT EXISTS (SELECT 1 FROM "HumanEditorialDraft" d WHERE d."newsItemId"=n.id AND d.status<>'DRAFT') AND NOT COALESCE(${ready},false)`:Prisma.sql`true`;
+ const eligible=mode==='approval'?Prisma.sql`NOT EXISTS (SELECT 1 FROM "HumanEditorialDraft" d WHERE d."newsItemId"=n.id) AND n.status IN ('PENDING_APPROVAL','APPROVED','NEEDS_REVIEW') AND n.error IS NULL AND n."validationStatus" IN ('PASSED','NEEDS_REVIEW') AND (COALESCE(${ready},false) OR n.status='APPROVED')`:mode==='review'?Prisma.sql`n.status='NEEDS_REVIEW' AND NOT EXISTS (SELECT 1 FROM "HumanEditorialDraft" d WHERE d."newsItemId"=n.id) AND NOT COALESCE(${ready},false)`:Prisma.sql`true`;
  return db.$transaction(async tx=>{
   const [count]=await tx.$queryRaw<{total:number}[]>(Prisma.sql`SELECT count(*)::int AS total FROM "NewsItem" n WHERE ${eligible}`);
   const paging=pageWindow(requested,count.total);
@@ -18,5 +18,5 @@ export async function newsPage(db:PrismaClient,mode:'readonly'|'review'|'approva
   return {items,...paging};
  },{isolationLevel:'RepeatableRead'});
 }
-export const unresolvedWhere:Prisma.SourcePostWhereInput={status:{in:['NEEDS_REVIEW','FAILED']},evidence:{none:{}},OR:[{humanDraft:{is:null}},{humanDraft:{is:{status:'DRAFT'}}}]};
+export const unresolvedWhere:Prisma.SourcePostWhereInput={status:{in:['NEEDS_REVIEW','FAILED']},evidence:{none:{}},humanDraft:{is:null},jobs:{none:{status:{in:['PENDING','RETRY','RUNNING']}}},OR:[{processingResult:{equals:Prisma.DbNull}},{processingResult:{equals:Prisma.JsonNull}},{NOT:{processingResult:{path:['editorialEligibility'],equals:'PROCESSING_ERROR'}}}]};
 export async function unresolvedPage(db:PrismaClient,requested:number){return db.$transaction(async tx=>{const paging=pageWindow(requested,await tx.sourcePost.count({where:unresolvedWhere}));const items=await tx.sourcePost.findMany({where:unresolvedWhere,skip:paging.skip,take:paging.take,orderBy:[{ingestedAt:'desc'},{id:'desc'}],include:{source:true}});return {items,...paging};},{isolationLevel:'RepeatableRead'});}

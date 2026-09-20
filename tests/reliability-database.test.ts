@@ -35,6 +35,7 @@ test('offline database: bounded retry preserves source and audits; later success
 });
 test('durable native checkpoints survive new adapter, 429 opens circuit, ambiguous transport requires reconciliation',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const url=process.env.TEST_DATABASE_URL!;assert.equal(new URL(url).hostname,'127.0.0.1');const db=new PrismaClient({datasourceUrl:url});
+ const baseline=await db.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget'}});
  let calls=0;const init={method:'POST',body:JSON.stringify({offline:true})};const postId=randomUUID();
  const fetchMock:typeof fetch=async()=>{calls++;return Response.json({candidates:[],usageMetadata:{}});};
  await guardedTransport(db,postId,fetchMock)('https://offline.invalid',init);
@@ -42,6 +43,6 @@ test('durable native checkpoints survive new adapter, 429 opens circuit, ambiguo
  await assert.rejects(guardedTransport(db,randomUUID(),async()=>{calls++;return new Response('unavailable',{status:429,headers:{'retry-after':'120'}});})('https://offline.invalid',init),/GEMINI_HTTP_429/);
  assert.ok(await providerAdmissionDelay(db)>0);
  await assert.rejects(guardedTransport(db,randomUUID(),fetchMock)('https://offline.invalid',init),/PROVIDER_COOLDOWN/);assert.equal(calls,2);
- assert.equal(await db.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget'}}),2);
+ assert.equal(await db.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget'}}),baseline+2);
  await db.$disconnect();
 });

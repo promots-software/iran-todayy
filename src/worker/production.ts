@@ -1,3 +1,4 @@
+import {processingLanes} from './newsroom-scheduler';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
 import {PrismaClient} from '@prisma/client';
@@ -55,7 +56,8 @@ async function main() {
       let owned=false,poller:TelegramPoller|undefined;
       const cycle=new AbortController();
       const signal=AbortSignal.any([stop.signal,cycle.signal]);
-      let lastRenewed=0,processingSince=0,pollErrors=0;
+      let lastRenewed=0,pollErrors=0;
+      const processing=new Map<number,number>();
       let pollPhase='IDLE',activeSource:string|null=null,lastPollError:string|null=null,lastPollCompletedAt:string|null=null;
       try {
         await safety();
@@ -91,15 +93,15 @@ async function main() {
         const heartbeat=async()=>{
           while(!signal.aborted){
             requireLease();await safety();
-            if(processingSince && Date.now()-processingSince>210000)throw new ProcessingError('WORKER_JOB_DEADLINE');
+            if([...processing.values()].some(start=>Date.now()-start>210000))throw new ProcessingError('WORKER_JOB_DEADLINE');
             const telegramReady=poller!.ready;
-            await renewLease(db,runId,processingSince?'BUSY':telegramReady?'IDLE':'ERROR',{
+            await renewLease(db,runId,processing.size?'BUSY':telegramReady?'IDLE':'ERROR',{
               shadowMode:true,requireApproval:true,autoPublish:false,externalPublishingEnabled:false,
-              liveMonitoringEnabled:telegramReady,processingEnabled:true,pollErrors,provider:'gemini-3.1-flash-lite',
+              telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:true,pollErrors,provider:'gemini-3.1-flash-lite',
               pollPhase,activeSource,lastPollError,lastPollCompletedAt,
             });
             lastRenewed=lastDatabaseCheck=Date.now();
-            log('WORKER_HEARTBEAT',{telegramReady,processing:!!processingSince,pollErrors,pollPhase,activeSource,lastPollError,lastPollCompletedAt});
+            log('WORKER_HEARTBEAT',{telegramReady,processing:processing.size>0,processingCount:processing.size,pollErrors,pollPhase,activeSource,lastPollError,lastPollCompletedAt});
             await pause(heartbeatMs,signal);
           }
         };
@@ -132,18 +134,17 @@ async function main() {
             }
           }
         };
-        const processingLoop=async()=>{
+        const processingLoop=async(lane:number)=>{
           let attempts=0;
           while(!signal.aborted){
             try {
               requireLease();await safety();
-              if(!poller!.ready){await pause(5000,signal);continue;}
               const admissionDelay=await providerAdmissionDelay(db);
               if(admissionDelay){await pause(Math.min(60000,admissionDelay),signal);continue;}
-              const job=await claimJob(db,runId,new Date(),true);
+              const job=await claimJob(db,runId,new Date(),true,[],true);
               if(!job){await pause(5000,signal);continue;}
-              processingSince=Date.now();
-              await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'One job per minute; request and cost reservations additionally enforced'}});
+              processing.set(lane,Date.now());
+              await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'Bounded two-lane processing; durable fairness and per-request cost protection'}});
               const provider=checkpointProvider(new GeminiLanguageProvider(config.geminiKey,guardedTransport(db,job.sourcePostId,async(url,init)=>{
                 requireLease();await safety();
                 return fetch(url,init);
@@ -152,12 +153,12 @@ async function main() {
                 await db.auditLog.create({data:{action:'AI_STAGE_USAGE',actor:workerId,entityType:'SourcePost',entityId:job.sourcePostId,message:'Provider token/cost accounting',metadata:json(usage)}});
               }),databaseCheckpoints(db,job.sourcePostId));
               const outcome=await processJob(db,job,provider,AbortSignal.any([signal,AbortSignal.timeout(180000)]));
-              processingSince=0;attempts=0;
+              processing.delete(lane);attempts=0;
               log('JOB_FINISHED',outcome);
               // Next admission is governed by durable throughput, request/cost
               // limits and provider cooldown, not a blanket story-error penalty.
             } catch(error) {
-              processingSince=0;
+              processing.delete(lane);
               if(signal.aborted)break;
               const code=safeWorkerError(error);
               if(['SHADOW_MODE_REQUIRED','REQUIRE_APPROVAL_REQUIRED','PUBLISHING_MUST_BE_DISABLED','WORKER_LEASE_LOST'].includes(code))throw error;
@@ -166,7 +167,7 @@ async function main() {
           }
         };
         let firstFailure:unknown;
-        const tasks=[heartbeat(),ingestLoop(),processingLoop()].map(async task=>{try{await task;}catch(e){if(!cycle.signal.aborted)firstFailure=e;cycle.abort();throw e;}});
+        const tasks=[heartbeat(),ingestLoop(),...processingLanes(processingLoop)].map(async task=>{try{await task;}catch(e){if(!cycle.signal.aborted)firstFailure=e;cycle.abort();throw e;}});
         await Promise.allSettled(tasks);
         if(firstFailure)throw firstFailure;
       } catch(error) {

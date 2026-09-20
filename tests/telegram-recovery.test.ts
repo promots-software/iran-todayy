@@ -253,7 +253,7 @@ test('production runs ingestion and processing concurrently; admission limiter i
  const worker=readFileSync('src/worker/production.ts','utf8');
  const ingestLoop=worker.slice(worker.indexOf('const ingestLoop='),worker.indexOf('const processingLoop='));
  assert.ok(ingestLoop.includes('pollSources('));assert.ok(!/providerAdmissionDelay|guardedTransport|processJob|jobIntervalMs/.test(ingestLoop));
- assert.ok(worker.includes('[heartbeat(),ingestLoop(),processingLoop()]'));
+ assert.ok(worker.includes('[heartbeat(),ingestLoop(),...processingLanes(processingLoop)]'));
 });
 
 test('a continuously busy source cannot starve a caught-up source with later arrivals',async()=>{

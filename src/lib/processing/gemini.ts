@@ -45,6 +45,7 @@ export class GeminiLanguageProvider implements LanguageProvider{
   if(i.understanding.relevance!=='POLITICAL_NEWS'||i.understanding.priority==='P4')throw new ProcessingError('DRAFT_NOT_ACCEPTED');
   const atoms=buildAtoms(i.content,i.understanding);
   // Retain validated source order and every fact; selection adds no new wording.
-  return renderSelection({titleAtomId:atoms.atoms[0].id,bodyAtomIds:atoms.atoms.map(a=>a.id)},atoms);
+  const title=atoms.format==='STATEMENT'?atoms.atoms[0]:atoms.atoms.reduce((shortest,a)=>a.renderedText.length<shortest.renderedText.length?a:shortest);
+  return renderSelection({titleAtomId:title.id,bodyAtomIds:atoms.atoms.map(a=>a.id)},atoms);
  }
 }

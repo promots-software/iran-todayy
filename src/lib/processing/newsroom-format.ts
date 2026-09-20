@@ -5,7 +5,7 @@ export function chooseNewsroomFormat(u:Understanding,source:string):Draft['forma
  const facts=u.event.facts;
  if(/(?:أنباء|تقارير أولية|معلومات متداولة|بحسب تقارير)/u.test(facts.map(f=>f.arabic).join(' ')))return 'UNCERTAIN_REPORT';
  if(/(?:^|\n)\s*(?:فيديو|مشاهد من|بالفيديو|ویدئو|ویدیو|Video\b)/iu.test(source))return 'VISUAL';
- if(facts.length>1&&facts.every(f=>f.speaker&&f.speaker.key===facts[0].speaker?.key))return 'STATEMENT';
+ if((facts.length>1||facts[0]?.arabic.length>240)&&facts.every(f=>f.speaker&&f.speaker.key===facts[0].speaker?.key))return 'STATEMENT';
  if(facts.length===1&&/[«“"]/u.test(facts[0].arabic)&&facts[0].speaker)return 'QUOTE_LED';
  if(facts.length===1)return 'FLASH';
  if(facts.length>=3)return 'MULTI_POINT_REPORT';

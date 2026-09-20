@@ -4,6 +4,13 @@ export type Candidate = { id: string; revisionId: string; revision: number; publ
 export type MatchDecision = { classification: "NEW_EVENT" | "DUPLICATE" | "MATERIAL_UPDATE" | "UNCERTAIN_MATCH"; candidate?: Candidate; rationale: string; newFactIds: string[]; evidence: Record<string, unknown>; candidates: { id: string; revisionId: string; rationale: string; evidence: Record<string, unknown> }[] };
 const norm = (s: string) => s.normalize("NFKC").toLowerCase().trim();
 const equal = (a: { key: string } | null, b: { key: string } | null) => !!a && !!b && norm(a.key) === norm(b.key);
+/** Only identical validated semantic data, ignoring provenance locations/IDs.
+ * Different wording, identities, roles, dates, verification or numbers still
+ * requires the existing semantic provider and temporal/conflict checks. */
+export function sameValidatedEvent(a:EventData,b:EventData){
+ const semantic=(value:unknown):unknown=>Array.isArray(value)?value.map(semantic):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([k])=>!['evidence','id'].includes(k)).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,semantic(v)])):value;
+ return JSON.stringify(semantic(a))===JSON.stringify(semantic(b));
+}
 export async function matchEvent(incoming: EventData, publishedAt: Date, candidates: Candidate[], provider: LanguageProvider, signal: AbortSignal): Promise<MatchDecision> {
   const results: (MatchDecision & { candidate: Candidate })[] = [];
   // Only identical semantic input is reused. Each event still gets its own
@@ -23,7 +30,7 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     // Entities alone never establish sameness. Meaning is checked for every plausible candidate.
     if (!actors.length && !factsOverlap.length) continue;
     const comparisonInput={incoming,existing:old},comparisonKey=JSON.stringify(comparisonInput);
-    const raw = comparisons.has(comparisonKey)?comparisons.get(comparisonKey):await provider.compare(comparisonInput, signal);
+    const raw = sameValidatedEvent(incoming,old)?{relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'تطابق كامل للحقائق والمرتكزات المثبتة؛ تُفحص المدة والتعارض محلياً'}:comparisons.has(comparisonKey)?comparisons.get(comparisonKey):await provider.compare(comparisonInput, signal);
     comparisons.set(comparisonKey,raw);
     const parsed = comparisonSchema.safeParse(raw);
     if (!parsed.success) throw new ProcessingError("INVALID_COMPARISON_SCHEMA");

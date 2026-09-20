@@ -24,7 +24,7 @@ export async function checkpointCall<T>(store:CheckpointStore,key:string,call:()
 export function checkpointProvider(provider:LanguageProvider, store:CheckpointStore):LanguageProvider {
   async function stage<T>(name:string,input:unknown,signal:AbortSignal,call:()=>Promise<T>):Promise<T> {
     signal.throwIfAborted();
-    const key=createHash('sha256').update(JSON.stringify(['worker-checkpoint-v1',provider.id,name,input])).digest('hex');
+    const key=createHash('sha256').update(JSON.stringify([name==='draft'?'worker-local-draft-v2':'worker-checkpoint-v1',provider.id,name,input])).digest('hex');
     return checkpointCall(store,key,call);
   }
   return {
