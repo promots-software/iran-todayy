@@ -9,6 +9,7 @@ test('supported title and body retain valid fact provenance',()=>{
  assert.deepEqual(d.sentenceEvidence,[
   {text:'قال المسؤول إن الاجتماع انتهى.',factIds:['rewrite:visit']},
   {text:'قال المسؤول إن الاجتماع انتهى',factIds:['rewrite:visit']},
+  {text:'إيران الآن | قال المسؤول إن الاجتماع انتهى',factIds:['rewrite:visit']},
  ]);
  assert.ok(d.sentenceEvidence.some(s=>s.text===d.title));
 });

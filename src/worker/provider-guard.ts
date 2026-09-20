@@ -6,9 +6,10 @@ import {checkpointCall,databaseCheckpoints} from './checkpoints';
 import {json} from '../lib/processing/engine';
 import {capacityDiagnostic,capacityRetryMs,capacityState} from './provider-capacity';
 import {googleQuota,pacificDay,quotaDecision} from './provider-quota';
-// Keep the existing application hourly/cost ceilings; these are NOT Google's
-// quota. Provider RPD uses Pacific midnight; cost remains rolling 24 hours.
-export const limits={hourRequests:45,dayRequests:googleQuota.rpd,dayReservedUsd:1,requestBytes:600000,outputTokens:4096,jobIntervalMs:0} as const;
+import {checkpointAliases,type CheckpointRequestInit} from '../lib/processing/gemini-request';
+// Provider RPM/TPM/RPD supersede the old workload-derived 45/hour gate.
+// Cost remains $1 rolling 24 hours; provider RPD uses Pacific midnight.
+export const limits={hourRequests:null,dayRequests:googleQuota.rpd,dayReservedUsd:1,requestBytes:600000,outputTokens:4096,jobIntervalMs:0} as const;
 export const geminiResource='generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 
 type BudgetRow={id?:string;action:string;metadata:unknown;createdAt:Date};
@@ -38,15 +39,15 @@ export function observedCost(envelope:unknown){
 type Reservation={at:number;usd:number};
 export function budgetRetryDelay(reservations:Reservation[],bytes:number,now:number,outputTokens:number=limits.outputTokens){
  if(budgetDecision(reservations,bytes,now,outputTokens).allowed)return 0;
- const boundaries=[...new Set(reservations.flatMap(r=>[r.at+3600000,r.at+86400000]))].filter(t=>t>now).sort((a,b)=>a-b);
+ const boundaries=[...new Set(reservations.map(r=>r.at+86400000))].filter(t=>t>now).sort((a,b)=>a-b);
  const available=boundaries.find(t=>budgetDecision(reservations,bytes,t,outputTokens).allowed);
  return available===undefined?86400000:Math.max(1000,available-now);
 }
 export function budgetDecision(reservations:Reservation[],bytes:number,now:number,outputTokens:number=limits.outputTokens){
  const cost=(bytes*0.25+outputTokens*1.5)/1e6;
- const day=reservations.filter(r=>r.at>now-86400000),hour=day.filter(r=>r.at>now-3600000);
+ const day=reservations.filter(r=>r.at>now-86400000);
  const invalid=!Number.isSafeInteger(bytes)||bytes<0||!Number.isSafeInteger(outputTokens)||outputTokens<0||outputTokens>limits.outputTokens||reservations.some(r=>!Number.isFinite(r.usd)||r.usd<0||!Number.isFinite(r.at))||bytes>limits.requestBytes;
- const reason=invalid?'PROVIDER_INPUT_LIMIT':hour.length>=limits.hourRequests?'PROVIDER_HOURLY_WAIT':day.reduce((s,r)=>s+r.usd,0)+cost>limits.dayReservedUsd?'PROVIDER_COST_WAIT':null;
+ const reason=invalid?'PROVIDER_INPUT_LIMIT':day.reduce((s,r)=>s+r.usd,0)+cost>limits.dayReservedUsd?'PROVIDER_COST_WAIT':null;
  return {allowed:reason===null,reservedUsd:cost,reason};
 }
 async function readCapacityRows(db:Pick<PrismaClient,'auditLog'>,now:number){
@@ -68,11 +69,22 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
  const store=databaseCheckpoints(db,postId);
  return async(url,init)=>{
   const body=String(init?.body??'');
+  const {[checkpointAliases]:aliases=[],...networkInit}=(init as CheckpointRequestInit|undefined)??{};
   const endpoint=new URL(String(url));
   const resource=`${endpoint.hostname}${endpoint.pathname}`;
   let networkAttempt=false;
   const key=createHash('sha256').update(`native-gemini-request-v1:${String(url)}:${body}`).digest('hex');
   const envelope=await checkpointCall(store,key,async()=>{
+   // Exact former serialization of the SAME contract/input. Replay still flows
+   // through all existing validators. A pending legacy request is ambiguous,
+   // never an excuse to issue the shortened request as a new paid call.
+   for(const priorBody of aliases){
+    const priorKey=createHash('sha256').update(`native-gemini-request-v1:${String(url)}:${priorBody}`).digest('hex');
+    if(priorKey===key)continue;
+    const prior=await store.load(priorKey);
+    if(prior&&'output' in prior)return prior.output;
+    if(prior)throw new ProcessingError('PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW');
+   }
    let reservationId:string|undefined,requestStartedAt=0;
    const bytes=Buffer.byteLength(body,'utf8');
    let outputTokens:number;
@@ -97,7 +109,7 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
    });
    try {
     networkAttempt=true;
-    const response=await transport(url,init);
+    const response=await transport(url,networkInit);
     if(!response.ok){
      // Bounded error body; never persist raw text, request headers or secrets.
      const diagnostic=capacityDiagnostic(response.status,await readErrorBody(response),retryAfter(response.headers));

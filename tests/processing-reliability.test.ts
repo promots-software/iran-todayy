@@ -54,9 +54,9 @@ test('provider signal respected, strict deterministic failures do not open provi
  }
  const worker=readFileSync('src/worker/production.ts','utf8');assert.ok(!worker.includes('pause(300000'));assert.ok(!worker.includes('providerAdmissionDelay(db)'));assert.ok(worker.includes('guardedTransport(db'));
 });
-test('hour/day/cost limits fail closed, never reset on process restart',()=>{
+test('cost/input limits fail closed without the superseded hourly gate',()=>{
  const now=1e9;assert.equal(budgetDecision([],1000,now).allowed,true);
- const hour=Array.from({length:limits.hourRequests},()=>({at:now,usd:0.001}));assert.equal(budgetDecision(hour,1000,now).allowed,false);
+ const hour=Array.from({length:60},()=>({at:now,usd:0.001}));assert.equal(budgetDecision(hour,1000,now).allowed,true);
  assert.equal(budgetDecision([{at:now,usd:1}],1000,now).allowed,false);
  assert.equal(budgetDecision([],limits.requestBytes+1,now).allowed,false);
  assert.equal(budgetDecision([{at:now-86400001,usd:1}],1000,now).allowed,true);

@@ -36,8 +36,8 @@ test('generic parliament and shared gulf reference do not establish institution 
 });
 import {budgetRetryDelay,budgetDecision,limits} from '../src/worker/provider-guard';
 test('budget deferral uses first safe rolling-window expiry without lifting hard caps',()=>{
- const now=100000000,rows=Array.from({length:limits.hourRequests},(_,i)=>({at:now-3590000+i,usd:.001}));
- assert.equal(budgetRetryDelay(rows,1000,now),10000);assert.equal(budgetDecision(rows,1000,now).allowed,false);
+ const now=100000000,rows=Array.from({length:60},(_,i)=>({at:now-3590000+i,usd:.001}));
+ assert.equal(budgetRetryDelay(rows,1000,now),0);assert.equal(budgetDecision(rows,1000,now).allowed,true);
  assert.equal(budgetDecision(rows,1000,now+10000).allowed,true);
  assert.equal(budgetRetryDelay([{at:now-1000,usd:1}],1000,now),86399000);
  assert.equal(budgetRetryDelay([],limits.requestBytes+1,now),86400000);

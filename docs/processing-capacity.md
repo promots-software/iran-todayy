@@ -10,11 +10,20 @@ classification/filter contract; there is no new model-label-only early exit.
 Immediately before each uncached Gemini request, a short database transaction
 reserves the specific request's conservative input/output cost and quota.
 Limits are 15 requests/minute, 250,000 input tokens/minute and 500 requests per
-Pacific calendar day (including DST). The existing application limit of 45
-requests/hour and $1 rolling-24-hour ceiling remain unchanged. They are separate
-from Google's quota and can still limit AI-dependent throughput. No tier or
+Pacific calendar day (including DST). These request-level limits supersede the
+former 45 requests/hour application gate. The $1 rolling-24-hour ceiling remains
+unchanged and can still limit AI-dependent throughput. No tier or
 quota increase is implied. Successful usage settles reservations; failed or
 ambiguous usage remains conservatively charged to the application budget.
+
+Gemini receives the response schema once through Structured Outputs, rather
+than also embedding its identical JSON in the prompt. An exactly duplicated
+coverage policy is supplied once. All other instructions and schema fields
+remain unchanged. ID-only classification output reservations scale with the
+required IDs; extraction, translation and independent review keep their limits.
+Exact legacy request bodies remain checkpoint aliases for the same post/input:
+completed output still goes through validation, and ambiguous requests stay
+blocked. No cross-post factual cache or new inference shortcut is introduced.
 
 A capacity wait saves the job's next eligible time and releases its lane.
 Quota exhaustion, cost waits and sanitized provider rejection diagnostics are
