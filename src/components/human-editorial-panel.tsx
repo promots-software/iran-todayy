@@ -1,3 +1,5 @@
+import {pageNumber,pageWindow,type PageParams} from '@/lib/dashboard-pagination';
+import {Pagination} from './pagination';
 import Image from 'next/image';
 import Link from 'next/link';
 import {db} from '@/lib/db';
@@ -22,7 +24,7 @@ export async function HumanEditorialPanel({kind,id,initialTitle='',initialBody='
  <details><summary>تفاصيل المعالجة الأصلية</summary><JsonView value={draft.originalSnapshot}/></details></details>}
  </>;
 }
-export async function HumanEditorialQueue({published=false,approved=false}:{published?:boolean;approved?:boolean}){
- const drafts=await db.humanEditorialDraft.findMany({where:{status:published?'PUBLISHED':approved?'APPROVED':'DRAFT'},orderBy:{updatedAt:'desc'},take:100});
- return <section className="panel"><h2>{published?'المنشورات المحررة بشرياً':'مسودات التحرير البشري'}</h2>{drafts.map(d=><article key={d.id}><Link href={d.newsItemId?`/news/${d.newsItemId}`:`/posts/${d.sourcePostId}`}>{d.title}</Link><p>{d.status==='DRAFT'?'محرر بشرياً — يحتاج الاعتماد':d.status==='APPROVED'?'معتمد بشرياً — متابعة الإرسال':'منشور'}</p></article>)}</section>;
+export async function HumanEditorialQueue({published=false,approved=false,params={}}:{published?:boolean;approved?:boolean;params?:PageParams}){
+ const {drafts,paging}=await db.$transaction(async tx=>{const status=published?'PUBLISHED':approved?'APPROVED':'DRAFT';const paging=pageWindow(pageNumber(params.draftsPage),await tx.humanEditorialDraft.count({where:{status}}));const drafts=await tx.humanEditorialDraft.findMany({where:{status},orderBy:[{updatedAt:'desc'},{id:'desc'}],skip:paging.skip,take:paging.take});return {drafts,paging};},{isolationLevel:'RepeatableRead'});
+ return <section className="panel"><h2>{published?'المنشورات المحررة بشرياً':'مسودات التحرير البشري'}</h2>{drafts.map(d=><article key={d.id}><Link href={d.newsItemId?`/news/${d.newsItemId}`:`/posts/${d.sourcePostId}`}>{d.title}</Link><p>{d.status==='DRAFT'?'محرر بشرياً — يحتاج الاعتماد':d.status==='APPROVED'?'معتمد بشرياً — متابعة الإرسال':'منشور'}</p></article>)}<Pagination {...paging} path={published?'/published':approved?'/approvals':'/review'} params={params} pageKey="draftsPage" label="مسودات التحرير البشري"/></section>;
 }
