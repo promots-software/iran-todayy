@@ -26,9 +26,9 @@ test('RPM and TPM reserve atomically before an uncached request; exact boundarie
  assert.equal(quotaDecision([],250001,now).reason,'PROVIDER_INPUT_LIMIT');
  const rpd=Array.from({length:500},()=>({at:now-60001,inputTokens:1}));assert.equal(quotaDecision(rpd,1,now).reason,'PROVIDER_RPD_WAIT');assert.equal(quotaDecision(rpd,1,now).waitMs,pacificDay(now).end-now);
 });
-test('actual-request cost reserve and $3 rolling-24-hour ceiling; no maximum-call preclaim reserve',()=>{
+test('actual-request cost reserve and $2 rolling-24-hour ceiling; no maximum-call preclaim reserve',()=>{
  const now=Date.now();assert.equal(budgetDecision([{at:now,usd:1}],100,now,1024).allowed,true);assert.equal(budgetDecision([],100,now,1024).reservedUsd,(100*.25+1024*1.5)/1e6);
- assert.equal(budgetDecision([{at:now,usd:2.99}],100,now,1024).allowed,true);
+ assert.equal(budgetDecision([{at:now,usd:1.99}],100,now,1024).allowed,true);
  assert.equal(budgetDecision([{at:now,usd:3}],100,now,1024).reason,'PROVIDER_COST_WAIT');
  assert.equal(budgetDecision([],100,now,4097).reason,'PROVIDER_INPUT_LIMIT');
 });

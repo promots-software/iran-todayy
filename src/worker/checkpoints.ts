@@ -47,7 +47,17 @@ export function databaseCheckpoints(db:PrismaClient,postId:string):CheckpointSto
       if(latest?.action==='WORKER_PROVIDER_STAGE_FAILED'&&(latest.metadata as {replaySafe?:boolean})?.replaySafe===true)return null;
       return latest ? {pending:true} : null;
     },
-    async start(key) {await db.auditLog.create({data:{action:'WORKER_PROVIDER_STAGE_STARTED',actor:'production-worker',entityType:'SourcePost',entityId:postId,message:'Provider stage intent; reconcile incomplete attempts before replay',metadata:json({key})}});},
+    async start(key) {
+      await db.$transaction(async tx=>{
+        // Serialize the intent check/write across workers, without holding a DB
+        // transaction over a network call. A competing intent never executes.
+        const operation=postId+':'+key;
+        await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${operation}, 0))`;
+        const latest=await tx.auditLog.findFirst({where:{entityType:'SourcePost',entityId:postId,metadata:{path:['key'],equals:key},action:{in:['WORKER_PROVIDER_STAGE_STARTED','WORKER_PROVIDER_STAGE_COMPLETED','WORKER_PROVIDER_STAGE_FAILED']}},orderBy:[{createdAt:'desc'},{id:'desc'}]});
+        if(latest&&!(latest.action==='WORKER_PROVIDER_STAGE_FAILED'&&(latest.metadata as {replaySafe?:boolean}).replaySafe===true))throw new ProcessingError('PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW');
+        await tx.auditLog.create({data:{action:'WORKER_PROVIDER_STAGE_STARTED',actor:'production-worker',entityType:'SourcePost',entityId:postId,message:'Provider stage intent; reconcile incomplete attempts before replay',metadata:json({key})}});
+      });
+    },
     async finish(key,output) {await db.auditLog.create({data:{action:'WORKER_PROVIDER_STAGE_COMPLETED',actor:'production-worker',entityType:'SourcePost',entityId:postId,message:'Checkpoint for restart; validation remains mandatory on replay',metadata:json({key,output})}});},
     async fail(key,code,replaySafe){await db.auditLog.create({data:{action:'WORKER_PROVIDER_STAGE_FAILED',actor:'production-worker',entityType:'SourcePost',entityId:postId,message:'Failed request retained; only definite retry-safe failures may resume',metadata:json({key,code,replaySafe})}});},
   };

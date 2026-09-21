@@ -7,9 +7,10 @@ import {json} from '../lib/processing/engine';
 import {capacityDiagnostic,capacityRetryMs,capacityState} from './provider-capacity';
 import {googleQuota,pacificDay,quotaDecision} from './provider-quota';
 import {checkpointAliases,type CheckpointRequestInit} from '../lib/processing/gemini-request';
+import {geminiCostPolicy,transientBackoff} from './cost-config';
 // Provider RPM/TPM/RPD supersede the old workload-derived 45/hour gate.
-// Cost remains $3 rolling 24 hours; provider RPD uses Pacific midnight.
-export const limits={hourRequests:null,dayRequests:googleQuota.rpd,dayReservedUsd:3,requestBytes:600000,outputTokens:4096,jobIntervalMs:0} as const;
+// Cost uses rolling 24 hours; provider RPD uses Pacific midnight.
+export const limits={hourRequests:null,dayRequests:googleQuota.rpd,dayReservedUsd:geminiCostPolicy.hard,requestBytes:600000,outputTokens:4096,jobIntervalMs:0} as const;
 export const geminiResource='generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 
 type BudgetRow={id?:string;action:string;metadata:unknown;createdAt:Date};
@@ -53,13 +54,23 @@ export function budgetDecision(reservations:Reservation[],bytes:number,now:numbe
 async function readCapacityRows(db:Pick<PrismaClient,'auditLog'>,now:number){
  return db.auditLog.findMany({where:{entityType:'ProviderBudget',entityId:'gemini',createdAt:{gt:new Date(Math.min(now-86400000,pacificDay(now).start)-1)}},select:{id:true,action:true,metadata:true,createdAt:true},orderBy:[{createdAt:'asc'},{id:'asc'}]});
 }
+export function costTelemetry(rows:BudgetRow[],now:number){
+ const active=rows.filter(r=>r.createdAt.getTime()>now-86400000);
+ const settledIds=new Set(rows.filter(r=>r.action==='PROVIDER_USAGE_SETTLED').map(r=>(r.metadata as {reservationId?:string}).reservationId));
+ const reservations=accountedReservations(rows).filter(r=>r.at>now-86400000);
+ const accounted=reservations.reduce((sum,r)=>sum+r.usd,0);
+ const outstanding=active.filter(r=>r.action==='PROVIDER_RESERVED'&&!settledIds.has(r.id)).reduce((sum,r)=>sum+Number((r.metadata as {usd:number}).usd),0);
+ return {accountedUsd:accounted,measuredUsd:accounted-outstanding,outstandingReservedUsd:outstanding,warningUsd:geminiCostPolicy.warning,hardLimitUsd:limits.dayReservedUsd,remainingUsd:Math.max(0,limits.dayReservedUsd-accounted),warning:accounted>=geminiCostPolicy.warning,circuit:accounted>=limits.dayReservedUsd?'OPEN':'CLOSED',maxTransientRetries:geminiCostPolicy.retries};
+}
 export async function providerCapacitySnapshot(db:PrismaClient,now=Date.now()){
  const rows=await readCapacityRows(db,now),capacity=capacityState(rows,geminiResource,now),quotas=quotaDecision(quotaReservations(rows),1,now),reservations=accountedReservations(rows),budget=budgetDecision(reservations,1,now,0);
  const costUsed=reservations.filter(r=>r.at>now-86400000).reduce((s,r)=>s+r.usd,0);
  const reason=capacity.waitMs?'PROVIDER_CAPACITY_WAIT':quotas.reason??budget.reason??(costUsed>=limits.dayReservedUsd?'PROVIDER_COST_WAIT':null);
  const waitMs=Math.max(capacity.waitMs,quotas.waitMs,budget.allowed?0:budgetRetryDelay(reservations,1,now,0));
+ const cost=costTelemetry(rows,now),costWaitJobs=await db.processingJob.count({where:{status:'RETRY',lastError:'PROVIDER_COST_WAIT'}});
+ const transientFailures24h=rows.filter(r=>r.action==='PROVIDER_HTTP_DIAGNOSTIC'&&r.createdAt.getTime()>now-86400000&&[429,500,502,503,504].includes(Number((r.metadata as {httpStatus:number}).httpStatus))).length;
  const diagnostic=rows.filter(r=>r.action==='PROVIDER_HTTP_DIAGNOSTIC').at(-1)?.metadata??null;
- return {observedAt:now,state:reason?'CAPACITY_WAIT':capacity.probe?'RECOVERY_PROBE':'AVAILABLE',reason,resource:geminiResource,waitMs,nextRequestAt:now+waitMs,quotas,limits:googleQuota,applicationHourLimit:limits.hourRequests,applicationHourUsed:reservations.filter(r=>r.at>now-3600000).length,costRolling24hUsd:reservations.filter(r=>r.at>now-86400000).reduce((s,r)=>s+r.usd,0),costCeilingUsd:limits.dayReservedUsd,diagnostic};
+ return {cost,costWaitJobs,transientFailures24h,observedAt:now,state:reason?'CAPACITY_WAIT':capacity.probe?'RECOVERY_PROBE':'AVAILABLE',reason,resource:geminiResource,waitMs,nextRequestAt:now+waitMs,quotas,limits:googleQuota,applicationHourLimit:limits.hourRequests,applicationHourUsed:reservations.filter(r=>r.at>now-3600000).length,costRolling24hUsd:reservations.filter(r=>r.at>now-86400000).reduce((s,r)=>s+r.usd,0),costCeilingUsd:limits.dayReservedUsd,diagnostic};
 }
 /** Reconsider obsolete cost waits only after a fresh, healthy capacity snapshot.
  * This is permission to claim ONE job, never permission to call the provider.
@@ -95,7 +106,7 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     if(prior&&'output' in prior)return prior.output;
     if(prior)throw new ProcessingError('PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW');
    }
-   let reservationId:string|undefined,requestStartedAt=0;
+   let reservationId:string|undefined,requestStartedAt=0,operationAttempt=0;
    const bytes=Buffer.byteLength(body,'utf8');
    let outputTokens:number;
    try{outputTokens=Number(JSON.parse(body).generationConfig?.maxOutputTokens??limits.outputTokens);}catch{throw new ProcessingError('PROVIDER_INPUT_LIMIT');}
@@ -104,6 +115,10 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     const [{now}]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() as now`;
     const nowMs=now.getTime();
     requestStartedAt=nowMs;
+    // Lifetime count for this exact operation survives worker restarts and rolling windows.
+    operationAttempt=await tx.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget',entityId:'gemini',AND:[{metadata:{path:['postId'],equals:postId}},{metadata:{path:['key'],equals:key}}]}});
+    if(operationAttempt>=1+geminiCostPolicy.retries)throw new ProcessingError('PROVIDER_RETRY_EXHAUSTED',true,undefined,86400000);
+    operationAttempt++;
     const rows=await readCapacityRows(tx,nowMs);
     const capacity=capacityState(rows,resource,nowMs);
     if(capacity.waitMs)throw new ProcessingError('PROVIDER_CAPACITY_WAIT',true,undefined,capacity.waitMs);
@@ -115,7 +130,7 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     const decision=budgetDecision(reservations,bytes,nowMs,outputTokens);
     if(!decision.allowed)throw new ProcessingError(decision.reason!,decision.reason!=='PROVIDER_INPUT_LIMIT',undefined,budgetRetryDelay(reservations,bytes,nowMs,outputTokens));
     if(capacity.probe)await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_CAPACITY_PROBE',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'One bounded recovery request for this model resource',metadata:json({resource,until:nowMs+65000})}});
-    reservationId=(await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_RESERVED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Conservative actual-request budget; no credentials',metadata:json({usd:decision.reservedUsd,bytes,inputTokens:bytes,outputTokens,resource,postId,key})}})).id;
+    reservationId=(await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_RESERVED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Conservative actual-request budget; no credentials',metadata:json({usd:decision.reservedUsd,bytes,inputTokens:bytes,outputTokens,resource,postId,key,operationAttempt})}})).id;
    });
    try {
     networkAttempt=true;
@@ -123,10 +138,11 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     if(!response.ok){
      // Bounded error body; never persist raw text, request headers or secrets.
      const diagnostic=capacityDiagnostic(response.status,await readErrorBody(response),retryAfter(response.headers));
-     const delay=Math.max(capacityRetryMs(diagnostic),diagnostic.quotas.some(q=>q.period==='DAY')?pacificDay(Date.now()).end-Date.now():0);
-     await db.auditLog.create({data:{action:'PROVIDER_HTTP_DIAGNOSTIC',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Sanitized provider rejection; quota unknown unless explicitly reported',metadata:json({resource,postId,...diagnostic})}});
+     const delay=transientBackoff(operationAttempt,Math.max(capacityRetryMs(diagnostic),diagnostic.quotas.some(q=>q.period==='DAY')?pacificDay(Date.now()).end-Date.now():0));
+     await db.auditLog.create({data:{action:'PROVIDER_HTTP_DIAGNOSTIC',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Sanitized provider rejection; quota unknown unless explicitly reported',metadata:json({resource,postId,key,operationAttempt,...diagnostic})}});
      if(failurePolicy(`GEMINI_HTTP_${response.status}`,1).providerFailure)await db.auditLog.create({data:{action:'PROVIDER_CAPACITY_BLOCKED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Only this model network resource is unavailable; local and cached work continue',metadata:json({resource,code:`GEMINI_HTTP_${response.status}`,until:Date.now()+delay,diagnostic})}});
-     throw new ProcessingError(`GEMINI_HTTP_${response.status}`,failurePolicy(`GEMINI_HTTP_${response.status}`,1).retryable,undefined,delay);
+     if(failurePolicy(`GEMINI_HTTP_${response.status}`,1).providerFailure)throw new ProcessingError(operationAttempt>=1+geminiCostPolicy.retries?'PROVIDER_RETRY_EXHAUSTED':'PROVIDER_TRANSIENT_WAIT',true,undefined,operationAttempt>=1+geminiCostPolicy.retries?86400000:delay);
+     throw new ProcessingError(`GEMINI_HTTP_${response.status}`,false,undefined,delay);
     }
     const envelope=await response.json(),usd=observedCost(envelope);
     // Only a known successful HTTP response with complete usage releases its
