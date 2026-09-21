@@ -42,7 +42,7 @@ export async function ingest(client: PrismaClient, sourceId: string, raw: unknow
     return post;
   });
 }
-export async function claimJob(client: PrismaClient, workerId: string, now=new Date(), telegramOnly=false, excludePostIds:string[] = [], newsroom=false) {
+export async function claimJob(client: PrismaClient, workerId: string, now=new Date(), telegramOnly=false, excludePostIds:string[] = [], newsroom=false, costRecheckBefore?:Date) {
   // A fresh opaque claim token fences stale processes after restart or lease recovery.
   const token=`${workerId}:${randomUUID()}`;
   return client.$transaction(async tx=>{
@@ -64,8 +64,10 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
     // Prisma stores DateTime as UTC timestamp-without-time-zone. A bound Date
     // is timestamptz in raw SQL; implicit conversion uses the DB session zone
     // and can claim future retries early. Compare explicit UTC wall timestamps.
-    const rows=await tx.$queryRaw<{id:string}[]>`SELECT "id" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND "availableAt" <= CAST(${now.toISOString()} AS timestamp) AND "attemptCount" < "maxAttempts" ${scope} ${exclusions} ORDER BY ${ordering} FOR UPDATE SKIP LOCKED LIMIT 1`;
+    const due=costRecheckBefore ? Prisma.sql`("availableAt" <= CAST(${now.toISOString()} AS timestamp) OR ("status"='RETRY' AND "lastError"='PROVIDER_COST_WAIT' AND "updatedAt" < CAST(${costRecheckBefore.toISOString()} AS timestamp)))` : Prisma.sql`"availableAt" <= CAST(${now.toISOString()} AS timestamp)`;
+    const rows=await tx.$queryRaw<{id:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${exclusions} ORDER BY ${ordering} FOR UPDATE SKIP LOCKED LIMIT 1`;
     if (!rows.length) return null;
+    if(rows[0].lastError==='PROVIDER_COST_WAIT'&&rows[0].availableAt>now&&costRecheckBefore)await tx.auditLog.create({data:{action:'PROCESSING_COST_WAIT_RECHECKED',actor:workerId,entityType:'ProcessingJob',entityId:rows[0].id,message:'Normal single-job claim reconsidered an obsolete cost schedule; actual request guard still required',metadata:{previousAvailableAt:rows[0].availableAt.toISOString(),capacityObservedAt:costRecheckBefore.toISOString()}}});
     if(newsroom){
       // Transaction start time may precede an earlier holder of the lock.
       const [clock]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() AS now`;

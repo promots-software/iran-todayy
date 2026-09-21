@@ -2,7 +2,7 @@
 export type SourceLanguage='fa'|'ar'|'en'|'unknown';
 const englishGrammar=new Set(['the','and','of','to','in','is','are','was','were','has','have','had','that','this','with','from','for','not','will','would','their','they','it','its','on','by','said']);
 const faGrammar=new Set(['که','از','را','در','به','با','بر','برای','تا','شد','شده','کرد','کرده','بود','بودند','گفته','نیست','است','هست','هستند','شود','شوند','خواهد','خواهند','این','آن','او','هم','چه','یک']);
-const arGrammar=new Set(['في','من','إلى','على','أن','إن','قال','التي','الذي','هذا','هذه','لم','لن','ليس','بعد','بين','خلال','أمام','نحو','عن','عند']);
+const arGrammar=new Set(['في','من','إلى','على','أن','إن','قال','التي','الذي','هذا','هذه','لم','لن','ليس','بعد','بين','خلال','أمام','نحو','عن','عند','دون','أو','وهو']);
 // Frequent native Persian vocabulary complements shared Arabic loanwords. No names,
 // source handles or topic labels are language evidence.
 const faLexicon=new Set(['امروز','دیروز','فردا','مردم','مردمی','بیش','کمتر','بیشتر','شب','روز','کشور','شهر','شهرستان','خانه','خانواده','کار','کارگران','گزارش','درباره','همچنان','رایگان','پیش','پس','دیگر','نخست','تازه','اکنون','هنوز','چند','چرا','کدام','خود']);
@@ -15,7 +15,8 @@ function scriptLanguage(text:string):'ar'|'fa'|'unknown'{
  // point per language. Definite articles include productive Arabic clitics.
  const ar=new Set<string>(), fa=new Set<string>();
  let arMorph=0, faMorph=0, faLexical=0, nisbaCount=0;
- const nisbaSupported=words.some(t=>/ة$/u.test(t))||(words.some(t=>/^(?:[وف])?ال/u.test(t))&&faWords.filter(w=>faGrammar.has(w)).length<2);
+ const explicitArabicPreposition=words.some(w=>['في','إلى','على'].includes(w))&&!faWords.some(w=>faGrammar.has(w));
+ const nisbaSupported=explicitArabicPreposition||words.some(t=>/ة$/u.test(t))||(words.some(t=>/^(?:[وف])?ال/u.test(t))&&faWords.filter(w=>faGrammar.has(w)).length<2);
  for(let i=0;i<words.length;i++){
   const w=words[i], f=faWords[i];
   const article=/^(?:[وف])?(?:[بك]?ال|لل)[\p{L}]{2,}$/u.test(w);
@@ -63,7 +64,11 @@ export function sourceLanguage(original:string):SourceLanguage{
   // Retain the density and grammar vetoes, and reject contiguous Latin phrases.
   const scatteredAcronyms=latin.every(w=>/^[A-Z]{1,5}$/.test(w))&&!/[A-Za-z]+(?:[\s-]+[A-Za-z]+){2}/.test(text);
   if(grammar||(new Set(latin).size>4&&!scatteredAcronyms)||latinLength>arabic*0.3)return 'unknown';
-  const labels=latin.every(w=>/^[A-Z][A-Za-z]*$/.test(w))||/\([A-Z][a-z]+ [a-z]+\)/.test(text)&&latin.length===2||latin.every(w=>/^[A-Za-z]$/.test(w));
+  // A lone isolated Latin footer/identifier is not English prose. Density and
+  // English grammar vetoes above still apply; source text is never removed.
+  const footer=text.match(/(?:^|\n)\s*[a-z][a-z0-9_]{2,}\s*$/u);
+  const isolatedIdentifier=!!footer&&!/[A-Za-z]/.test(text.slice(0,footer.index));
+  const labels=isolatedIdentifier||latin.every(w=>/^[A-Z][A-Za-z]*$/.test(w))||/\([A-Z][a-z]+ [a-z]+\)/.test(text)&&latin.length===2||latin.every(w=>/^[A-Za-z]$/.test(w));
   if(!labels)return 'unknown';
  }
  if(arabic){

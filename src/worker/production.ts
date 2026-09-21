@@ -11,7 +11,7 @@ import {ProcessingError} from '../lib/processing/contracts';
 import {assertApprovalMode} from '../lib/processing/shadow';
 import {GeminiLanguageProvider} from '../lib/processing/gemini';
 import {checkpointProvider,databaseCheckpoints} from './checkpoints';
-import {guardedTransport,providerCapacitySnapshot} from './provider-guard';
+import {guardedTransport,providerCapacitySnapshot,costWaitRecheckBefore} from './provider-guard';
 import {latencySnapshot} from './latency';
 import {acquireLease,renewLease,releaseLease,workerId,heartbeatMs,workerConfig,assertWorkerSafety,safeWorkerError,backoff,pause,healthStatus,probeAuthorization,TelegramStartupError} from './runtime';
 
@@ -144,7 +144,7 @@ async function main() {
               requireLease();await safety();
               // Local checks and checkpoint replay never wait for AI capacity.
               // Only an actual uncached network stage obtains provider capacity.
-              const job=await claimJob(db,runId,new Date(),true,[],true);
+              const job=await claimJob(db,runId,new Date(),true,[],true,costWaitRecheckBefore(processingCapacity));
               if(!job){await pause(1000,signal);continue;}
               processing.set(lane,Date.now());
               await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'Bounded two-lane processing; durable fairness and per-request cost protection'}});

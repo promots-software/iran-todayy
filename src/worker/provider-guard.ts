@@ -59,7 +59,17 @@ export async function providerCapacitySnapshot(db:PrismaClient,now=Date.now()){
  const reason=capacity.waitMs?'PROVIDER_CAPACITY_WAIT':quotas.reason??budget.reason??(costUsed>=limits.dayReservedUsd?'PROVIDER_COST_WAIT':null);
  const waitMs=Math.max(capacity.waitMs,quotas.waitMs,budget.allowed?0:budgetRetryDelay(reservations,1,now,0));
  const diagnostic=rows.filter(r=>r.action==='PROVIDER_HTTP_DIAGNOSTIC').at(-1)?.metadata??null;
- return {state:reason?'CAPACITY_WAIT':capacity.probe?'RECOVERY_PROBE':'AVAILABLE',reason,resource:geminiResource,waitMs,nextRequestAt:now+waitMs,quotas,limits:googleQuota,applicationHourLimit:limits.hourRequests,applicationHourUsed:reservations.filter(r=>r.at>now-3600000).length,costRolling24hUsd:reservations.filter(r=>r.at>now-86400000).reduce((s,r)=>s+r.usd,0),costCeilingUsd:limits.dayReservedUsd,diagnostic};
+ return {observedAt:now,state:reason?'CAPACITY_WAIT':capacity.probe?'RECOVERY_PROBE':'AVAILABLE',reason,resource:geminiResource,waitMs,nextRequestAt:now+waitMs,quotas,limits:googleQuota,applicationHourLimit:limits.hourRequests,applicationHourUsed:reservations.filter(r=>r.at>now-3600000).length,costRolling24hUsd:reservations.filter(r=>r.at>now-86400000).reduce((s,r)=>s+r.usd,0),costCeilingUsd:limits.dayReservedUsd,diagnostic};
+}
+/** Reconsider obsolete cost waits only after a fresh, healthy capacity snapshot.
+ * This is permission to claim ONE job, never permission to call the provider.
+ * The atomic actual-request guard remains authoritative. A job updated after
+ * this snapshot cannot churn against the same observation. */
+export function costWaitRecheckBefore(snapshot:Awaited<ReturnType<typeof providerCapacitySnapshot>>|null,now=Date.now()){
+ if(!snapshot||snapshot.state!=='AVAILABLE'||snapshot.quotas.reason||snapshot.observedAt>now||now-snapshot.observedAt>60000)return undefined;
+ const maximumReservation=(limits.requestBytes*.25+limits.outputTokens*1.5)/1e6;
+ if(snapshot.costRolling24hUsd+maximumReservation>limits.dayReservedUsd)return undefined;
+ return new Date(snapshot.observedAt);
 }
 /** Diagnostic only; never put this before job claiming. */
 export async function providerRequestDelay(db:PrismaClient){return (await providerCapacitySnapshot(db)).waitMs;}
