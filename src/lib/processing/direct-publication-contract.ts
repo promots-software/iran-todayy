@@ -1,0 +1,9 @@
+import {z} from 'zod';
+import {renderingReviewSchema} from './rendering-contract';
+const text=z.string().min(1).max(20000);
+export const publicationSentenceSchema=z.object({text,factIds:z.array(z.string().regex(/^f[1-9]\d*$/)).min(1).max(100)}).strict();
+export const directProposalSchema=z.object({title:publicationSentenceSchema,body:z.array(publicationSentenceSchema).max(100)}).strict();
+export const directCoverageSchema=z.array(z.object({unitId:text,factIds:z.array(text),nonFactual:z.boolean()}).strict()).min(1).max(200);
+export const directPublicationReviewSchema=z.object({review:z.array(renderingReviewSchema).min(1).max(101),fullSourceCovered:z.boolean(),publicationQuality:z.boolean(),issues:z.array(text)}).strict();
+export const directPublicationReceiptSchema=z.object({version:z.literal('direct-publication-v1'),sourceHash:text,factsHash:text,coverage:directCoverageSchema,proposal:directProposalSchema,method:z.enum(['LOCAL','INDEPENDENT']),review:directPublicationReviewSchema.nullable()}).strict();
+export type DirectProposal=z.infer<typeof directProposalSchema>;

@@ -19,6 +19,7 @@ const source='افتتح المجلس مدرسة جديدة في العاصمة.
 const ev=(excerpt:string,context=source)=>({excerpt,context});
 const safety={filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false};
 const raw=()=>({actors:[ev('المجلس')],action:ev('افتتح'),object:ev('مدرسة جديدة'),location:ev('العاصمة'),event_time:null,statements:[{evidence:ev(source),speaker:null,kind:'FACT',material:false}],safety});
+const publicationRaw=()=>({...raw(),coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:source.slice(0,-1),factIds:['f1']},body:[]}});
 const input=(content=source)=>({content,processingMode:'DIRECT' as const,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet});
 const signal=()=>new AbortController().signal;
 const response=(output:unknown)=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:100,candidatesTokenCount:100,thoughtsTokenCount:0}});
@@ -31,7 +32,7 @@ test('source mode defaults NORMAL, accepts explicit modes only, ADMIN server act
  const migration=readFileSync('prisma/migrations/20260921160000_source_processing_mode/migration.sql','utf8');assert.match(migration,/DEFAULT 'NORMAL'/);assert.doesNotMatch(migration,/DROP|DELETE|UPDATE /);
 });
 test('Arabic DIRECT one factual request, no relevance/topic decision, local grounded draft',async()=>{
- let calls=0;const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const req=JSON.parse(String(init?.body));const schema=req.generationConfig.responseJsonSchema;assert.equal(schema.properties.relevance,undefined);assert.equal(schema.properties.topic,undefined);assert.ok(!req.systemInstruction.parts[0].text.includes('six-geographies-v1'));return response(raw());});
+ let calls=0;const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const req=JSON.parse(String(init?.body));const schema=req.generationConfig.responseJsonSchema;assert.equal(schema.properties.relevance,undefined);assert.equal(schema.properties.topic,undefined);assert.ok(!req.systemInstruction.parts[0].text.includes('six-geographies-v1'));return response(publicationRaw());});
  const u=validateUnderstanding(await provider.understand(input(),signal()),source);
  assert.equal(u.relevance,'POLITICAL_NEWS');assert.equal(u.topic,'UNKNOWN');
  const draft=await provider.draft({content:source,understanding:u,rules:ruleSet},signal());
@@ -47,7 +48,7 @@ test('Persian DIRECT uses combined generation and independent review only',async
 test('strict completeness, speaker, reference and Arabic validators remain fail-closed',()=>{
  assert.throws(()=>validateDirectExtraction({...raw(),statements:[]},source),/INCOMPLETE_EXTRACTION/);
  assert.throws(()=>validateDirectExtraction({...raw(),action:ev('معلومة غير موجودة')},source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
- const speech=raw();speech.statements[0].kind='STATEMENT';assert.throws(()=>adaptDirectExtraction(validateDirectExtraction(speech,source),source),/INVALID_ID_CLASSIFICATION/);
+ const speech=raw();speech.statements[0].kind='STATEMENT';assert.throws(()=>adaptDirectExtraction(validateDirectExtraction(speech,source),source),/INVALID_ID_CLASSIFICATION|INVALID_DIRECT_EXTRACTION_SCHEMA/);
  assert.throws(()=>validateDirectExtraction({...raw(),relevance:'IRRELEVANT'},source),/INVALID_DIRECT_EXTRACTION_SCHEMA/);
  const english='The council opened a new school in the capital.';const x={...raw(),actors:[ev('council',english)],action:ev('opened',english),object:null,location:null,statements:[{evidence:ev(english,english),speaker:null,kind:'FACT',material:false}]};
  assert.throws(()=>adaptDirectExtraction(validateDirectExtraction(x,english),english),/VALIDATED_ARABIC_RENDERING_REQUIRED/);
@@ -84,7 +85,7 @@ test('DIRECT full local pipeline, guarded unattended path, duplicate claim and e
  const p=await ingest(db,src.id,{externalId:'a',url:src.url+'/a',content:source,publishedAt:new Date()});
  const other=await db.processingJob.findMany({where:{sourcePostId:{not:p.id}},select:{sourcePostId:true}});
  const job=await claimJob(db,'complete',new Date(),false,other.map(j=>j.sourcePostId));assert.ok(job);
- let ai=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{ai++;return response(raw());}),signal());
+ let ai=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{ai++;return response(publicationRaw());}),signal());
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:p.id}}}});
  assert.equal(item.validationStatus,'PASSED');assert.equal(item.status,'PENDING_APPROVAL');assert.equal(ai,1);
  const eligible=await db.newsItem.findUniqueOrThrow({where:{id:item.id},include:{humanDraft:true,publication:true,eventRevision:true,evidence:{include:{sourcePost:{include:{source:true,jobs:true,matches:true,humanDraft:true}}}}}});
@@ -121,7 +122,7 @@ test('empty DIRECT skips AI; a mode change during processing cannot commit a sta
  const p=await ingest(db,src.id,{externalId:'race',url:src.url+'/race',content:'افتتح المجلس مكتبة عامة في العاصمة.',publishedAt:new Date()});
  const text=p.originalContent,x={...raw(),actors:[ev('المجلس',text)],action:ev('افتتح',text),object:ev('مكتبة عامة',text),location:ev('العاصمة',text),statements:[{evidence:ev(text,text),speaker:null,kind:'FACT',material:false}]};
  const job=await claim(p.id);
- await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{await changeSourceProcessingMode(db,src.id,'NORMAL','user:admin');return response(x);}),signal());
+ await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{await changeSourceProcessingMode(db,src.id,'NORMAL','user:admin');return response({...x,coverage:[{unitId:"u1",factIds:["f1"],nonFactual:false}],publication:{title:{text:text.slice(0,-1),factIds:["f1"]},body:[]}});}),signal());
  const stored=await db.sourcePost.findUniqueOrThrow({where:{id:p.id}});assert.equal(stored.error,'SOURCE_PROCESSING_MODE_CHANGED');assert.equal(await db.newsItem.count({where:{evidence:{some:{sourcePostId:p.id}}}}),0);assert.equal((await db.processingJob.findUniqueOrThrow({where:{id:job.id}})).status,'RETRY');
  }finally{await db.$disconnect();}
 });

@@ -6,6 +6,9 @@ const headingRole=/(?:^|\s)(?:معاون|وزیر|رئیس|سخنگو|المتح
 const speech=/(?:گفت(?:‌وگو)?|اظهار|اعلام|افزود|تأکید|تصریح|قال|ذكرت|أوضح|صرح|أضاف|says?|said|stated|told|interview)/iu;
 const explicitSpeakerRole=/(?:سخنگو|المتحدث|الناطق|spokes(?:person|man|woman))/iu;
 const descriptorRole=/^(?:[,،]\s*)?(?:تحلیل[‌ -]?گر|مشاور|محلل|مستشار|analyst|adviser|advisor)(?=[\s‌،,:：]|$)/iu;
+const arabicIntroduction=/^(?:[وف])?(?:قالت?|أعلنت?|أكدت?|أوضحت?|ذكرت?|صرحت?|أضافت?)\s*$/u;
+const persianIntroduction=/^\s+(?:اعلام کرد|اظهار کرد|تأکید کرد|تصریح کرد|گفت|افزود)(?:[\s،:：]|$)/u;
+const arabicSpeakerFirst=/^\s+(?:قالت?|أعلنت?|أكدت?|أوضحت?|ذكرت?|صرحت?|أضافت?)(?:\s|[،:：])/u;
 /** A speaker heading may govern a contiguous bullet quotation block. Blank
  * lines are layout, but a new heading/narrative or attributed voice ends scope. */
 export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evidence){
@@ -16,7 +19,7 @@ export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evid
  if(fact.start<=speaker.start&&speaker.end<fact.end){
   const before=source.slice(fact.start,speaker.start).replace(decoration,'').trim();
   const after=source.slice(speaker.end,fact.end);
-  if((before===''&&/^\s*[:：]\s*\S/u.test(after)) || (/^(?:قال|أعلن|أكد|أوضح|ذكر|صرح)\s*$/u.test(before)&&/^\s+\S/u.test(after)))return;
+  if((before===''&&(/^\s*[:：]\s*\S/u.test(after)||persianIntroduction.test(after)||arabicSpeakerFirst.test(after))) || (arabicIntroduction.test(before)&&/^\s+\S/u.test(after)))return;
  }
  const paragraphStart=source.lastIndexOf('\n',fact.start)+1;
  if(speaker.start>=paragraphStart&&speaker.end<=fact.start)return;

@@ -1,6 +1,7 @@
+import {publicationDraft} from './direct-publication';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
-import {directExtractionSchema,directInstructions,validateDirectExtraction} from './direct';
+import {directStatementSchema,directExtractionSchema,directInstructions,validateDirectExtraction} from './direct';
 import {classificationReferences,idClassificationSchema} from './id-classification';
 import {ProcessingError,type Understanding} from './contracts';
 import {renderingInstructions,renderingReviewInstructions,renderingReviewSchemaFor,validateRenderingProposal,validateRendering,type RenderingReference} from './evidence-rendering';
@@ -9,7 +10,7 @@ const arabic=z.string().min(1).max(20000);
 const evidence=directExtractionSchema.shape.actors.element.extend({arabic}).strict();
 export const directBilingualSchema=directExtractionSchema.extend({
  actors:z.array(evidence).max(30),action:evidence.nullable(),object:evidence.nullable(),location:evidence.nullable(),event_time:evidence.nullable(),
- statements:z.array(directExtractionSchema.shape.statements.element.extend({evidence,speaker:evidence.nullable()}).strict()).max(100),
+ statements:z.array(directStatementSchema(evidence)).max(100),
 }).strict();
 export const bilingualInstructions=directInstructions.replace('Do not generate summary, translations, invented factual prose, IDs, keys, offsets or verification.','Do not generate summary, invented factual prose, IDs, keys, offsets or verification. Proposed Arabic is permitted only in attached arabic fields.')+' '+renderingInstructions.replace('Return only id and arabic.','Return translations only in the attached arabic fields.').replace('IDs and evidence are immutable.','Original evidence excerpts and contexts are immutable.').replace('Every supplied ID must appear exactly once.','Every extracted evidence object must have exactly one attached arabic field; IDs are assigned locally.')+
  ' This combined generation response must attach one proposed arabic string to EACH evidence object, including anchors, statement evidence and any explicit speaker/date. Do not return IDs or offsets. Keep excerpt/context in the original language verbatim and separate from Arabic. Arabic is an untrusted proposal, not evidence. Never attest or review your own rendering. Preserve every material assertion; the next independent reviewer will compare against the entire original post. Output the complete object, never truncate or drop assertions to fit.';
@@ -75,6 +76,6 @@ export function finalizeDirectBilingual(source:string,p:ReturnType<typeof prepar
 }
 /** Rechecked after checkpoint replay and again before unattended delivery. */
 export function assertDirectFullCoverage(source:string,u:Understanding){
- if(u.language==='ar')return;
+ if(u.language==='ar'){publicationDraft(source,u);return;}
  checkCoverage(source,u.event.facts.map(f=>({...f,speakerEvidence:f.speaker?.evidence})),u.rendering?.fullSourceCoverage);
 }

@@ -1,3 +1,4 @@
+import {publicationDraft} from './direct-publication';
 import {buildAtoms,renderSelection} from './constrained-rewrite';
 import {editDraft} from './editorial';
 import {draftSchema,ProcessingError,type SourceProfile,type Understanding} from './contracts';
@@ -6,7 +7,13 @@ import {newsroomPrefix} from './newsroom-format';
 
 /** Reuse the provider's selection result without accepting its attestations. */
 export function finalizeConstrainedDraft(raw:unknown,content:string,u:Understanding,profile:SourceProfile){
- const d=draftSchema.parse(raw),atoms=buildAtoms(content,u);
+ const d=draftSchema.parse(raw);
+ if(u.publicationProposal){
+  const expected=publicationDraft(content,u);
+  if(JSON.stringify(d)!==JSON.stringify(draftSchema.parse(expected)))throw new ProcessingError('CONSTRAINED_DRAFT_CHANGED');
+  return finalizeValidatedDraft(expected,content,u,profile);
+ }
+ const atoms=buildAtoms(content,u);
  const titleLink=d.sentences.find(s=>s.text===d.title);
  const statement=atoms.format==='STATEMENT';
  const title=atoms.atoms.find(a=>titleLink?.factIds.length===1&&titleLink.factIds[0]===a.id&&newsroomPrefix+(statement?a.attribution:a.renderedText.replace(/\.$/u,''))===d.title);
@@ -22,7 +29,9 @@ export function finalizeConstrainedDraft(raw:unknown,content:string,u:Understand
 
 /** Reconstruct immutable output locally; never accept model-authored attestations. */
 export function finalizeSelection(selection:unknown,content:string,u:Understanding,profile:SourceProfile){
- const draft=renderSelection(selection,buildAtoms(content,u));
+ return finalizeValidatedDraft(renderSelection(selection,buildAtoms(content,u)),content,u,profile);
+}
+function finalizeValidatedDraft(draft:ReturnType<typeof renderSelection>,content:string,u:Understanding,profile:SourceProfile){
  const probe=editDraft(draft,content,u,profile);
  const reasons:Record<string,string>={};
  // This attests preservation of validated atoms, not independent source truth.

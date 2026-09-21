@@ -1,3 +1,4 @@
+import {publicationDraft} from './direct-publication';
 import {GroqLanguageProvider} from './groq';
 import {failurePolicy,retryAfter} from './failure-policy';
 import {ProcessingError,type LanguageProvider} from './contracts';
@@ -47,6 +48,7 @@ export class GeminiLanguageProvider implements LanguageProvider{
  async draft(i:Parameters<LanguageProvider['draft']>[0],s:AbortSignal){
   s.throwIfAborted();
   if(i.understanding.relevance!=='POLITICAL_NEWS'||i.understanding.priority==='P4')throw new ProcessingError('DRAFT_NOT_ACCEPTED');
+  if(i.understanding.publicationProposal)return publicationDraft(i.content,i.understanding);
   const atoms=buildAtoms(i.content,i.understanding);
   // Retain validated source order and every fact; selection adds no new wording.
   const title=atoms.format==='STATEMENT'?atoms.atoms[0]:atoms.atoms.reduce((shortest,a)=>a.renderedText.length<shortest.renderedText.length?a:shortest);
