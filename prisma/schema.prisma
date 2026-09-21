@@ -101,6 +101,11 @@ model AppSettings {
   updatedAt      DateTime       @updatedAt
 }
 
+enum SourceProcessingMode {
+  NORMAL
+  DIRECT
+}
+
 model Source {
   id         String       @id @default(cuid())
   platform   Platform
@@ -111,6 +116,7 @@ model Source {
   deletedAt  DateTime?
   cursor     Json?
   editorialProfile Json?
+  processingMode SourceProcessingMode @default(NORMAL)
   lastPollAt DateTime?
   lastError  String?
   createdAt  DateTime     @default(now())

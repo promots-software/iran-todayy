@@ -1,4 +1,5 @@
 "use client";
+import {SourceProcessingModeControl} from "./source-processing-mode";
 import { useActionState } from "react";
 import { addSourceAction, sourceAction, modeAction } from "@/app/actions";
 const initial = { ok: false, message: "" };
@@ -11,6 +12,7 @@ export function AddSourceForm() {
       <label>اسم المصدر<input name="name" required maxLength={120} placeholder="مثال: وكالة أنباء" /></label>
       <label>المنصة<select name="platform"><option value="TELEGRAM">Telegram</option><option value="X">X</option></select></label>
       <label>معرّف الحساب<input name="handle" dir="ltr" required maxLength={33} placeholder="@username" /></label>
+      <SourceProcessingModeControl/>
       <button disabled={pending} type="submit">{pending ? "جارٍ الحفظ…" : "+ إضافة المصدر"}</button>
     </div>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}

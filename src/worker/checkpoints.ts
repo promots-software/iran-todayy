@@ -1,3 +1,4 @@
+import {sourceLanguage} from '../lib/processing/source-language';
 import {createHash} from 'node:crypto';
 import type {PrismaClient} from '@prisma/client';
 import {ProcessingError,type LanguageProvider} from '../lib/processing/contracts';
@@ -24,7 +25,9 @@ export async function checkpointCall<T>(store:CheckpointStore,key:string,call:()
 export function checkpointProvider(provider:LanguageProvider, store:CheckpointStore):LanguageProvider {
   async function stage<T>(name:string,input:unknown,signal:AbortSignal,call:()=>Promise<T>):Promise<T> {
     signal.throwIfAborted();
-    const key=createHash('sha256').update(JSON.stringify([name==='draft'?'worker-local-draft-v2':'worker-checkpoint-v1',provider.id,name,input])).digest('hex');
+    const context=input as {processingMode?:string;content?:string};
+    const directBilingual=name==='understand'&&context.processingMode==='DIRECT'&&typeof context.content==='string'&&sourceLanguage(context.content)!=='ar';
+    const key=createHash('sha256').update(JSON.stringify([directBilingual?'worker-direct-bilingual-v1':name==='draft'?'worker-local-draft-v2':'worker-checkpoint-v1',provider.id,name,input])).digest('hex');
     return checkpointCall(store,key,call);
   }
   return {

@@ -1,8 +1,10 @@
 import { z } from "zod";
 
 export const publishingModeSchema = z.enum(["REQUIRE_APPROVAL", "AUTO_PUBLISH"]);
+export const sourceProcessingModeSchema = z.enum(["NORMAL", "DIRECT"]);
 export const sourceSchema = z.object({
   platform: z.enum(["TELEGRAM", "X"]),
+  processingMode: sourceProcessingModeSchema.default("NORMAL"),
   name: z.string().trim().min(1, "أدخل اسم المصدر").max(120),
   handle: z.string().trim().transform(value => value.replace(/^@/, "").toLowerCase()),
 }).superRefine((value, ctx) => {

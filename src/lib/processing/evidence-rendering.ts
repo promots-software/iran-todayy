@@ -31,16 +31,25 @@ export const renderingReviewInstructions='Independently compare each Arabic rend
 
 export function renderingInput(refs:RenderingReference[]){return {references:refs.map(r=>({id:r.id,role:r.role,source:r.evidence.excerpt}))};}
 export function renderingReviewInput(refs:RenderingReference[],rendered:unknown){return {...renderingInput(refs),rendered};}
-export function validateRendering(source:string,refs:RenderingReference[],rawRendered:unknown,rawReview:unknown):RenderingReceipt{
- const rendered=renderingSchemaFor(refs).safeParse(rawRendered),reviewed=renderingReviewSchemaFor(refs).safeParse(rawReview);
- if(!rendered.success||!reviewed.success)throw new ProcessingError('INVALID_ARABIC_RENDERING_SCHEMA');
- if(!exactIds(rendered.data.entries.map(e=>e.id),refs.map(r=>r.id))||!exactIds(reviewed.data.review.map(e=>e.id),refs.map(r=>r.id)))throw new ProcessingError('ARABIC_RENDERING_ID_MISMATCH');
+/** Syntax/numbers/dates/quotes only: this does NOT create a trusted receipt. */
+export function validateRenderingProposal(refs:RenderingReference[],raw:unknown){
+ const parsed=renderingSchemaFor(refs).safeParse(raw);
+ if(!parsed.success)throw new ProcessingError('INVALID_ARABIC_RENDERING_SCHEMA');
+ if(!exactIds(parsed.data.entries.map(e=>e.id),refs.map(r=>r.id)))throw new ProcessingError('ARABIC_RENDERING_ID_MISMATCH');
+ const rendered={data:parsed.data};
  const byId=new Map(refs.map(r=>[r.id,r]));
  for(const entry of rendered.data.entries){
   validateEntry(byId.get(entry.id)!,entry.arabic);
  }
  const translationsBySpan=new Map<string,string>();
  for(const entry of rendered.data.entries){const ref=byId.get(entry.id)!,span=`${ref.evidence.start}:${ref.evidence.end}`,prior=translationsBySpan.get(span);if(prior&&prior!==entry.arabic)throw new ProcessingError('ARABIC_RENDERING_INCONSISTENT');translationsBySpan.set(span,entry.arabic);}
+ return parsed.data;
+}
+export function validateRendering(source:string,refs:RenderingReference[],rawRendered:unknown,rawReview:unknown):RenderingReceipt{
+ const rendered=renderingSchemaFor(refs).safeParse(rawRendered),reviewed=renderingReviewSchemaFor(refs).safeParse(rawReview);
+ if(!rendered.success||!reviewed.success)throw new ProcessingError('INVALID_ARABIC_RENDERING_SCHEMA');
+ if(!exactIds(rendered.data.entries.map(e=>e.id),refs.map(r=>r.id))||!exactIds(reviewed.data.review.map(e=>e.id),refs.map(r=>r.id)))throw new ProcessingError('ARABIC_RENDERING_ID_MISMATCH');
+ validateRenderingProposal(refs,rendered.data);
  for(const review of reviewed.data.review)if(review.verdict!=='SUPPORTED'||renderingChecks.some(k=>!review.checks[k])||review.issues.length)throw new ProcessingError('UNVALIDATED_ARABIC_RENDERING');
  return renderingReceiptSchema.parse({version:'evidence-arabic-v1',sourceHash:sourceHash(source),entries:rendered.data.entries,review:reviewed.data.review});
 }

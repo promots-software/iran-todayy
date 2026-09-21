@@ -1,3 +1,4 @@
+import {isProviderWait} from "./failure-policy";
 /** Editorial quality and permission to deliver are independent. No send occurs here. */
 export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR';
 export const editorialLabels:Record<EditorialEligibility,string>={READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
@@ -30,7 +31,7 @@ export const arabicReasons:Record<string,string>={
 export const technicalExplanation='تعذّرت معالجة الخبر بسبب خطأ تقني، وسيحتاج إلى إعادة المحاولة';
 const operational=new Set(['SHADOW_MODE_REVIEW','AUTO_PUBLISH_DISABLED','REQUIRE_APPROVAL','MANUAL_PUBLICATION_REQUIRED']);
 export function isTechnicalFailure(code:string){
- if(['PROVIDER_BUDGET_EXHAUSTED','PROVIDER_COOLDOWN'].includes(code))return true;
+ if(isProviderWait(code)||code==='SOURCE_PROCESSING_MODE_CHANGED')return true;
  return /(?:SCHEMA|INVALID_JSON|INVALID_RESPONSE|INVALID_ID_CLASSIFICATION|TRANSPORT|HTTP_|UNAVAILABLE|REQUEST_LIMIT|INPUT_LIMIT|RATE_LIMIT|INTERRUPTED|TIMEOUT|LEASE_|STALE_CLAIM|AUTH_FAILED|API_KEY|PROCESSING_FAILED|REQUEST_REJECTED|REQUEST_TOO_LARGE|REFUSAL|^(?:GEMINI|GROQ|OPENAI)_INCOMPLETE$)/u.test(code);
 }
 export type ReasonInput={code:string;detail?:string};

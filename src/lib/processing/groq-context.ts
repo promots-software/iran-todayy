@@ -39,3 +39,8 @@ export function groqRuleContext(stage: Stage, rules: typeof ruleSet) {
     // instruction repeats from/to; category/reference are provenance, not operative requirements.
     terminology:rules.terminology.map(({id,mode,from,to,condition})=>({id,mode,from,to,condition})),names:rules.names,ambiguities:rules.ambiguities,externalPublishingEnabled:false};
 }
+
+/** DIRECT replaces only scope/priority policy, retaining source and claim safety. */
+export function directRuleContext(rules:typeof ruleSet) {
+ return {version:rules.version,policy:rules.policy.filter(r=>['SOURCES','TITLES','CREDIBILITY'].includes(r.id)),names:rules.names,reviewReasons:rules.reviewReasons,ambiguities:rules.ambiguities};
+}

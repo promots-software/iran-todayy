@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 
-import { saveSource, changeSource, changeMode } from "@/lib/source-service";
+import { saveSource, changeSource, changeMode, changeSourceProcessingMode } from "@/lib/source-service";
 import { saveSourceProfile } from "@/lib/processing/source-profile";
 import {approvePublication,publishApprovedManually} from '@/lib/telegram/publisher';
 
@@ -27,7 +27,7 @@ function failure(error: unknown): ActionState {
 export async function addSourceAction(_: ActionState, form: FormData): Promise<ActionState> {
   try {
     const user = await actor(true);
-    await saveSource(db, { platform: form.get("platform"), handle: form.get("handle"), name: form.get("name") }, user);
+    await saveSource(db, { platform: form.get("platform"), handle: form.get("handle"), name: form.get("name"), processingMode: form.get("processingMode") ?? "NORMAL" }, user);
     revalidatePath("/", "layout");
     return { ok: true, message: "تمت إضافة المصدر" };
   } catch (error) { return failure(error); }
@@ -116,4 +116,13 @@ export async function rejectEditorialAction(_:ActionState,form:FormData):Promise
   await tx.auditLog.create({data:{actor:user,action:'HUMAN_STORY_REJECTED',entityType:kind==='news'?'NewsItem':'SourcePost',entityId:id,message:'رفض الخبر من مسار المراجعة',metadata:{reason}}});
  });revalidatePath('/','layout');return {ok:true,message:'حُفظ الرفض دون حذف المصدر أو سجل المعالجة.'};
  }catch{return {ok:false,message:'تعذر الرفض. قد تكون الحالة تغيرت أو سبق اعتماد النشر.'};}
+}
+
+export async function sourceProcessingModeAction(_: ActionState, form: FormData): Promise<ActionState> {
+  try {
+    const user = await actor(true);
+    await changeSourceProcessingMode(db,z.string().min(1).max(100).parse(form.get("id")),form.get("processingMode"),user);
+    revalidatePath("/sources");
+    return {ok:true,message:"تم حفظ طريقة المعالجة"};
+  } catch(error) {return failure(error);}
 }

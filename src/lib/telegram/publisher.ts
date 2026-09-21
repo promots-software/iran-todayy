@@ -38,9 +38,12 @@ export function assertSendEnabled(env:Record<string,string|undefined>=process.en
 }
 export type ApprovalInput={newsItemId:string;digest:string;resolutions:{key:string;note:string}[]};
 export async function approvePublication(db:PrismaClient,input:ApprovalInput,actor:string,env:Record<string,string|undefined>=process.env,target:'TELEGRAM'|'WEB'='TELEGRAM'){
+ return db.$transaction(tx=>freezeValidatedPublication(tx,input,actor,env,target));
+}
+/** Shares the exact existing evidence/provenance freeze checks with a bounded automatic permit. */
+export async function freezeValidatedPublication(tx:Prisma.TransactionClient,input:ApprovalInput,actor:string,env:Record<string,string|undefined>,target:'TELEGRAM'|'WEB'='TELEGRAM',automatic:boolean|'DIRECT'=false){
  if(!actor.trim())throw new ProcessingError('AUTHENTICATION_REQUIRED');
  const chatId=target==='WEB'?'WEB':readPublisherEnv(env).chatId; // Approving never calls Telegram and never arms sending.
- return db.$transaction(async tx=>{
   await lockEditorialPublication(tx);
   if(await tx.humanEditorialDraft.findUnique({where:{newsItemId:input.newsItemId}}))throw new ProcessingError('HUMAN_DRAFT_REQUIRES_HUMAN_APPROVAL');
   await tx.$queryRaw`SELECT id FROM "NewsItem" WHERE id=${input.newsItemId} FOR UPDATE`;
@@ -70,9 +73,8 @@ export async function approvePublication(db:PrismaClient,input:ApprovalInput,act
   if(remainder.trim())throw new ProcessingError('INCOMPLETE_DRAFT_PROVENANCE');
   const publication=await tx.publication.create({data:{newsItemId:item.id,idempotencyKey:digest,contentSnapshot:content,destination:chatId}});
   await tx.newsItem.update({where:{id:item.id},data:{status:'APPROVED',approvedAt:new Date(),approvedBy:actor}});
-  await tx.auditLog.create({data:{action:'MANUAL_PUBLICATION_APPROVED',actor,entityType:'Publication',entityId:publication.id,message:'Explicit review and approval of frozen content; no message sent',metadata:json({digest,resolutions:input.resolutions,review:validation.review})}});
+  await tx.auditLog.create({data:{action:automatic==='DIRECT'?'DIRECT_AUTO_PUBLICATION_APPROVED':automatic?'CONTROLLED_AUTO_PUBLICATION_APPROVED':'MANUAL_PUBLICATION_APPROVED',actor,entityType:'Publication',entityId:publication.id,message:automatic?'Clean validated READY content frozen under one-shot authorization; no message sent':'Explicit review and approval of frozen content; no message sent',metadata:json({digest,resolutions:input.resolutions,review:validation.review})}});
   return publication;
- });
 }
 export type SendResult={status:'SENT';messageId:string;chatId:string}|{status:'FAILED'|'UNKNOWN';error:string};
 /** No automatic transport retry: Bot API has no client idempotency key. */
