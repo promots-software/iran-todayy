@@ -1,3 +1,4 @@
+import {attributionLead} from './attribution-rendering';
 import { checkEvidence, draftSchema, type Draft, type SourceProfile, type Understanding, ProcessingError } from "./contracts";
 import { names, reviewReasons, terminology, type ReviewCode } from "./rules";
 import {hasEditorialGrounding,unresolvedTerms} from './editorial-grounding';
@@ -103,7 +104,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   }
   // Attribution is validated rather than adding an unverified speaker or upgrading a claim.
   if (["WESTERN","HEBREW"].includes(profile.classification) || u.seriousClaim) {
-    const scopedStatement=draft.format==='STATEMENT'&&hasEditorialGrounding(u,content)&&u.event.facts.every(f=>f.speaker&&title===newsroomPrefix+`قال ${f.speaker.arabic}، في إفادته:`)&&draft.sentences.filter(s=>s.text!==draft.title).every(s=>s.factIds.length===1&&s.text===`- ${u.event.facts.find(f=>f.id===s.factIds[0])?.arabic}`);
+    const scopedStatement=draft.format==='STATEMENT'&&hasEditorialGrounding(u,content)&&u.event.facts.every(f=>f.speaker&&title===newsroomPrefix+attributionLead(f.speaker.arabic))&&draft.sentences.filter(s=>s.text!==draft.title).every(s=>s.factIds.length===1&&s.text===`- ${u.event.facts.find(f=>f.id===s.factIds[0])?.arabic}`);
     if (!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(title) || (body.trim()&&!scopedStatement&&!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(body))) review.push(reason("UNSUPPORTED_OUTPUT", "النسب الصريح مطلوب في العنوان والمتن"));
   }
   if ((joined.match(/زعم|ادّعى|ادعى/gu)?.length ?? 0)>1) review.push(reason("FORMAT_REVIEW", "الإفراط في أفعال التشكيك"));

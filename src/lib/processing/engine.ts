@@ -192,7 +192,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     // Provider work must never hold the shared event-decision lock. Prepare
     // against an immutable snapshot, then recheck under the lock before commit.
     const snapshot=filter?null:await eventSnapshot(client);
-    const preparedMatch=snapshot?await matchEvent(u.event,post.sourcePublishedAt,snapshot.candidates,provider,signal):null;
+    const preparedMatch=snapshot?await matchEvent(u.event,post.sourcePublishedAt,snapshot.candidates,provider,signal,{source:post.originalContent,understanding:u}):null;
     if(snapshot?.legacy&&preparedMatch?.classification==='NEW_EVENT'){preparedMatch.classification='UNCERTAIN_MATCH';preparedMatch.rationale='توجد أحداث قديمة بلا استخراج منظم؛ يلزم فحصها قبل إنشاء حدث جديد';preparedMatch.evidence={legacyEvents:snapshot.legacy};}
     const skipDraft=provider.draftOnlyAccepted&&(u.relevance!=='POLITICAL_NEWS'||u.priority==='P4'||!u.event.action||!u.event.actors.length||!u.event.facts.length||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
     const preparedDraft=!filter&&!skipDraft?await provider.draft({content:post.originalContent,understanding:u,rules:ruleSet},signal):null;

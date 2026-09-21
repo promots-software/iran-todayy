@@ -1,0 +1,5756 @@
+{
+  "version": "direct-gold-v1",
+  "authorship": "Engineering-authored synthetic semantic specification; NOT human-signed-off gold or measured model output.",
+  "policyReferences": [
+    "src/lib/processing/rules.ts",
+    "src/lib/processing/direct-publication.ts",
+    "src/lib/processing/editorial.ts",
+    "src/lib/processing/newsroom-format.ts"
+  ],
+  "styleEvidence": [
+    {
+      "artifact": "irannow_messages.json",
+      "messageIds": [
+        36165,
+        36166,
+        36167
+      ],
+      "use": "STYLE ONLY: single brand prefix, explicit attribution and separated factual clauses. No source pairs or factual ground truth inferred. Export timestamps unreliable and unused."
+    }
+  ],
+  "trueHistoricalSourceGoldPairs": 0,
+  "cases": [
+    {
+      "id": "D01",
+      "name": "Electronic permit service",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "meaning": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "وزارة الطاقة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أطلقت",
+                "دشنت"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمة إلكترونية"
+              ]
+            },
+            {
+              "anyOf": [
+                "لتقديم الطلبات"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة الطاقة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارة الطاقة"
+        ],
+        "action": "أطلقت",
+        "object": "خدمة إلكترونية",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D02",
+      "name": "Meeting scheduled",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "حدد المجلس موعد الاجتماع يوم الاثنين.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "حدد المجلس موعد الاجتماع يوم الاثنين.",
+          "meaning": "حدد المجلس موعد الاجتماع يوم الاثنين.",
+          "predicates": [
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "حدد"
+              ]
+            },
+            {
+              "anyOf": [
+                "موعد الاجتماع"
+              ]
+            },
+            {
+              "anyOf": [
+                "يوم الاثنين"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [
+        "الاثنين"
+      ],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المجلس"
+        ],
+        "action": "حدد",
+        "object": "موعد الاجتماع",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "حدد المجلس موعد الاجتماع يوم الاثنين."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D03",
+      "name": "Public consultation",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "فتحت البلدية باب المشاورات بشأن خطة النقل.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "فتحت البلدية باب المشاورات بشأن خطة النقل.",
+          "meaning": "فتحت البلدية باب المشاورات بشأن خطة النقل.",
+          "predicates": [
+            {
+              "anyOf": [
+                "البلدية"
+              ]
+            },
+            {
+              "anyOf": [
+                "فتحت"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشاورات"
+              ]
+            },
+            {
+              "anyOf": [
+                "خطة النقل"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "البلدية"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "البلدية"
+        ],
+        "action": "فتحت",
+        "object": "باب المشاورات",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "فتحت البلدية باب المشاورات بشأن خطة النقل."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D04",
+      "name": "Report released",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "نشرت الهيئة تقرير متابعة المشروع.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "نشرت الهيئة تقرير متابعة المشروع.",
+          "meaning": "نشرت الهيئة تقرير متابعة المشروع.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "نشرت",
+                "أصدرت"
+              ]
+            },
+            {
+              "anyOf": [
+                "تقرير"
+              ]
+            },
+            {
+              "anyOf": [
+                "متابعة المشروع"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "نشرت",
+        "object": "تقرير متابعة المشروع",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "نشرت الهيئة تقرير متابعة المشروع."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D05",
+      "name": "Border office opening",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "افتتحت الإدارة مكتباً لخدمة المسافرين في طهران.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "افتتحت الإدارة مكتباً لخدمة المسافرين في طهران.",
+          "meaning": "افتتحت الإدارة مكتباً لخدمة المسافرين في طهران.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الإدارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "افتتحت"
+              ]
+            },
+            {
+              "anyOf": [
+                "مكتباً"
+              ]
+            },
+            {
+              "anyOf": [
+                "لخدمة المسافرين"
+              ]
+            },
+            {
+              "anyOf": [
+                "طهران"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [
+        "طهران"
+      ],
+      "requiredEntities": [
+        "الإدارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الإدارة"
+        ],
+        "action": "افتتحت",
+        "object": "مكتباً",
+        "location": "طهران",
+        "speakers": [],
+        "arabicFacts": [
+          "افتتحت الإدارة مكتباً لخدمة المسافرين في طهران."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D06",
+      "name": "Committee vote",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "أقرت اللجنة جدول جلسات المراجعة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أقرت اللجنة جدول جلسات المراجعة.",
+          "meaning": "أقرت اللجنة جدول جلسات المراجعة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "اللجنة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أقرت"
+              ]
+            },
+            {
+              "anyOf": [
+                "جدول"
+              ]
+            },
+            {
+              "anyOf": [
+                "جلسات المراجعة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "اللجنة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "اللجنة"
+        ],
+        "action": "أقرت",
+        "object": "جدول جلسات المراجعة",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "أقرت اللجنة جدول جلسات المراجعة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D07",
+      "name": "Online registration",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "بدأت الهيئة استقبال طلبات التسجيل إلكترونياً.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "بدأت الهيئة استقبال طلبات التسجيل إلكترونياً.",
+          "meaning": "بدأت الهيئة استقبال طلبات التسجيل إلكترونياً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "بدأت"
+              ]
+            },
+            {
+              "anyOf": [
+                "استقبال"
+              ]
+            },
+            {
+              "anyOf": [
+                "طلبات التسجيل"
+              ]
+            },
+            {
+              "anyOf": [
+                "إلكترونياً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "بدأت",
+        "object": "استقبال طلبات التسجيل",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "بدأت الهيئة استقبال طلبات التسجيل إلكترونياً."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D08",
+      "name": "Future service launch",
+      "language": "ar",
+      "category": "A",
+      "tags": [],
+      "sourceText": "ستطلق الوزارة خدمة الاستعلام غداً.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "ستطلق الوزارة خدمة الاستعلام غداً.",
+          "meaning": "ستطلق الوزارة خدمة الاستعلام غداً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستطلق"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمة الاستعلام"
+              ]
+            },
+            {
+              "anyOf": [
+                "غداً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [
+        "غداً"
+      ],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستطلق"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "أطلقت الوزارة",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "ستطلق",
+        "object": "خدمة الاستعلام",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "ستطلق الوزارة خدمة الاستعلام غداً."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D09",
+      "name": "Two-stage consultation",
+      "language": "ar",
+      "category": "B",
+      "tags": [],
+      "sourceText": "أطلقت البلدية مشاورات خطة النقل.\nتستمر المشاورات أسبوعين.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أطلقت البلدية مشاورات خطة النقل.",
+          "meaning": "أطلقت البلدية مشاورات خطة النقل.",
+          "predicates": [
+            {
+              "anyOf": [
+                "البلدية"
+              ]
+            },
+            {
+              "anyOf": [
+                "أطلقت"
+              ]
+            },
+            {
+              "anyOf": [
+                "مشاورات"
+              ]
+            },
+            {
+              "anyOf": [
+                "خطة النقل"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "تستمر المشاورات أسبوعين.",
+          "meaning": "تستمر المشاورات أسبوعين.",
+          "predicates": [
+            {
+              "anyOf": [
+                "تستمر"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشاورات"
+              ]
+            },
+            {
+              "anyOf": [
+                "أسبوعين"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "البلدية"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "البلدية"
+        ],
+        "action": "أطلقت",
+        "object": "مشاورات خطة النقل",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "أطلقت البلدية مشاورات خطة النقل.",
+          "تستمر المشاورات أسبوعين."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D10",
+      "name": "Project and tests",
+      "language": "ar",
+      "category": "B",
+      "tags": [],
+      "sourceText": "بدأت الهيئة تشغيل المحطة تجريبياً.\nتستمر الاختبارات حتى نهاية الشهر.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "بدأت الهيئة تشغيل المحطة تجريبياً.",
+          "meaning": "بدأت الهيئة تشغيل المحطة تجريبياً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "بدأت"
+              ]
+            },
+            {
+              "anyOf": [
+                "تشغيل المحطة"
+              ]
+            },
+            {
+              "anyOf": [
+                "تجريبياً"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "تستمر الاختبارات حتى نهاية الشهر.",
+          "meaning": "تستمر الاختبارات حتى نهاية الشهر.",
+          "predicates": [
+            {
+              "anyOf": [
+                "تستمر"
+              ]
+            },
+            {
+              "anyOf": [
+                "الاختبارات"
+              ]
+            },
+            {
+              "anyOf": [
+                "حتى نهاية الشهر"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [
+        "حتى نهاية الشهر"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "بدأت",
+        "object": "تشغيل المحطة",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "بدأت الهيئة تشغيل المحطة تجريبياً.",
+          "تستمر الاختبارات حتى نهاية الشهر."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D11",
+      "name": "Feminine project announcement",
+      "language": "ar",
+      "category": "B",
+      "tags": [
+        "six-message-feminine"
+      ],
+      "sourceText": "أعلنت وزارة النقل إطلاق المرحلة الأولى من المشروع.\nتشمل المرحلة أعمال تجهيز المحطة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أعلنت وزارة النقل إطلاق المرحلة الأولى من المشروع.",
+          "meaning": "أعلنت وزارة النقل إطلاق المرحلة الأولى من المشروع.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلنت",
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "وزارة النقل"
+              ]
+            },
+            {
+              "anyOf": [
+                "إطلاق"
+              ]
+            },
+            {
+              "anyOf": [
+                "المرحلة الأولى"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشروع"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "تشمل المرحلة أعمال تجهيز المحطة.",
+          "meaning": "تشمل المرحلة أعمال تجهيز المحطة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "تشمل"
+              ]
+            },
+            {
+              "anyOf": [
+                "المرحلة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أعمال تجهيز المحطة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "وزارة النقل"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة النقل"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارة النقل"
+        ],
+        "action": "إطلاق",
+        "object": "المرحلة الأولى",
+        "location": null,
+        "speakers": [
+          "وزارة النقل"
+        ],
+        "arabicFacts": [
+          "أعلنت وزارة النقل إطلاق المرحلة الأولى من المشروع.",
+          "تشمل المرحلة أعمال تجهيز المحطة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D12",
+      "name": "Final sentence must survive",
+      "language": "ar",
+      "category": "B",
+      "tags": [
+        "six-message-final-omission"
+      ],
+      "sourceText": "قال المتحدث إن الاختبارات مستمرة.\nوقالت الوزارة إن النتائج ستنشر بعد انتهاء الاختبارات.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث إن الاختبارات مستمرة.",
+          "meaning": "قال المتحدث إن الاختبارات مستمرة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "الاختبارات"
+              ]
+            },
+            {
+              "anyOf": [
+                "مستمرة"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "وقالت الوزارة إن النتائج ستنشر بعد انتهاء الاختبارات.",
+          "meaning": "وقالت الوزارة إن النتائج ستنشر بعد انتهاء الاختبارات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "النتائج"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستنشر"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد انتهاء الاختبارات"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث",
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستنشر"
+      ],
+      "requiredConditions": [
+        "بعد انتهاء الاختبارات"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "مستمرة",
+        "object": "الاختبارات",
+        "location": null,
+        "speakers": [
+          "المتحدث",
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "قال المتحدث إن الاختبارات مستمرة.",
+          "وقالت الوزارة إن النتائج ستنشر بعد انتهاء الاختبارات."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D13",
+      "name": "Application deadline and response",
+      "language": "ar",
+      "category": "B",
+      "tags": [],
+      "sourceText": "فتحت الإدارة باب الطلبات.\nينتهي التسجيل يوم الخميس.\nتصدر النتائج بعد المراجعة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "فتحت الإدارة باب الطلبات.",
+          "meaning": "فتحت الإدارة باب الطلبات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الإدارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "فتحت"
+              ]
+            },
+            {
+              "anyOf": [
+                "باب الطلبات"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "ينتهي التسجيل يوم الخميس.",
+          "meaning": "ينتهي التسجيل يوم الخميس.",
+          "predicates": [
+            {
+              "anyOf": [
+                "ينتهي"
+              ]
+            },
+            {
+              "anyOf": [
+                "التسجيل"
+              ]
+            },
+            {
+              "anyOf": [
+                "الخميس"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f3",
+          "sourceExcerpt": "تصدر النتائج بعد المراجعة.",
+          "meaning": "تصدر النتائج بعد المراجعة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "تصدر"
+              ]
+            },
+            {
+              "anyOf": [
+                "النتائج"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد المراجعة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [
+        "الخميس"
+      ],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الإدارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [
+        "بعد المراجعة"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الإدارة"
+        ],
+        "action": "فتحت",
+        "object": "باب الطلبات",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "فتحت الإدارة باب الطلبات.",
+          "ينتهي التسجيل يوم الخميس.",
+          "تصدر النتائج بعد المراجعة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D14",
+      "name": "Mixed service continuity",
+      "language": "ar",
+      "category": "B",
+      "tags": [],
+      "sourceText": "بدأت البلدية صيانة الطريق.\nتستمر خدمات الحافلات أثناء الصيانة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "بدأت البلدية صيانة الطريق.",
+          "meaning": "بدأت البلدية صيانة الطريق.",
+          "predicates": [
+            {
+              "anyOf": [
+                "البلدية"
+              ]
+            },
+            {
+              "anyOf": [
+                "بدأت"
+              ]
+            },
+            {
+              "anyOf": [
+                "صيانة الطريق"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "تستمر خدمات الحافلات أثناء الصيانة.",
+          "meaning": "تستمر خدمات الحافلات أثناء الصيانة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "تستمر"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمات الحافلات"
+              ]
+            },
+            {
+              "anyOf": [
+                "أثناء الصيانة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "البلدية"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [
+        "أثناء الصيانة"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "البلدية"
+        ],
+        "action": "بدأت",
+        "object": "صيانة الطريق",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "بدأت البلدية صيانة الطريق.",
+          "تستمر خدمات الحافلات أثناء الصيانة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D15",
+      "name": "Grant without amount",
+      "language": "ar",
+      "category": "B",
+      "tags": [],
+      "sourceText": "وافق المجلس على برنامج دعم المدارس.\nلم يحدد البيان قيمة الدعم.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "وافق المجلس على برنامج دعم المدارس.",
+          "meaning": "وافق المجلس على برنامج دعم المدارس.",
+          "predicates": [
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "وافق"
+              ]
+            },
+            {
+              "anyOf": [
+                "برنامج دعم المدارس"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "لم يحدد البيان قيمة الدعم.",
+          "meaning": "لم يحدد البيان قيمة الدعم.",
+          "predicates": [
+            {
+              "anyOf": [
+                "لم يحدد"
+              ]
+            },
+            {
+              "anyOf": [
+                "البيان"
+              ]
+            },
+            {
+              "anyOf": [
+                "قيمة الدعم"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم يحدد"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "مليون",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المجلس"
+        ],
+        "action": "وافق",
+        "object": "برنامج دعم المدارس",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "وافق المجلس على برنامج دعم المدارس.",
+          "لم يحدد البيان قيمة الدعم."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D16",
+      "name": "Three material assertions",
+      "language": "ar",
+      "category": "B",
+      "tags": [
+        "truncate-multifact"
+      ],
+      "sourceText": "أعلنت الهيئة بدء العمل بالمكتب.\nيستقبل المكتب الطلبات إلكترونياً.\nستنشر الهيئة تقريراً بعد نهاية المرحلة التجريبية.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أعلنت الهيئة بدء العمل بالمكتب.",
+          "meaning": "أعلنت الهيئة بدء العمل بالمكتب.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلنت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "بدء العمل"
+              ]
+            },
+            {
+              "anyOf": [
+                "المكتب"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "يستقبل المكتب الطلبات إلكترونياً.",
+          "meaning": "يستقبل المكتب الطلبات إلكترونياً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "يستقبل"
+              ]
+            },
+            {
+              "anyOf": [
+                "المكتب"
+              ]
+            },
+            {
+              "anyOf": [
+                "الطلبات"
+              ]
+            },
+            {
+              "anyOf": [
+                "إلكترونياً"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f3",
+          "sourceExcerpt": "ستنشر الهيئة تقريراً بعد نهاية المرحلة التجريبية.",
+          "meaning": "ستنشر الهيئة تقريراً بعد نهاية المرحلة التجريبية.",
+          "predicates": [
+            {
+              "anyOf": [
+                "ستنشر"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "تقريراً"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد نهاية المرحلة التجريبية"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الهيئة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستنشر"
+      ],
+      "requiredConditions": [
+        "بعد نهاية المرحلة التجريبية"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2",
+        "f3"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "بدء",
+        "object": "العمل بالمكتب",
+        "location": null,
+        "speakers": [
+          "الهيئة"
+        ],
+        "arabicFacts": [
+          "أعلنت الهيئة بدء العمل بالمكتب.",
+          "يستقبل المكتب الطلبات إلكترونياً.",
+          "ستنشر الهيئة تقريراً بعد نهاية المرحلة التجريبية."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D17",
+      "name": "Feminine says",
+      "language": "ar",
+      "category": "C",
+      "tags": [],
+      "sourceText": "قالت الوزارة إن التسجيل سيبدأ غداً.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الوزارة إن التسجيل سيبدأ غداً.",
+          "meaning": "قالت الوزارة إن التسجيل سيبدأ غداً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت",
+                "ذكرت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "التسجيل"
+              ]
+            },
+            {
+              "anyOf": [
+                "سيبدأ"
+              ]
+            },
+            {
+              "anyOf": [
+                "غداً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [
+        "غداً"
+      ],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "سيبدأ"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "سيبدأ",
+        "object": "التسجيل",
+        "location": null,
+        "speakers": [
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "قالت الوزارة إن التسجيل سيبدأ غداً."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D18",
+      "name": "Conjunction feminine",
+      "language": "ar",
+      "category": "C",
+      "tags": [
+        "six-message-conjunction"
+      ],
+      "sourceText": "وقالت الهيئة إن الاختبارات لم تنته بعد.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "وقالت الهيئة إن الاختبارات لم تنته بعد.",
+          "meaning": "وقالت الهيئة إن الاختبارات لم تنته بعد.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت",
+                "ذكرت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "الاختبارات"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم تنته"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الهيئة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم تنته"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "لم تنته",
+        "object": "الاختبارات",
+        "location": null,
+        "speakers": [
+          "الهيئة"
+        ],
+        "arabicFacts": [
+          "وقالت الهيئة إن الاختبارات لم تنته بعد."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D19",
+      "name": "Two speakers not merged",
+      "language": "ar",
+      "category": "C",
+      "tags": [],
+      "sourceText": "قالت الوزارة إن الأعمال مستمرة.\nوقال المجلس إن المراجعة لم تبدأ.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الوزارة إن الأعمال مستمرة.",
+          "meaning": "قالت الوزارة إن الأعمال مستمرة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت",
+                "ذكرت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "الأعمال"
+              ]
+            },
+            {
+              "anyOf": [
+                "مستمرة"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "وقال المجلس إن المراجعة لم تبدأ.",
+          "meaning": "وقال المجلس إن المراجعة لم تبدأ.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال",
+                "ذكر"
+              ]
+            },
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "المراجعة"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم تبدأ"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة",
+        "المجلس"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم تبدأ"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "مستمرة",
+        "object": "الأعمال",
+        "location": null,
+        "speakers": [
+          "الوزارة",
+          "المجلس"
+        ],
+        "arabicFacts": [
+          "قالت الوزارة إن الأعمال مستمرة.",
+          "وقال المجلس إن المراجعة لم تبدأ."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D20",
+      "name": "Clarification",
+      "language": "ar",
+      "category": "C",
+      "tags": [],
+      "sourceText": "أوضحت الإدارة أن الخدمة متاحة للطلبات الجديدة فقط.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أوضحت الإدارة أن الخدمة متاحة للطلبات الجديدة فقط.",
+          "meaning": "أوضحت الإدارة أن الخدمة متاحة للطلبات الجديدة فقط.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أوضحت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الإدارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "الخدمة"
+              ]
+            },
+            {
+              "anyOf": [
+                "متاحة"
+              ]
+            },
+            {
+              "anyOf": [
+                "للطلبات الجديدة فقط"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الإدارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الإدارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [
+        "للطلبات الجديدة فقط"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الإدارة"
+        ],
+        "action": "متاحة",
+        "object": "الخدمة",
+        "location": null,
+        "speakers": [
+          "الإدارة"
+        ],
+        "arabicFacts": [
+          "أوضحت الإدارة أن الخدمة متاحة للطلبات الجديدة فقط."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D21",
+      "name": "Serious allegation remains attributed",
+      "language": "ar",
+      "category": "C",
+      "tags": [
+        "serious-attributed-claim"
+      ],
+      "sourceText": "قال المتحدث إن الشركة تلاعبت بنتائج الفحص.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث إن الشركة تلاعبت بنتائج الفحص.",
+          "meaning": "قال المتحدث إن الشركة تلاعبت بنتائج الفحص.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "الشركة"
+              ]
+            },
+            {
+              "anyOf": [
+                "تلاعبت"
+              ]
+            },
+            {
+              "anyOf": [
+                "بنتائج الفحص"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "تلاعبت",
+        "object": "الشركة",
+        "location": null,
+        "speakers": [
+          "المتحدث"
+        ],
+        "arabicFacts": [
+          "قال المتحدث إن الشركة تلاعبت بنتائج الفحص."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": true,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D22",
+      "name": "Attribution with uncertainty",
+      "language": "ar",
+      "category": "C",
+      "tags": [],
+      "sourceText": "وأضافت الوزارة أن أسباب العطل لم تتضح بعد.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "وأضافت الوزارة أن أسباب العطل لم تتضح بعد.",
+          "meaning": "وأضافت الوزارة أن أسباب العطل لم تتضح بعد.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أضافت",
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أسباب العطل"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم تتضح"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم تتضح"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "لم تتضح",
+        "object": "أسباب العطل",
+        "location": null,
+        "speakers": [
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "وأضافت الوزارة أن أسباب العطل لم تتضح بعد."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D23",
+      "name": "Twelve trains date location",
+      "language": "ar",
+      "category": "D",
+      "tags": [
+        "six-message-number-date"
+      ],
+      "sourceText": "أعلنت الهيئة تشغيل 12 رحلة في طهران يوم 5 أكتوبر.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أعلنت الهيئة تشغيل 12 رحلة في طهران يوم 5 أكتوبر.",
+          "meaning": "أعلنت الهيئة تشغيل 12 رحلة في طهران يوم 5 أكتوبر.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلنت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "تشغيل"
+              ]
+            },
+            {
+              "anyOf": [
+                "12 رحلة"
+              ]
+            },
+            {
+              "anyOf": [
+                "طهران"
+              ]
+            },
+            {
+              "anyOf": [
+                "5 أكتوبر"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الهيئة"
+      ],
+      "requiredNumbers": [
+        "12",
+        "5"
+      ],
+      "requiredDates": [
+        "5 أكتوبر"
+      ],
+      "requiredLocations": [
+        "طهران"
+      ],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "تشغيل",
+        "object": "12 رحلة",
+        "location": "طهران",
+        "speakers": [
+          "الهيئة"
+        ],
+        "arabicFacts": [
+          "أعلنت الهيئة تشغيل 12 رحلة في طهران يوم 5 أكتوبر."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D24",
+      "name": "Percentage exact",
+      "language": "ar",
+      "category": "D",
+      "tags": [],
+      "sourceText": "ارتفعت نسبة الإنجاز في المشروع إلى 35 بالمئة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "ارتفعت نسبة الإنجاز في المشروع إلى 35 بالمئة.",
+          "meaning": "ارتفعت نسبة الإنجاز في المشروع إلى 35 بالمئة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "ارتفعت"
+              ]
+            },
+            {
+              "anyOf": [
+                "نسبة الإنجاز"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشروع"
+              ]
+            },
+            {
+              "anyOf": [
+                "35 بالمئة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [
+        "35"
+      ],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المشروع"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المشروع"
+        ],
+        "action": "ارتفعت",
+        "object": "نسبة الإنجاز",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "ارتفعت نسبة الإنجاز في المشروع إلى 35 بالمئة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D25",
+      "name": "Unit retained",
+      "language": "ar",
+      "category": "D",
+      "tags": [],
+      "sourceText": "افتتحت البلدية طريقاً بطول 8 كيلومترات في شيراز.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "افتتحت البلدية طريقاً بطول 8 كيلومترات في شيراز.",
+          "meaning": "افتتحت البلدية طريقاً بطول 8 كيلومترات في شيراز.",
+          "predicates": [
+            {
+              "anyOf": [
+                "البلدية"
+              ]
+            },
+            {
+              "anyOf": [
+                "افتتحت"
+              ]
+            },
+            {
+              "anyOf": [
+                "طريقاً"
+              ]
+            },
+            {
+              "anyOf": [
+                "8 كيلومترات"
+              ]
+            },
+            {
+              "anyOf": [
+                "شيراز"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [
+        "8"
+      ],
+      "requiredDates": [],
+      "requiredLocations": [
+        "شيراز"
+      ],
+      "requiredEntities": [
+        "البلدية"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "8 أمتار",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "البلدية"
+        ],
+        "action": "افتتحت",
+        "object": "طريقاً",
+        "location": "شيراز",
+        "speakers": [],
+        "arabicFacts": [
+          "افتتحت البلدية طريقاً بطول 8 كيلومترات في شيراز."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D26",
+      "name": "Two numeric allocations",
+      "language": "ar",
+      "category": "D",
+      "tags": [],
+      "sourceText": "خصص المجلس 12 حافلة للخدمة.\nتعمل 6 حافلات صباحاً و6 حافلات مساءً.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "خصص المجلس 12 حافلة للخدمة.",
+          "meaning": "خصص المجلس 12 حافلة للخدمة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "خصص"
+              ]
+            },
+            {
+              "anyOf": [
+                "12 حافلة"
+              ]
+            },
+            {
+              "anyOf": [
+                "للخدمة"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "تعمل 6 حافلات صباحاً و6 حافلات مساءً.",
+          "meaning": "تعمل 6 حافلات صباحاً و6 حافلات مساءً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "6 حافلات صباحاً"
+              ]
+            },
+            {
+              "anyOf": [
+                "6 حافلات مساءً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [
+        "12",
+        "6"
+      ],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المجلس"
+        ],
+        "action": "خصص",
+        "object": "12 حافلة",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "خصص المجلس 12 حافلة للخدمة.",
+          "تعمل 6 حافلات صباحاً و6 حافلات مساءً."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D27",
+      "name": "Clock and deadline",
+      "language": "ar",
+      "category": "D",
+      "tags": [],
+      "sourceText": "حددت الإدارة بدء التسجيل يوم 7 أكتوبر عند الساعة 9 صباحاً.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "حددت الإدارة بدء التسجيل يوم 7 أكتوبر عند الساعة 9 صباحاً.",
+          "meaning": "حددت الإدارة بدء التسجيل يوم 7 أكتوبر عند الساعة 9 صباحاً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "الإدارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "حددت"
+              ]
+            },
+            {
+              "anyOf": [
+                "بدء التسجيل"
+              ]
+            },
+            {
+              "anyOf": [
+                "7 أكتوبر"
+              ]
+            },
+            {
+              "anyOf": [
+                "الساعة 9 صباحاً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [
+        "7",
+        "9"
+      ],
+      "requiredDates": [
+        "7 أكتوبر",
+        "9 صباحاً"
+      ],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الإدارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الإدارة"
+        ],
+        "action": "حددت",
+        "object": "بدء التسجيل",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "حددت الإدارة بدء التسجيل يوم 7 أكتوبر عند الساعة 9 صباحاً."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D28",
+      "name": "Quote denial",
+      "language": "ar",
+      "category": "E",
+      "tags": [],
+      "sourceText": "قال المتحدث «لن تتوقف الخدمة».",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث «لن تتوقف الخدمة».",
+          "meaning": "قال المتحدث «لن تتوقف الخدمة».",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "لن تتوقف الخدمة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [
+        "«لن تتوقف الخدمة»"
+      ],
+      "requiredModalities": [
+        "لن تتوقف"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "تتوقف",
+        "object": "الخدمة",
+        "location": null,
+        "speakers": [
+          "المتحدث"
+        ],
+        "arabicFacts": [
+          "قال المتحدث «لن تتوقف الخدمة»."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D29",
+      "name": "Quote uncertainty",
+      "language": "ar",
+      "category": "E",
+      "tags": [],
+      "sourceText": "قالت الوزارة «قد تتغير المواعيد».",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الوزارة «قد تتغير المواعيد».",
+          "meaning": "قالت الوزارة «قد تتغير المواعيد».",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "قد تتغير المواعيد"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [
+        "«قد تتغير المواعيد»"
+      ],
+      "requiredModalities": [
+        "قد تتغير"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "تتغير",
+        "object": "المواعيد",
+        "location": null,
+        "speakers": [
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "قالت الوزارة «قد تتغير المواعيد»."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D30",
+      "name": "Two quotes separate speakers",
+      "language": "ar",
+      "category": "E",
+      "tags": [],
+      "sourceText": "قال المتحدث «الاختبارات مستمرة».\nوقالت الهيئة «لم تصدر النتائج».",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث «الاختبارات مستمرة».",
+          "meaning": "قال المتحدث «الاختبارات مستمرة».",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "الاختبارات مستمرة"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "وقالت الهيئة «لم تصدر النتائج».",
+          "meaning": "وقالت الهيئة «لم تصدر النتائج».",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم تصدر النتائج"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث",
+        "الهيئة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [
+        "«الاختبارات مستمرة»",
+        "«لم تصدر النتائج»"
+      ],
+      "requiredModalities": [
+        "لم تصدر"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "مستمرة",
+        "object": "الاختبارات",
+        "location": null,
+        "speakers": [
+          "المتحدث",
+          "الهيئة"
+        ],
+        "arabicFacts": [
+          "قال المتحدث «الاختبارات مستمرة».",
+          "وقالت الهيئة «لم تصدر النتائج»."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D31",
+      "name": "Protected possessive unresolved",
+      "language": "ar",
+      "category": "E",
+      "tags": [],
+      "sourceText": "قال المتحدث «سنراجع خطتنا».",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث «سنراجع خطتنا».",
+          "meaning": "قال المتحدث «سنراجع خطتنا».",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "سنراجع خطتنا"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [
+        "«سنراجع خطتنا»"
+      ],
+      "requiredModalities": [
+        "سنراجع"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "الخطة الإيرانية",
+        "خطة الحكومة",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "سنراجع",
+        "object": "خطتنا",
+        "location": null,
+        "speakers": [
+          "المتحدث"
+        ],
+        "arabicFacts": [
+          "قال المتحدث «سنراجع خطتنا»."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D32",
+      "name": "Future colloquial",
+      "language": "ar",
+      "category": "F",
+      "tags": [
+        "six-message-awkward"
+      ],
+      "sourceText": "أعلنت الوزارة أن أعمال المشروع رح تبدأ الأسبوع الجاي.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أعلنت الوزارة أن أعمال المشروع رح تبدأ الأسبوع الجاي.",
+          "meaning": "أعلنت الوزارة أن أعمال المشروع ستبدأ الأسبوع المقبل.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلنت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أعمال المشروع"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستبدأ"
+              ]
+            },
+            {
+              "anyOf": [
+                "الأسبوع المقبل"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستبدأ"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism",
+        "rewrite-required"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "رح تبدأ",
+        "object": "أعمال المشروع",
+        "location": null,
+        "speakers": [
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "أعلنت الوزارة أن أعمال المشروع ستبدأ الأسبوع المقبل."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D33",
+      "name": "Awkward current preparation",
+      "language": "ar",
+      "category": "F",
+      "tags": [],
+      "sourceText": "قالت الهيئة إن التجهيزات عم تنعمل وهلأ الشغل مستمر.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الهيئة إن التجهيزات عم تنعمل وهلأ الشغل مستمر.",
+          "meaning": "قالت الهيئة إن التجهيزات تُعدّ والعمل مستمر حالياً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "التجهيزات"
+              ]
+            },
+            {
+              "anyOf": [
+                "تعد",
+                "تُعد"
+              ]
+            },
+            {
+              "anyOf": [
+                "العمل"
+              ]
+            },
+            {
+              "anyOf": [
+                "مستمر"
+              ]
+            },
+            {
+              "anyOf": [
+                "حالياً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الهيئة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism",
+        "rewrite-required"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "مستمر",
+        "object": "الشغل",
+        "location": null,
+        "speakers": [
+          "الهيئة"
+        ],
+        "arabicFacts": [
+          "قالت الهيئة إن التجهيزات تُعدّ والعمل مستمر حالياً."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D34",
+      "name": "Colloquial results future",
+      "language": "ar",
+      "category": "F",
+      "tags": [],
+      "sourceText": "قالت الإدارة إن النتائج رح تكون جاهزة الأسبوع الجاي.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الإدارة إن النتائج رح تكون جاهزة الأسبوع الجاي.",
+          "meaning": "قالت الإدارة إن النتائج ستكون جاهزة الأسبوع المقبل.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الإدارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "النتائج"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستكون"
+              ]
+            },
+            {
+              "anyOf": [
+                "جاهزة"
+              ]
+            },
+            {
+              "anyOf": [
+                "الأسبوع المقبل"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الإدارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الإدارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستكون"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism",
+        "rewrite-required"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الإدارة"
+        ],
+        "action": "رح تكون",
+        "object": "النتائج",
+        "location": null,
+        "speakers": [
+          "الإدارة"
+        ],
+        "arabicFacts": [
+          "قالت الإدارة إن النتائج ستكون جاهزة الأسبوع المقبل."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D35",
+      "name": "Redundant awkward phrasing",
+      "language": "ar",
+      "category": "F",
+      "tags": [],
+      "sourceText": "قالت الوزارة إن الشغل بالمشروع يعني الأعمال فيه مستمرة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الوزارة إن الشغل بالمشروع يعني الأعمال فيه مستمرة.",
+          "meaning": "قالت الوزارة إن أعمال المشروع مستمرة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أعمال المشروع"
+              ]
+            },
+            {
+              "anyOf": [
+                "مستمرة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism",
+        "rewrite-required"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "مستمرة",
+        "object": "الأعمال",
+        "location": null,
+        "speakers": [
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "قالت الوزارة إن أعمال المشروع مستمرة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D36",
+      "name": "Colloquial continuation",
+      "language": "ar",
+      "category": "F",
+      "tags": [],
+      "sourceText": "قالت البلدية إن الخدمة رح تستمر الأسبوع الجاي.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت البلدية إن الخدمة رح تستمر الأسبوع الجاي.",
+          "meaning": "قالت البلدية إن الخدمة ستستمر الأسبوع المقبل.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "البلدية"
+              ]
+            },
+            {
+              "anyOf": [
+                "الخدمة"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستستمر"
+              ]
+            },
+            {
+              "anyOf": [
+                "الأسبوع المقبل"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "البلدية"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "البلدية"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستستمر"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism",
+        "rewrite-required"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "البلدية"
+        ],
+        "action": "رح تستمر",
+        "object": "الخدمة",
+        "location": null,
+        "speakers": [
+          "البلدية"
+        ],
+        "arabicFacts": [
+          "قالت البلدية إن الخدمة ستستمر الأسبوع المقبل."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D37",
+      "name": "Persian speaker first",
+      "language": "fa",
+      "category": "G",
+      "tags": [
+        "six-message-persian-speaker-first"
+      ],
+      "sourceText": "وزارت راه اعلام کرد پروژه آغاز شده است.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "وزارت راه اعلام کرد پروژه آغاز شده است.",
+          "meaning": "أعلنت وزارة النقل أن المشروع بدأ.",
+          "predicates": [
+            {
+              "anyOf": [
+                "وزارة النقل"
+              ]
+            },
+            {
+              "anyOf": [
+                "أعلنت",
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشروع"
+              ]
+            },
+            {
+              "anyOf": [
+                "بدأ"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "وزارة النقل"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة النقل"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارت راه"
+        ],
+        "action": "آغاز شده",
+        "object": "پروژه",
+        "location": null,
+        "speakers": [
+          "وزارت راه"
+        ],
+        "arabicFacts": [
+          "أعلنت وزارة النقل أن المشروع بدأ."
+        ],
+        "anchorArabic": {
+          "وزارت راه": "وزارة النقل",
+          "آغاز شده": "بدأ",
+          "پروژه": "المشروع"
+        },
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D38",
+      "name": "Persian numeric schools",
+      "language": "fa",
+      "category": "G",
+      "tags": [],
+      "sourceText": "شورا ۱۲ مدرسه جدید را در پایتخت افتتاح کرد.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "شورا ۱۲ مدرسه جدید را در پایتخت افتتاح کرد.",
+          "meaning": "افتتح المجلس 12 مدرسة جديدة في العاصمة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "افتتح"
+              ]
+            },
+            {
+              "anyOf": [
+                "12 مدرسة جديدة"
+              ]
+            },
+            {
+              "anyOf": [
+                "العاصمة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [
+        "12"
+      ],
+      "requiredDates": [],
+      "requiredLocations": [
+        "العاصمة"
+      ],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "شورا"
+        ],
+        "action": "افتتاح کرد",
+        "object": "۱۲ مدرسه جدید",
+        "location": "پایتخت",
+        "speakers": [],
+        "arabicFacts": [
+          "افتتح المجلس 12 مدرسة جديدة في العاصمة."
+        ],
+        "anchorArabic": {
+          "شورا": "المجلس",
+          "افتتاح کرد": "افتتح",
+          "۱۲ مدرسه جدید": "12 مدرسة جديدة",
+          "پایتخت": "العاصمة"
+        },
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D39",
+      "name": "Persian negation",
+      "language": "fa",
+      "category": "G",
+      "tags": [],
+      "sourceText": "وزارت راه اعلام کرد پروژه هنوز آغاز نشده است.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "وزارت راه اعلام کرد پروژه هنوز آغاز نشده است.",
+          "meaning": "أعلنت وزارة النقل أن المشروع لم يبدأ بعد.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلنت"
+              ]
+            },
+            {
+              "anyOf": [
+                "وزارة النقل"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشروع"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم يبدأ"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "وزارة النقل"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة النقل"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم يبدأ"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارت راه"
+        ],
+        "action": "آغاز نشده",
+        "object": "پروژه",
+        "location": null,
+        "speakers": [
+          "وزارت راه"
+        ],
+        "arabicFacts": [
+          "أعلنت وزارة النقل أن المشروع لم يبدأ بعد."
+        ],
+        "anchorArabic": {
+          "وزارت راه": "وزارة النقل",
+          "آغاز نشده": "لم يبدأ",
+          "پروژه": "المشروع"
+        },
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D40",
+      "name": "Persian condition",
+      "language": "fa",
+      "category": "G",
+      "tags": [],
+      "sourceText": "شورا اعلام کرد خدمات پس از پایان آزمایش آغاز می‌شود.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "شورا اعلام کرد خدمات پس از پایان آزمایش آغاز می‌شود.",
+          "meaning": "أعلن المجلس أن الخدمة ستبدأ بعد انتهاء الاختبار.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلن"
+              ]
+            },
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "الخدمة"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستبدأ"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد انتهاء الاختبار"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المجلس"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستبدأ"
+      ],
+      "requiredConditions": [
+        "بعد انتهاء الاختبار"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "شورا"
+        ],
+        "action": "آغاز می‌شود",
+        "object": "خدمات",
+        "location": null,
+        "speakers": [
+          "شورا"
+        ],
+        "arabicFacts": [
+          "أعلن المجلس أن الخدمة ستبدأ بعد انتهاء الاختبار."
+        ],
+        "anchorArabic": {
+          "شورا": "المجلس",
+          "آغاز می‌شود": "ستبدأ",
+          "خدمات": "الخدمة"
+        },
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D41",
+      "name": "Persian final assertion",
+      "language": "fa",
+      "category": "G",
+      "tags": [],
+      "sourceText": "شورا پروژه را افتتاح کرد.\nنتایج آزمایش بعداً منتشر می‌شود.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "شورا پروژه را افتتاح کرد.",
+          "meaning": "افتتح المجلس المشروع.",
+          "predicates": [
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "افتتح"
+              ]
+            },
+            {
+              "anyOf": [
+                "المشروع"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "نتایج آزمایش بعداً منتشر می‌شود.",
+          "meaning": "ستنشر نتائج الاختبار لاحقاً.",
+          "predicates": [
+            {
+              "anyOf": [
+                "نتائج الاختبار"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستنشر"
+              ]
+            },
+            {
+              "anyOf": [
+                "لاحقاً"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستنشر"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "شورا"
+        ],
+        "action": "افتتاح کرد",
+        "object": "پروژه",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "افتتح المجلس المشروع.",
+          "ستنشر نتائج الاختبار لاحقاً."
+        ],
+        "anchorArabic": {
+          "شورا": "المجلس",
+          "افتتاح کرد": "افتتح",
+          "پروژه": "المشروع"
+        },
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D42",
+      "name": "Exact duplicate",
+      "language": "ar",
+      "category": "H",
+      "tags": [
+        "exact-duplicate-zero-call"
+      ],
+      "sourceText": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "DUPLICATE",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "meaning": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "وزارة الطاقة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أطلقت"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمة إلكترونية"
+              ]
+            },
+            {
+              "anyOf": [
+                "لتقديم الطلبات"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة الطاقة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": "permit-service",
+      "relation": {
+        "kind": "DUPLICATE",
+        "previousCaseId": "D01"
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارة الطاقة"
+        ],
+        "action": "أطلقت",
+        "object": "خدمة إلكترونية",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D43",
+      "name": "Near duplicate with source footer",
+      "language": "ar",
+      "category": "H",
+      "tags": [],
+      "sourceText": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.\n@synthetic_newsroom",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "DUPLICATE",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "meaning": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "وزارة الطاقة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أطلقت"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمة إلكترونية"
+              ]
+            },
+            {
+              "anyOf": [
+                "لتقديم الطلبات"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة الطاقة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": "permit-service",
+      "relation": {
+        "kind": "DUPLICATE",
+        "previousCaseId": "D01"
+      },
+      "notes": "Footer is non-factual and not a material fact. Same immutable event as D01.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارة الطاقة"
+        ],
+        "action": "أطلقت",
+        "object": "خدمة إلكترونية",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D44",
+      "name": "Material update not duplicate",
+      "language": "ar",
+      "category": "H",
+      "tags": [],
+      "sourceText": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.\nأعلنت وزارة الطاقة إضافة خدمة متابعة الطلبات.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "meaning": "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "وزارة الطاقة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أطلقت"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمة إلكترونية"
+              ]
+            },
+            {
+              "anyOf": [
+                "لتقديم الطلبات"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "أعلنت وزارة الطاقة إضافة خدمة متابعة الطلبات.",
+          "meaning": "أعلنت وزارة الطاقة إضافة خدمة متابعة الطلبات.",
+          "predicates": [
+            {
+              "anyOf": [
+                "أعلنت"
+              ]
+            },
+            {
+              "anyOf": [
+                "وزارة الطاقة"
+              ]
+            },
+            {
+              "anyOf": [
+                "إضافة"
+              ]
+            },
+            {
+              "anyOf": [
+                "خدمة متابعة الطلبات"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "وزارة الطاقة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "وزارة الطاقة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": "permit-service",
+      "relation": {
+        "kind": "MATERIAL_UPDATE",
+        "previousCaseId": "D01"
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "وزارة الطاقة"
+        ],
+        "action": "أطلقت",
+        "object": "خدمة إلكترونية",
+        "location": null,
+        "speakers": [
+          "وزارة الطاقة"
+        ],
+        "arabicFacts": [
+          "أطلقت وزارة الطاقة خدمة إلكترونية لتقديم الطلبات.",
+          "أعلنت وزارة الطاقة إضافة خدمة متابعة الطلبات."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": {
+          "relation": "SAME",
+          "newFactIds": [
+            "f2"
+          ],
+          "conflictingFactIds": [],
+          "rationale": "معلومة جديدة عن خدمة متابعة الطلبات"
+        }
+      }
+    },
+    {
+      "id": "D45",
+      "name": "No nationality from pronoun",
+      "language": "ar",
+      "category": "I",
+      "tags": [
+        "unresolved-possessive",
+        "flagged-source-never-auto-eligible"
+      ],
+      "sourceText": "قال المتحدث إن قواعدنا ستخضع للصيانة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "NEEDS_REVIEW",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث إن قواعدنا ستخضع للصيانة.",
+          "meaning": "قال المتحدث إن قواعدنا ستخضع للصيانة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "قواعدنا"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستخضع"
+              ]
+            },
+            {
+              "anyOf": [
+                "للصيانة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستخضع"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "القواعد الإيرانية",
+        "قواعد بلاده",
+        "القواعد الأمريكية",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required. This case uses a flagged synthetic source; review is mandatory independently of factual fidelity.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "ستخضع",
+        "object": "قواعدنا",
+        "location": null,
+        "speakers": [
+          "المتحدث"
+        ],
+        "arabicFacts": [
+          "قال المتحدث إن قواعدنا ستخضع للصيانة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": true,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D46",
+      "name": "Audience knowledge not announcement",
+      "language": "ar",
+      "category": "I",
+      "tags": [
+        "audience-specific-knowledge"
+      ],
+      "sourceText": "قال المتحدث إن السكان لم يبلغوا بالموعد.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المتحدث إن السكان لم يبلغوا بالموعد.",
+          "meaning": "قال المتحدث إن السكان لم يبلغوا بالموعد.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المتحدث"
+              ]
+            },
+            {
+              "anyOf": [
+                "السكان"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم يبلغوا"
+              ]
+            },
+            {
+              "anyOf": [
+                "بالموعد"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المتحدث"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المتحدث"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم يبلغوا"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "لم يعلن",
+        "لم يكشف",
+        "أخفت",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المتحدث"
+        ],
+        "action": "لم يبلغوا",
+        "object": "السكان",
+        "location": null,
+        "speakers": [
+          "المتحدث"
+        ],
+        "arabicFacts": [
+          "قال المتحدث إن السكان لم يبلغوا بالموعد."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D47",
+      "name": "Allegation denial distinct",
+      "language": "ar",
+      "category": "I",
+      "tags": [
+        "no-claim-merge"
+      ],
+      "sourceText": "قال المجلس إن الشركة أخرت التسليم.\nوقالت الشركة إنها لم تؤخر التسليم.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قال المجلس إن الشركة أخرت التسليم.",
+          "meaning": "قال المجلس إن الشركة أخرت التسليم.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قال"
+              ]
+            },
+            {
+              "anyOf": [
+                "المجلس"
+              ]
+            },
+            {
+              "anyOf": [
+                "الشركة"
+              ]
+            },
+            {
+              "anyOf": [
+                "أخرت التسليم"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "وقالت الشركة إنها لم تؤخر التسليم.",
+          "meaning": "وقالت الشركة إنها لم تؤخر التسليم.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الشركة"
+              ]
+            },
+            {
+              "anyOf": [
+                "لم تؤخر التسليم"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "المجلس",
+        "الشركة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "المجلس"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "لم تؤخر"
+      ],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "المجلس"
+        ],
+        "action": "أخرت",
+        "object": "التسليم",
+        "location": null,
+        "speakers": [
+          "المجلس",
+          "الشركة"
+        ],
+        "arabicFacts": [
+          "قال المجلس إن الشركة أخرت التسليم.",
+          "وقالت الشركة إنها لم تؤخر التسليم."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": true,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D48",
+      "name": "Conditional future not present",
+      "language": "ar",
+      "category": "J",
+      "tags": [],
+      "sourceText": "قالت الهيئة إن الخدمة قد تبدأ بعد انتهاء الاختبارات إذا نجحت المراجعة.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الهيئة إن الخدمة قد تبدأ بعد انتهاء الاختبارات إذا نجحت المراجعة.",
+          "meaning": "قالت الهيئة إن الخدمة قد تبدأ بعد انتهاء الاختبارات إذا نجحت المراجعة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الهيئة"
+              ]
+            },
+            {
+              "anyOf": [
+                "الخدمة"
+              ]
+            },
+            {
+              "anyOf": [
+                "قد تبدأ"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد انتهاء الاختبارات"
+              ]
+            },
+            {
+              "anyOf": [
+                "إذا نجحت المراجعة"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الهيئة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الهيئة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "قد تبدأ"
+      ],
+      "requiredConditions": [
+        "بعد انتهاء الاختبارات",
+        "إذا نجحت المراجعة"
+      ],
+      "forbiddenAdditions": [
+        "بدأت الخدمة",
+        "ستبدأ الخدمة حتماً",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الهيئة"
+        ],
+        "action": "قد تبدأ",
+        "object": "الخدمة",
+        "location": null,
+        "speakers": [
+          "الهيئة"
+        ],
+        "arabicFacts": [
+          "قالت الهيئة إن الخدمة قد تبدأ بعد انتهاء الاختبارات إذا نجحت المراجعة."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D49",
+      "name": "Cause cannot reverse",
+      "language": "ar",
+      "category": "J",
+      "tags": [
+        "cause-effect",
+        "no-invented-purpose"
+      ],
+      "sourceText": "تأخرت الأعمال بسبب الأمطار.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "تأخرت الأعمال بسبب الأمطار.",
+          "meaning": "تأخرت الأعمال بسبب الأمطار.",
+          "predicates": [
+            {
+              "anyOf": [
+                "تأخرت الأعمال بسبب الأمطار"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الأعمال"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [],
+      "requiredConditions": [],
+      "forbiddenAdditions": [
+        "هطلت الأمطار بسبب",
+        "لزيادة التمويل",
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الأعمال"
+        ],
+        "action": "تأخرت",
+        "object": "الأعمال",
+        "location": null,
+        "speakers": [],
+        "arabicFacts": [
+          "تأخرت الأعمال بسبب الأمطار."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    },
+    {
+      "id": "D50",
+      "name": "Final followup after tests",
+      "language": "ar",
+      "category": "J",
+      "tags": [
+        "six-message-final-omission",
+        "repeated-evidence-context"
+      ],
+      "sourceText": "قالت الوزارة إن الاختبارات مستمرة.\nوقالت الوزارة إنها ستعلن تفاصيل إضافية بعد انتهاء الاختبارات الفنية.",
+      "sourceType": "SYNTHETIC",
+      "expectedDisposition": "READY_TO_PUBLISH",
+      "materialFacts": [
+        {
+          "id": "f1",
+          "sourceExcerpt": "قالت الوزارة إن الاختبارات مستمرة.",
+          "meaning": "قالت الوزارة إن الاختبارات مستمرة.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "الاختبارات"
+              ]
+            },
+            {
+              "anyOf": [
+                "مستمرة"
+              ]
+            }
+          ]
+        },
+        {
+          "id": "f2",
+          "sourceExcerpt": "وقالت الوزارة إنها ستعلن تفاصيل إضافية بعد انتهاء الاختبارات الفنية.",
+          "meaning": "وقالت الوزارة إنها ستعلن تفاصيل إضافية بعد انتهاء الاختبارات الفنية.",
+          "predicates": [
+            {
+              "anyOf": [
+                "قالت"
+              ]
+            },
+            {
+              "anyOf": [
+                "الوزارة"
+              ]
+            },
+            {
+              "anyOf": [
+                "ستعلن"
+              ]
+            },
+            {
+              "anyOf": [
+                "تفاصيل إضافية"
+              ]
+            },
+            {
+              "anyOf": [
+                "بعد انتهاء الاختبارات الفنية"
+              ]
+            }
+          ]
+        }
+      ],
+      "requiredAttributions": [
+        "الوزارة"
+      ],
+      "requiredNumbers": [],
+      "requiredDates": [],
+      "requiredLocations": [],
+      "requiredEntities": [
+        "الوزارة"
+      ],
+      "requiredQuotes": [],
+      "requiredModalities": [
+        "ستعلن"
+      ],
+      "requiredConditions": [
+        "بعد انتهاء الاختبارات الفنية"
+      ],
+      "forbiddenAdditions": [
+        "شركة الأطلس"
+      ],
+      "expectedCoverage": [
+        "f1",
+        "f2"
+      ],
+      "styleCharacteristics": [
+        "MSA",
+        "informative-title",
+        "single-branding",
+        "no-sensationalism"
+      ],
+      "allowedTransformations": [
+        "punctuation",
+        "sentence-order-within-supported-meaning",
+        "listed-semantic-alternatives"
+      ],
+      "forbiddenTransformations": [
+        "invent-facts",
+        "resolve-unknown-identity",
+        "change-attribution",
+        "change-certainty",
+        "omit-material-fact"
+      ],
+      "duplicateGroup": null,
+      "relation": {
+        "kind": "NEW_EVENT",
+        "previousCaseId": null
+      },
+      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required.",
+      "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
+      "replay": {
+        "actors": [
+          "الوزارة"
+        ],
+        "action": "مستمرة",
+        "object": "الاختبارات",
+        "location": null,
+        "speakers": [
+          "الوزارة"
+        ],
+        "arabicFacts": [
+          "قالت الوزارة إن الاختبارات مستمرة.",
+          "وقالت الوزارة إنها ستعلن تفاصيل إضافية بعد انتهاء الاختبارات الفنية."
+        ],
+        "anchorArabic": {},
+        "publication": null,
+        "seriousClaim": false,
+        "flagged": false,
+        "kind": null,
+        "comparison": null
+      }
+    }
+  ]
+}

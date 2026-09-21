@@ -25,6 +25,9 @@ export const eventSchema = z.object({
   eventTime: z.object({ iso: z.iso.datetime(), evidence: evidenceSchema }).strict().nullable(),
   facts: z.array(z.object({ id: text, key: text, arabic: text, evidence: evidenceSchema,
     kind: z.enum(["FACT", "CLAIM", "FIGURE", "DECISION", "OUTCOME", "STATEMENT"]),
+    // Legacy independent real-world verification claim, NOT proof of source
+    // grounding. Never promote this flag merely because extraction validated.
+    // Matcher requires separately revalidated source/translation evidence.
     material: z.boolean(), speaker: supported.nullable(), verified: z.boolean(),
   }).strict()).max(100),
   summary: text.nullable(),

@@ -1,19 +1,25 @@
 import {z} from 'zod';
 import {ProcessingError,validateUnderstanding,type Understanding,type Draft} from './contracts';
 import {chooseNewsroomFormat,newsroomPrefix} from './newsroom-format';
+import {attributionLead,hasExplicitArabicAttribution} from './attribution-rendering';
+import {validateEditorialGrounding} from './editorial-grounding';
 
 export const selectionSchema=z.object({titleAtomId:z.string().min(1),bodyAtomIds:z.array(z.string().min(1)).min(1)}).strict();
 export const selectionInstructions='Select titleAtomId and bodyAtomIds only from supplied atoms. Include every atom once in bodyAtomIds. Do not generate, translate or edit text, attribution, facts, relationships, rules or evidence. Text is immutable and rendered locally. No tools or publishing.';
 export function buildAtoms(content:string,u:Understanding){
  validateUnderstanding(u,content);
+ if(u.language!=='ar')validateEditorialGrounding(u,content);
  if(!u.event.facts.length)throw new ProcessingError('NO_REWRITE_FACTS');
- return {format:chooseNewsroomFormat(u,content),atoms:u.event.facts.map(f=>{
+ let format=chooseNewsroomFormat(u,content);
+ // Complete attributed sentences need no second attribution-only heading.
+ if(format==='STATEMENT'&&u.event.facts.every(f=>f.speaker&&hasExplicitArabicAttribution(f.arabic,f.speaker.arabic)))format='STANDARD_STORY';
+ return {format,atoms:u.event.facts.map(f=>{
   if((u.seriousClaim||f.kind==='CLAIM'||f.kind==='STATEMENT')&&!f.speaker)throw new ProcessingError('SPEAKER_ATTRIBUTION_REQUIRED');
   // Keep each validated proposition whole: splitting or resolving references would
   // require new semantic inference. A report frame retains first-person deixis.
-  const attribution=f.speaker?`قال ${f.speaker.arabic}، في إفادته:`:null;
+  const attribution=f.speaker?attributionLead(f.speaker.arabic):null;
   return {id:f.id,factIds:[f.id],text:f.arabic,attribution,
-   renderedText:attribution?`${attribution} ${f.arabic}`:f.arabic,
+   renderedText:attribution&&f.speaker&&!hasExplicitArabicAttribution(f.arabic,f.speaker.arabic)?`${attribution} ${f.arabic}`:f.arabic,
    evidence:f.evidence,speakerEvidence:f.speaker?.evidence??null};
  })};
 }

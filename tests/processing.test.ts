@@ -17,12 +17,15 @@ for (const id of ["telegram-b","x-a","english","persian","rewrite"]) test(`seman
   assert.equal(result.classification,"DUPLICATE");assert.equal(result.candidate?.id,"event-1");
   assert.deepEqual(result.evidence.actors,["person:araghchi"]);
 });
-test("verified decision creates material update; translation adds no material fact",async()=>{
+test("source-grounded decision creates material update without claiming independent truth",async()=>{
   const s=scenarios.find(s=>s.id === "update")!;
-  const m=await matchEvent(s.understanding.event,when,[candidate],fixtureProvider(),signal);
+  const m=await matchEvent(s.understanding.event,when,[candidate],fixtureProvider(),signal,{source:s.content,understanding:s.understanding});
   assert.equal(m.classification,"MATERIAL_UPDATE");assert.deepEqual(m.newFactIds,["update:agreement"]);
   const unverified=structuredClone(s.understanding.event);unverified.facts[1].verified=false;
   assert.equal((await matchEvent(unverified,when,[candidate],fixtureProvider(),signal)).classification,"UNCERTAIN_MATCH");
+  const u={...s.understanding,event:unverified};
+  assert.equal((await matchEvent(unverified,when,[candidate],fixtureProvider(),signal,{source:s.content,understanding:u})).classification,'MATERIAL_UPDATE');
+  assert.equal(unverified.facts[1].verified,false);
 });
 test("same actors different event stays new; unresolved similarity holds candidate",async()=>{
   assert.equal((await matchEvent(scenarios.find(s=>s.id === "different")!.understanding.event,when,[candidate],fixtureProvider(),signal)).classification,"NEW_EVENT");

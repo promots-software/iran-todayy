@@ -1,4 +1,5 @@
-import { comparisonSchema, type EventData, type LanguageProvider, ProcessingError } from "./contracts";
+import { comparisonSchema, type EventData, type LanguageProvider, type Understanding, ProcessingError } from "./contracts";
+import {hasEditorialGrounding} from './editorial-grounding';
 import { ruleSet } from "./rules";
 export type Candidate = { id: string; revisionId: string; revision: number; publishedAt: Date; data: EventData; published: boolean };
 export type MatchDecision = { classification: "NEW_EVENT" | "DUPLICATE" | "MATERIAL_UPDATE" | "UNCERTAIN_MATCH"; candidate?: Candidate; rationale: string; newFactIds: string[]; evidence: Record<string, unknown>; candidates: { id: string; revisionId: string; rationale: string; evidence: Record<string, unknown> }[] };
@@ -11,7 +12,8 @@ export function sameValidatedEvent(a:EventData,b:EventData){
  const semantic=(value:unknown):unknown=>Array.isArray(value)?value.map(semantic):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([k])=>!['evidence','id'].includes(k)).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,semantic(v)])):value;
  return JSON.stringify(semantic(a))===JSON.stringify(semantic(b));
 }
-export async function matchEvent(incoming: EventData, publishedAt: Date, candidates: Candidate[], provider: LanguageProvider, signal: AbortSignal): Promise<MatchDecision> {
+export type MatchGrounding={source:string;understanding:Understanding};
+export async function matchEvent(incoming: EventData, publishedAt: Date, candidates: Candidate[], provider: LanguageProvider, signal: AbortSignal, grounding?:MatchGrounding): Promise<MatchDecision> {
   const results: (MatchDecision & { candidate: Candidate })[] = [];
   // Only identical semantic input is reused. Each event still gets its own
   // temporal/conflict decision; multiple matches still require human review.
@@ -38,10 +40,14 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     const knownIds = new Set(incoming.facts.map(f => f.id));
     if ([...semantic.newFactIds, ...semantic.conflictingFactIds].some(id => !knownIds.has(id))) throw new ProcessingError("INVALID_COMPARISON_EVIDENCE");
     const fresh = incoming.facts.filter(f => !old.facts.some(o => norm(o.key) === norm(f.key)));
-    const material = fresh.filter(f => f.material && f.verified && ["FIGURE", "DECISION", "OUTCOME", "STATEMENT"].includes(f.kind) && semantic.newFactIds.includes(f.id));
+    // Independent truth verification is NOT evidence grounding. A provider's
+    // boolean cannot authorize updates. Revalidate the exact incoming event,
+    // source spans, attribution and reviewed translations at this boundary.
+    const sourceGrounded=!!grounding&&JSON.stringify(grounding.understanding.event)===JSON.stringify(incoming)&&hasEditorialGrounding(grounding.understanding,grounding.source);
+    const material = fresh.filter(f => f.material && sourceGrounded && ["FIGURE", "DECISION", "OUTCOME", "STATEMENT"].includes(f.kind) && semantic.newFactIds.includes(f.id));
     const anchors = actors.length > 0 && action && (object || location || (!!incoming.eventTime && !!old.eventTime && timeA === timeB));
     const contradiction = locationConflict || objectConflict || timeConflict || semantic.conflictingFactIds.length > 0;
-    const evidence = { actors, action, object, location, elapsedHours, insideDuplicateWindow: elapsedHours <= ruleSet.duplicateWindowHours, locationConflict, objectConflict, timeConflict, factsOverlap, newFacts: fresh.map(f=>f.id), materialFacts: material.map(f=>f.id), semantic, matcherVersion: "layered-v1" };
+    const evidence = { actors, action, object, location, elapsedHours, insideDuplicateWindow: elapsedHours <= ruleSet.duplicateWindowHours, locationConflict, objectConflict, timeConflict, factsOverlap, newFacts: fresh.map(f=>f.id), materialFacts: material.map(f=>f.id), sourceGrounded,materialBasis:'source-grounded-not-independent-truth', semantic, matcherVersion: "layered-v1" };
     if (semantic.relation === "DIFFERENT") continue;
     let classification: MatchDecision["classification"] = "UNCERTAIN_MATCH";
     // Historical relationship remains visible, but the 24h rule is never silently extended.

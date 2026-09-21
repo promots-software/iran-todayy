@@ -17,14 +17,21 @@ export const scenarios=[
   fixture("english","Abbas Araghchi visits Tehran.","en"),
   fixture("persian","عباس عراقچی به تهران سفر کرد.","fa"),
   fixture("rewrite","طهران تستقبل عباس عراقجي في زيارته"),
-  fixture("update","عباس عراقجي يزور طهران ويعلن توقيع اتفاق","ar","عباس عراقجي يزور طهران ويعلن توقيع اتفاق"),
+  fixture("update","عباس عراقجي يزور طهران ويعلن توقيع اتفاق للتعاون خلال الاجتماع الرسمي","ar","عباس عراقجي يزور طهران ويعلن توقيع اتفاق للتعاون خلال الاجتماع الرسمي"),
   fixture("different","عباس عراقجي يزور شيراز","ar","عباس عراقجي يزور شيراز"),
   fixture("uncertain","تقارير عن زيارة عباس عراقجي إلى مدينة إيرانية","ar","تقارير عن زيارة عباس عراقجي إلى مدينة إيرانية"),
 ];
 const update=scenarios.find(s=>s.id === "update")!;
 update.understanding.event.facts[0].arabic="عباس عراقجي يزور طهران";
-update.understanding.event.facts.push({...update.understanding.event.facts[0],id:"update:agreement",key:"araghchi-signs-agreement-2026-08-10",arabic:"يعلن توقيع اتفاق",kind:"DECISION",material:true});
+update.understanding.event.facts.push({...update.understanding.event.facts[0],id:"update:agreement",key:"araghchi-signs-agreement-2026-08-10",arabic:"يعلن توقيع اتفاق للتعاون خلال الاجتماع الرسمي",kind:"DECISION",material:true});
+update.understanding.event.summary="تحديث الاتفاق";
 update.draft.sentences[0].factIds.push("update:agreement");
+// Material-update matching now proves grounding from exact source spans, not
+// the legacy verified boolean. Give this fixture real per-field evidence.
+const updateEvidence=(excerpt:string)=>({excerpt,start:update.content.indexOf(excerpt),end:update.content.indexOf(excerpt)+excerpt.length});
+for(const entry of [...update.understanding.event.actors,...update.understanding.names])entry.evidence=updateEvidence(entry.arabic);
+update.understanding.event.action!.arabic='يزور';
+for(const entry of [update.understanding.event.action,update.understanding.event.object,update.understanding.event.location,...update.understanding.event.facts])if(entry)entry.evidence=updateEvidence(entry.arabic);
 const different=scenarios.find(s=>s.id === "different")!;
 different.understanding.event.object!.key="city:shiraz";
 different.understanding.event.location!.key="city:shiraz";
@@ -38,9 +45,9 @@ uncertain.understanding.event.facts[0].key="unconfirmed-visit";
 uncertain.understanding.names=uncertain.understanding.names.slice(0,1);
 /** Hand-labelled semantic fixture groups; this is a test oracle, not a production matcher. */
 export function fixtureProvider(records=scenarios) {
-  const sameGroup=new Set(["telegram-a","telegram-b","x-a","english","persian","rewrite","update"]);
+  const sameGroup=new Set(["telegram-a","telegram-b","x-a","english","persian","rewrite","تحديث الاتفاق"]);
   return new FixtureLanguageProvider(records,(a,b)=>{
     const relation=a.summary === "uncertain" || b.summary === "uncertain" ? "UNCERTAIN" : sameGroup.has(a.summary??"")&&sameGroup.has(b.summary??"") ? "SAME" : a.summary === b.summary ? "SAME" : "DIFFERENT";
-    return {relation,rationale:relation === "SAME"?"المصدران يصفان زيارة عراقجي نفسها إلى طهران":relation === "DIFFERENT"?"الزيارتان حدثان مختلفان":"هوية الزيارة ومكانها غير محسومين",newFactIds:a.summary === "update"&&!b.facts.some(f=>f.key === "araghchi-signs-agreement-2026-08-10")?["update:agreement"]:[],conflictingFactIds:[]};
+    return {relation,rationale:relation === "SAME"?"المصدران يصفان زيارة عراقجي نفسها إلى طهران":relation === "DIFFERENT"?"الزيارتان حدثان مختلفان":"هوية الزيارة ومكانها غير محسومين",newFactIds:a.summary === "تحديث الاتفاق"&&!b.facts.some(f=>f.key === "araghchi-signs-agreement-2026-08-10")?["update:agreement"]:[],conflictingFactIds:[]};
   });
 }
