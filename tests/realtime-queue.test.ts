@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {PrismaClient} from '@prisma/client';
 import {capacityDiagnostic,capacityState,capacityRetryMs} from '../src/worker/provider-capacity';
-import {pacificDay,quotaDecision} from '../src/worker/provider-quota';
+import {googleQuota,pacificDay,quotaDecision} from '../src/worker/provider-quota';
 import {budgetDecision,guardedTransport,geminiResource,providerCapacitySnapshot} from '../src/worker/provider-guard';
 import {failurePolicy} from '../src/lib/processing/failure-policy';
 import {distribution,latencyAlerts} from '../src/worker/latency';
@@ -17,14 +17,14 @@ import {ruleSet} from '../src/lib/processing/rules';
 test('Pacific quota days reset at calendar midnight, including 23/25-hour DST days',()=>{
  for(const [date,hours] of [['2026-03-08T18:00:00Z',23],['2026-11-01T18:00:00Z',25],['2026-09-20T18:00:00Z',24]] as const){const d=pacificDay(Date.parse(date));assert.equal(d.end-d.start,hours*3600000);assert.equal(pacificDay(d.end).start,d.end);}
  const now=Date.parse('2026-09-20T07:00:00Z');assert.equal(pacificDay(now).start,now);
- const boundary=quotaDecision(Array.from({length:500},()=>({at:now-1,inputTokens:0})),1,now);assert.equal(boundary.rpd,0,'previous Pacific day does not consume RPD');assert.equal(boundary.reason,'PROVIDER_RPM_WAIT','minute quota does not reset at midnight');
+ const boundary=quotaDecision(Array.from({length:googleQuota.rpd},()=>({at:now-1,inputTokens:0})),1,now);assert.equal(boundary.rpd,0,'previous Pacific day does not consume RPD');assert.equal(boundary.reason,'PROVIDER_RPM_WAIT','minute quota does not reset at midnight');
 });
 test('RPM and TPM reserve atomically before an uncached request; exact boundaries release capacity',()=>{
  const now=Date.parse('2026-09-20T20:00:00Z');
- const rpm=Array.from({length:15},()=>({at:now-100,inputTokens:10}));assert.equal(quotaDecision(rpm,10,now).reason,'PROVIDER_RPM_WAIT');assert.equal(quotaDecision(rpm,10,now+59900).reason,null);
- assert.equal(quotaDecision([{at:now,inputTokens:249999}],2,now).reason,'PROVIDER_TPM_WAIT');
- assert.equal(quotaDecision([],250001,now).reason,'PROVIDER_INPUT_LIMIT');
- const rpd=Array.from({length:500},()=>({at:now-60001,inputTokens:1}));assert.equal(quotaDecision(rpd,1,now).reason,'PROVIDER_RPD_WAIT');assert.equal(quotaDecision(rpd,1,now).waitMs,pacificDay(now).end-now);
+ const rpm=Array.from({length:googleQuota.rpm},()=>({at:now-100,inputTokens:10}));assert.equal(quotaDecision(rpm,10,now).reason,'PROVIDER_RPM_WAIT');assert.equal(quotaDecision(rpm,10,now+59900).reason,null);
+ assert.equal(quotaDecision([{at:now,inputTokens:googleQuota.inputTpm-1}],2,now).reason,'PROVIDER_TPM_WAIT');
+ assert.equal(quotaDecision([],googleQuota.inputTpm+1,now).reason,'PROVIDER_INPUT_LIMIT');
+ const rpd=Array.from({length:googleQuota.rpd},()=>({at:now-60001,inputTokens:1}));assert.equal(quotaDecision(rpd,1,now).reason,'PROVIDER_RPD_WAIT');assert.equal(quotaDecision(rpd,1,now).waitMs,pacificDay(now).end-now);
 });
 test('actual-request cost reserve and $2 rolling-24-hour ceiling; no maximum-call preclaim reserve',()=>{
  const now=Date.now();assert.equal(budgetDecision([{at:now,usd:1}],100,now,1024).allowed,true);assert.equal(budgetDecision([],100,now,1024).reservedUsd,(100*.25+1024*1.5)/1e6);
@@ -134,4 +134,11 @@ test('DB matching: network comparison holds no event lock; changed snapshot repl
   const result=await processJob(db,job,provider,signal);assert(!('error' in result),JSON.stringify(result));assert(comparisons>=2);assert.equal(await db.canonicalEvent.count(),before);assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:post.id}})).status,'DUPLICATE');
   const audit=await db.auditLog.findFirstOrThrow({where:{entityId:post.id,action:'PROCESSING_DECISION_COMMITTED'}});const stored=await db.sourcePost.findUniqueOrThrow({where:{id:post.id}});assert.equal(stored.processingEndedAt!.toISOString(),(audit.metadata as {committedObservedAt:string}).committedObservedAt);
  }finally{await db.$disconnect();}
+});
+
+test('paid Tier 1 capacity admits the old 500-request boundary without changing cost limits',()=>{
+ assert.deepEqual(googleQuota,{rpm:4000,inputTpm:4000000,rpd:150000});
+ const now=Date.parse('2026-09-21T12:00:00Z');
+ assert.equal(quotaDecision(Array.from({length:500},()=>({at:now-60001,inputTokens:1})),1,now).reason,null);
+ assert.equal(budgetDecision([{at:now,usd:2}],100,now).reason,'PROVIDER_COST_WAIT');
 });

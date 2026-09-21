@@ -1,4 +1,4 @@
-export const googleQuota={rpm:15,inputTpm:250000,rpd:500} as const;
+export const googleQuota={rpm:4000,inputTpm:4000000,rpd:150000} as const;
 const pacificDate=new Intl.DateTimeFormat('en-CA',{timeZone:'America/Los_Angeles',year:'numeric',month:'2-digit',day:'2-digit'});
 /** Calendar boundaries, including 23/25-hour DST days. Never substitute a
  * rolling 24-hour window for Google's Pacific calendar-day quota. */
