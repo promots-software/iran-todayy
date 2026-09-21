@@ -8,8 +8,8 @@ import {capacityDiagnostic,capacityRetryMs,capacityState} from './provider-capac
 import {googleQuota,pacificDay,quotaDecision} from './provider-quota';
 import {checkpointAliases,type CheckpointRequestInit} from '../lib/processing/gemini-request';
 // Provider RPM/TPM/RPD supersede the old workload-derived 45/hour gate.
-// Cost remains $1 rolling 24 hours; provider RPD uses Pacific midnight.
-export const limits={hourRequests:null,dayRequests:googleQuota.rpd,dayReservedUsd:1,requestBytes:600000,outputTokens:4096,jobIntervalMs:0} as const;
+// Cost remains $3 rolling 24 hours; provider RPD uses Pacific midnight.
+export const limits={hourRequests:null,dayRequests:googleQuota.rpd,dayReservedUsd:3,requestBytes:600000,outputTokens:4096,jobIntervalMs:0} as const;
 export const geminiResource='generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent';
 
 type BudgetRow={id?:string;action:string;metadata:unknown;createdAt:Date};

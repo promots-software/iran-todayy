@@ -31,7 +31,7 @@ test('known usage settles cost, unknown/malformed/failed reservations remain con
  const usd=observedCost({usageMetadata:{promptTokenCount:1000,candidatesTokenCount:100,totalTokenCount:1100}});assert.equal(usd,.0004);
  const accounted=accountedReservations([...rows,{action:'PROVIDER_USAGE_SETTLED',createdAt:at,metadata:{reservationId:'attempt-a',usd:usd!}}]);
  assert.deepEqual(accounted.map(r=>r.usd),[.0004,.15]);
- assert.equal(budgetDecision([{at:now,usd:1}],1000,now).allowed,false);assert.equal(limits.dayReservedUsd,1);
+ assert.equal(budgetDecision([{at:now,usd:3}],1000,now).allowed,false);assert.equal(limits.dayReservedUsd,3);
 });
 test('exact validated events need no interpretation; changed facts/speakers remain non-identical',()=>{
  const a=cleanCases()[0].u.event,b=structuredClone(a);b.facts[0].id='different-local-id';b.facts[0].evidence.start+=2;

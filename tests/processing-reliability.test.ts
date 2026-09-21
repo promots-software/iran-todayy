@@ -57,9 +57,9 @@ test('provider signal respected, strict deterministic failures do not open provi
 test('cost/input limits fail closed without the superseded hourly gate',()=>{
  const now=1e9;assert.equal(budgetDecision([],1000,now).allowed,true);
  const hour=Array.from({length:60},()=>({at:now,usd:0.001}));assert.equal(budgetDecision(hour,1000,now).allowed,true);
- assert.equal(budgetDecision([{at:now,usd:1}],1000,now).allowed,false);
+ assert.equal(budgetDecision([{at:now,usd:3}],1000,now).allowed,false);
  assert.equal(budgetDecision([],limits.requestBytes+1,now).allowed,false);
- assert.equal(budgetDecision([{at:now-86400001,usd:1}],1000,now).allowed,true);
+ assert.equal(budgetDecision([{at:now-86400001,usd:3}],1000,now).allowed,true);
 });
 test('definite HTTP failure can retry while successful substeps and unknown outcomes cannot be charged again',async()=>{
  const values=new Map<string,{pending:true}|{output:unknown}>();

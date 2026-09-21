@@ -34,7 +34,7 @@ test('45/hour is superseded, but RPM/TPM/RPD and the dollar ceiling still fail c
  assert.equal(quotaDecision(Array.from({length:15},()=>({at:now,inputTokens:1})),1,now).reason,'PROVIDER_RPM_WAIT');
  assert.equal(quotaDecision([{at:now,inputTokens:250000}],1,now).reason,'PROVIDER_TPM_WAIT');
  assert.equal(quotaDecision(Array.from({length:500},()=>({at:now-60001,inputTokens:1})),1,now).reason,'PROVIDER_RPD_WAIT');
- assert.equal(budgetDecision([{at:now,usd:1}],1,now,1024).reason,'PROVIDER_COST_WAIT');
+ assert.equal(budgetDecision([{at:now,usd:3}],1,now,1024).reason,'PROVIDER_COST_WAIT');
 });
 test('legacy completed request reuses output during outage; ambiguous legacy request is never resent',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const url=process.env.TEST_DATABASE_URL!;assert(['localhost','127.0.0.1'].includes(new URL(url).hostname));const db=new PrismaClient({datasourceUrl:url});
