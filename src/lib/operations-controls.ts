@@ -6,7 +6,7 @@ import {lockEditorialPublication} from './human-editorial-contract';
 import {ProcessingError} from './processing/contracts';
 import {syncAutomaticSources} from './telegram/source-authorization';
 import {automaticControlState} from './telegram/auto-control';
-export const operationSchema=z.object({requestId:z.uuid(),kind:z.enum(['AUTO_PUBLISH','PUBLISHING_HOLD','PROCESSING_HOLD','SOURCE_ENABLED','SOURCE_MODE','SOURCE_PROCESSING_HOLD','RETRY']),target:z.string().max(100),value:z.string().max(30),expected:z.string().max(100),confirmed:z.literal(true)}).strict();
+export const operationSchema=z.object({requestId:z.uuid(),kind:z.enum(['AUTO_PUBLISH','AUTO_PUBLISH_RECOVERY','PUBLISHING_HOLD','PROCESSING_HOLD','SOURCE_ENABLED','SOURCE_MODE','SOURCE_PROCESSING_HOLD','RETRY']),target:z.string().max(100),value:z.string().max(30),expected:z.string().max(150),confirmed:z.literal(true)}).strict();
 export const safeRetryCodes=['SOURCE_DISABLED','LIVE_SOURCE_DISABLED','LEASE_EXHAUSTED','PROCESSING_FAILED'] as const;
 export async function assertPublishingActive(tx:Prisma.TransactionClient){if((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingPaused)throw new ProcessingError('OPERATIONS_PUBLISHING_PAUSED');}
 export async function operate(db:PrismaClient,userId:string,raw:unknown){
@@ -21,7 +21,19 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
   const prior=await tx.auditLog.findUnique({where:{id:auditId}});
   if(prior){if(prior.actor!==`user:${userId}`||!isDeepStrictEqual(prior.metadata,input))throw new Error('REQUEST_ID_REUSED');return {changed:false};}
   let before:unknown;
-  if(input.kind==='AUTO_PUBLISH'){
+  if(input.kind==='AUTO_PUBLISH_RECOVERY'){
+   const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}});
+   const state=automaticControlState(settings.telegramAutoPolicy,settings.publishingPaused,await tx.workerHeartbeat.findUnique({where:{id:'telegram-publisher-worker'}}));
+   const policy=state.policy;
+   if(!policy||input.target!=='1'||input.value!=='ACKNOWLEDGE'||input.expected!==`${state.expected}:${policy.reason}`)throw new Error('STALE_CONTROL');
+   if(!state.canAcknowledge||settings.publishingMode!=='REQUIRE_APPROVAL')throw new Error('AUTOMATIC_RECOVERY_BLOCKED');
+   // Recovery never retries or changes publications. Every unfinished intent must
+   // first have an explicit terminal disposition; READY stories are unaffected.
+   if(await tx.publication.count({where:{automaticPolicyId:policy.id,status:{in:['PENDING','SENDING','UNKNOWN','FAILED']}}}))throw new Error('DELIVERY_RECONCILIATION_REQUIRED');
+   if(await tx.publication.count({where:{automaticPolicyId:policy.id,status:'CANCELLED',OR:[{attemptCount:{not:0}},{attempts:{some:{}}},{telegramMessageId:{not:null}},{claimedAt:{not:null}},{sentAt:{not:null}}]}}))throw new Error('DELIVERY_RECONCILIATION_REQUIRED');
+   before=policy;
+   await tx.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...policy,state:'CLOSED',reason:'OPERATOR_DISABLED'}}});
+  }else if(input.kind==='AUTO_PUBLISH'){
    const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}});
    const heartbeat=await tx.workerHeartbeat.findUnique({where:{id:'telegram-publisher-worker'}});
    const state=automaticControlState(settings.telegramAutoPolicy,settings.publishingPaused,heartbeat);
@@ -64,5 +76,5 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
   await tx.auditLog.create({data:{id:auditId,actor:`user:${userId}`,action:'OPERATIONS_CONTROL',entityType:'Operations',entityId:input.target,message:input.kind,metadata:input}});
   await tx.auditLog.create({data:{actor:`user:${userId}`,action:`OPERATIONS_${input.kind}`,entityType:input.kind.startsWith('SOURCE_')?'Source':input.kind==='RETRY'?'ProcessingJob':'AppSettings',entityId:input.target,message:'تغيير تشغيلي مؤكد',metadata:{before:before as Prisma.InputJsonValue,after:input.value,requestId:input.requestId}}});
   return {changed:true};
- });
+ },{timeout:30000});
 }

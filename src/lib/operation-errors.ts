@@ -5,6 +5,7 @@ const messages:Record<string,string>={
  AUTOMATIC_ENABLE_BLOCKED:'تعذر التفعيل: تحقق من نبضة الناشر وإعدادات Telegram وShadow Mode والإيقاف الطارئ وصلاحية التسليم.',
  AUTOMATIC_AUTHORIZATION_REQUIRED:'لا يوجد ترخيص تسليم آلي صالح. لا يمكن إنشاء ترخيص جديد من هذا التحكم.',
  AUTOMATIC_DISABLE_BLOCKED:'تغيرت حالة الترخيص. حدّث الصفحة قبل التعطيل.',
+ AUTOMATIC_RECOVERY_BLOCKED:'تعذر إقرار معالجة العطل: تحقق من إغلاق النشر وجاهزية الناشر وعدم وجود إيقاف طارئ. لن يُفعّل النشر تلقائياً.',
  DELIVERY_RECONCILIATION_REQUIRED:'توجد محاولة إرسال غير محسومة أو متعثرة؛ يلزم تسويتها قبل إعادة التفعيل.'
 };
 export function operationErrorMessage(error:unknown){
