@@ -1,4 +1,4 @@
-import {completeImpersonalReport} from './impersonal-event';
+import {completeImpersonalReport,completeObservedEvent} from './impersonal-event';
 import { z } from 'zod';
 import {validateSpeakerEvidence} from './speaker-evidence';
 import { checkEvidence, evidenceSchema, ProcessingError, understandingSchema, validateUnderstanding, type Understanding } from './contracts';
@@ -20,14 +20,15 @@ export function validateMinimalExtraction(raw:unknown,source:string){
   if(!p.success)throw new ProcessingError('GROQ_INVALID_SCHEMA');
   let field='schema';
   try{
-  const resolve=(value:z.infer<typeof evidence>|null,path:string):Evidence|null=>{
+  const resolve=(value:z.infer<typeof evidence>|null,path:string,locationActors?:Evidence[]):Evidence|null=>{
     field=path;
     if(!value)return null;
-    const copy={...value};resolveContextEvidence(copy,source);
+    const copy={...value};resolveContextEvidence(copy,source,locationActors);
     const result=evidenceSchema.parse(copy);checkEvidence(source,result);return result;
   };
   const x=p.data;
-  const result={relevance:x.relevance,actors:x.actors.map((e,i)=>resolve(e,`actors.${i}`)!),action:resolve(x.action,'action'),object:resolve(x.object,'object'),location:resolve(x.location,'location'),event_time:resolve(x.event_time,'event_time'),
+  const actors=x.actors.map((e,i)=>resolve(e,`actors.${i}`)!);
+  const result={relevance:x.relevance,actors,action:resolve(x.action,'action'),object:resolve(x.object,'object'),location:resolve(x.location,'location',actors),event_time:resolve(x.event_time,'event_time'),
     statements:x.statements.map((s,i)=>({id:`f${i+1}`,evidence:resolve(s.evidence,`statements.${i}.evidence`)!,speaker:resolve(s.speaker,`statements.${i}.speaker`)}))};
   for(const s of result.statements){
     if(!s.speaker)continue;
@@ -43,7 +44,7 @@ export function validateMinimalExtraction(raw:unknown,source:string){
 }
 export type GroundedExtraction=ReturnType<typeof validateMinimalExtraction>;
 export function requireCompleteExtraction(x:GroundedExtraction,source?:string){
-  if(x.relevance!=='IRRELEVANT' && (x.relevance==='UNCERTAIN'||(!x.actors.length&&!completeImpersonalReport(source,x))||!x.action||!x.statements.length))throw new ProcessingError('INCOMPLETE_EXTRACTION');
+  if(x.relevance!=='IRRELEVANT' && (x.relevance==='UNCERTAIN'||(!x.actors.length&&!completeImpersonalReport(source,x)&&!completeObservedEvent(source,x))||!x.action||!x.statements.length))throw new ProcessingError('INCOMPLETE_EXTRACTION');
 }
 // Semantic keys and Arabic translations are downstream classification, not evidence.
 const label=z.object({key:text,arabic:text,nameKind:z.enum(['person','place','institution']).nullable()}).strict();

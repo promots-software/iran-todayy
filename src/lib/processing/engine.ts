@@ -16,7 +16,7 @@ import {finalizeConstrainedDraft} from './local-finalization';
 import {sourceLanguage,detectSourceLanguage} from './source-language';
 import {editorialDecision} from './editorial-eligibility';
 import {editorialScope} from './editorial-scope';
-import {failurePolicy,isProviderWait} from './failure-policy';
+import {failurePolicy,isProviderWait,requiresProviderRecovery} from './failure-policy';
 import {nextClaimSlot,oldestSlot} from '../../worker/newsroom-scheduler';
 export const json = (value: unknown): Prisma.InputJsonValue => JSON.parse(JSON.stringify(value));
 const stage = "PROCESS_V1";
@@ -293,8 +293,8 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     // comparisons alone may require capacity. Bound churn under active writers.
     if(code==='MATCH_SNAPSHOT_CHANGED'&&snapshotRetry<2&&!signal.aborted)return runJob(client,job,provider,signal,snapshotRetry+1,attemptStartedAt);
     const policy=failurePolicy(code,job.attemptCount,error instanceof ProcessingError?error.retryAfterMs:0);
-    const retryable=policy.retryable || !(error instanceof ProcessingError) || error.retryable;
-    const budgetHold=isProviderWait(code)||code==='MATCH_SNAPSHOT_CHANGED'||code==='SOURCE_PROCESSING_MODE_CHANGED';
+    const retryable=!requiresProviderRecovery(code)&&(policy.retryable || !(error instanceof ProcessingError) || error.retryable);
+    const budgetHold=(isProviderWait(code)&&!requiresProviderRecovery(code))||code==='MATCH_SNAPSHOT_CHANGED'||code==='SOURCE_PROCESSING_MODE_CHANGED';
     await client.$transaction(async tx=>{
       const terminal=!retryable || (!budgetHold&&job.attemptCount>=job.maxAttempts);
       const preciseWait=budgetHold&&error instanceof ProcessingError&&error.retryAfterMs>0;
@@ -302,9 +302,10 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code,...(budgetHold?{attemptCount:{decrement:1}}:{})}});
       if (changed.count) {
         const decision=editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
-        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(retryable?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
-        await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(retryable?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
-        if(isProviderWait(code))await audit(tx,post.id,'PROCESSING_PROVIDER_WAIT','Provider-dependent stage scheduled; processing lane released',{jobId:job.id,code,eligibleAt:next.toISOString(),startedAt:new Date().toISOString()});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal&&decision.editorialEligibility!=="PROCESSING_ERROR"?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(retryable||decision.editorialEligibility==="PROCESSING_ERROR"?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
+        await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(retryable||decision.editorialEligibility==='PROCESSING_ERROR'?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
+        if(isProviderWait(code)&&!terminal)await audit(tx,post.id,'PROCESSING_PROVIDER_WAIT','Provider-dependent stage scheduled; processing lane released',{jobId:job.id,code,eligibleAt:next.toISOString(),startedAt:new Date().toISOString()});
+        if(isProviderWait(code)&&terminal)await audit(tx,post.id,'PROCESSING_PROVIDER_RECOVERY_REQUIRED','Provider outcome requires technical reconciliation; no automatic replay scheduled',{jobId:job.id,code});
       }
     });
     return {postId:post.id,error:code};

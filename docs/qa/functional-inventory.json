@@ -1,0 +1,287 @@
+{
+  "routes": [
+    "src/app/api/health/route.ts",
+    "src/app/approvals/page.tsx",
+    "src/app/events/page.tsx",
+    "src/app/filtered/page.tsx",
+    "src/app/login/page.tsx",
+    "src/app/logs/page.tsx",
+    "src/app/media/[id]/route.ts",
+    "src/app/news/[id]/page.tsx",
+    "src/app/operations/failures/page.tsx",
+    "src/app/operations/page.tsx",
+    "src/app/operations/posts/[id]/page.tsx",
+    "src/app/page.tsx",
+    "src/app/posts/[id]/page.tsx",
+    "src/app/published/page.tsx",
+    "src/app/review/page.tsx",
+    "src/app/settings/page.tsx",
+    "src/app/sources/page.tsx",
+    "src/app/system/page.tsx"
+  ],
+  "actions": [
+    {
+      "file": "src/app/actions.ts",
+      "name": "addSourceAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "sourceAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "modeAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "sourceProfileAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "approvePublicationAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "publishPublicationAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "saveHumanDraftAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "approveHumanDraftAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "uploadPublicationImage"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "rejectEditorialAction"
+    },
+    {
+      "file": "src/app/actions.ts",
+      "name": "sourceProcessingModeAction"
+    },
+    {
+      "file": "src/app/login/actions.ts",
+      "name": "loginAction"
+    },
+    {
+      "file": "src/app/login/actions.ts",
+      "name": "logoutAction"
+    },
+    {
+      "file": "src/app/operations/actions.ts",
+      "name": "operationAction"
+    },
+    {
+      "file": "src/app/settings/actions.ts",
+      "name": "manageUserAction"
+    }
+  ],
+  "enums": [
+    {
+      "name": "Platform",
+      "values": [
+        "TELEGRAM",
+        "X"
+      ]
+    },
+    {
+      "name": "PublishingMode",
+      "values": [
+        "REQUIRE_APPROVAL",
+        "AUTO_PUBLISH"
+      ]
+    },
+    {
+      "name": "ProcessingStatus",
+      "values": [
+        "INGESTED",
+        "NORMALIZED",
+        "CLASSIFYING",
+        "DEDUPLICATING",
+        "DRAFTING",
+        "VALIDATING",
+        "NEEDS_REVIEW",
+        "PENDING_APPROVAL",
+        "APPROVED",
+        "QUEUED",
+        "PUBLISHED",
+        "FILTERED",
+        "REJECTED",
+        "DUPLICATE",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "EventClassification",
+      "values": [
+        "NEW_EVENT",
+        "DUPLICATE",
+        "UPDATE",
+        "UNCERTAIN",
+        "MATERIAL_UPDATE",
+        "UNCERTAIN_MATCH"
+      ]
+    },
+    {
+      "name": "Relevance",
+      "values": [
+        "UNASSESSED",
+        "POLITICAL_NEWS",
+        "IRRELEVANT",
+        "UNCERTAIN"
+      ]
+    },
+    {
+      "name": "ValidationStatus",
+      "values": [
+        "NOT_RUN",
+        "PASSED",
+        "FAILED",
+        "NEEDS_REVIEW"
+      ]
+    },
+    {
+      "name": "HumanEditorialStatus",
+      "values": [
+        "DRAFT",
+        "APPROVED",
+        "PUBLISHED"
+      ]
+    },
+    {
+      "name": "PublicationStatus",
+      "values": [
+        "CANCELLED",
+        "PENDING",
+        "SENDING",
+        "SENT",
+        "FAILED",
+        "UNKNOWN"
+      ]
+    },
+    {
+      "name": "JobStatus",
+      "values": [
+        "PENDING",
+        "RUNNING",
+        "RETRY",
+        "COMPLETED",
+        "FAILED"
+      ]
+    },
+    {
+      "name": "LogLevel",
+      "values": [
+        "INFO",
+        "WARN",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "WorkerState",
+      "values": [
+        "STARTING",
+        "IDLE",
+        "BUSY",
+        "STOPPED",
+        "ERROR"
+      ]
+    },
+    {
+      "name": "SourceProcessingMode",
+      "values": [
+        "NORMAL",
+        "DIRECT"
+      ]
+    },
+    {
+      "name": "DashboardRole",
+      "values": [
+        "SUPER_ADMIN",
+        "ADMIN",
+        "EDITOR"
+      ]
+    }
+  ],
+  "tests": [
+    "tests/automatic-delivery.test.ts",
+    "tests/classification-grounding.test.ts",
+    "tests/classification-normalization.test.ts",
+    "tests/classification-preservation.test.ts",
+    "tests/clean-e2e.test.ts",
+    "tests/constrained-rewrite.test.ts",
+    "tests/cost-safety.test.ts",
+    "tests/dashboard-auth.test.ts",
+    "tests/dashboard-database.test.ts",
+    "tests/dashboard-http.test.ts",
+    "tests/dashboard-media-processing.test.ts",
+    "tests/dashboard-pagination.test.ts",
+    "tests/dashboard-publication.test.ts",
+    "tests/dashboard-ui.test.tsx",
+    "tests/dashboard-user-management.test.ts",
+    "tests/database.test.ts",
+    "tests/direct-bilingual.test.ts",
+    "tests/direct-gold.test.ts",
+    "tests/direct-grounding-fixes.test.ts",
+    "tests/direct-newsroom.test.ts",
+    "tests/direct-processing.test.ts",
+    "tests/direct-style.test.ts",
+    "tests/domain.test.ts",
+    "tests/editorial-guidelines.test.ts",
+    "tests/editorial-state.test.tsx",
+    "tests/extraction-assertions.test.ts",
+    "tests/flash-publication.test.ts",
+    "tests/flow-recovery.test.ts",
+    "tests/gemini-optimization.test.ts",
+    "tests/gemini-provider.test.ts",
+    "tests/groq-split.test.ts",
+    "tests/groq-validation.test.ts",
+    "tests/http.test.ts",
+    "tests/human-editorial-http.test.ts",
+    "tests/human-editorial.test.ts",
+    "tests/id-classification.test.ts",
+    "tests/local-finalization.test.ts",
+    "tests/newsroom-database.test.ts",
+    "tests/newsroom-eligibility.test.ts",
+    "tests/newsroom-fast.test.ts",
+    "tests/newsroom-matcher.test.ts",
+    "tests/operations.test.ts",
+    "tests/optional-review-note.test.ts",
+    "tests/persian-processing.test.ts",
+    "tests/processing-database.test.ts",
+    "tests/processing-reliability.test.ts",
+    "tests/processing.test.ts",
+    "tests/production-quality.test.ts",
+    "tests/production-worker.test.ts",
+    "tests/publication-database.test.ts",
+    "tests/publication-destination.test.ts",
+    "tests/realtime-queue.test.ts",
+    "tests/reliability-database.test.ts",
+    "tests/review-draft.test.ts",
+    "tests/review-notes.test.tsx",
+    "tests/review-production-blockers.test.ts",
+    "tests/rewrite-contract.test.ts",
+    "tests/rewrite-grounding.test.ts",
+    "tests/rewrite-scope.test.ts",
+    "tests/rewrite-size.test.ts",
+    "tests/schema-converter.test.ts",
+    "tests/seed.test.ts",
+    "tests/source-language.test.ts",
+    "tests/telegram-format.test.ts",
+    "tests/telegram-publish-path.test.ts",
+    "tests/telegram-publisher.test.ts",
+    "tests/telegram-reconciliation.test.ts",
+    "tests/telegram-recovery.test.ts",
+    "tests/telegram-startup-classification.test.ts",
+    "tests/telegram.test.ts",
+    "tests/deep-semantics.test.ts",
+    "tests/deep-state.test.ts",
+    "tests/e2e/workflows.spec.ts"
+  ],
+  "limitations": "Inventory is discovery, not proof of executed coverage. Execution evidence will be recorded separately."
+}

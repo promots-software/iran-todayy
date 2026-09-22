@@ -47,7 +47,7 @@ export async function modeAction(_: ActionState, form: FormData): Promise<Action
     const user = await actor(true);
     await changeMode(db, form.get("publishingMode"), user);
     revalidatePath("/", "layout");
-    return { ok: true, message: "تم حفظ وضع النشر. الموافقة اليدوية إلزامية والنشر التلقائي معطل." };
+    return { ok: true, message: "تم حفظ شرط الموافقة؛ صلاحية التسليم الآلي المستقلة لم تتغير." };
   } catch (error) { return failure(error); }
 }
 export async function sourceProfileAction(_:ActionState,form:FormData):Promise<ActionState> {

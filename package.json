@@ -19,7 +19,9 @@
     "worker": "node --env-file-if-exists=.env --import tsx src/worker/index.ts",
     "worker:production": "node --import tsx src/worker/start-production.ts",
     "telegram:authorize": "node --env-file=.env --import tsx scripts/telegram-authorize.ts",
-    "benchmark:direct": "node --import tsx scripts/benchmark-direct.ts"
+    "benchmark:direct": "node --import tsx scripts/benchmark-direct.ts",
+    "test:e2e": "node scripts/test-e2e.mjs",
+    "test:regressions": "node scripts/test-regressions.mjs"
   },
   "dependencies": {
     "@neon/config": "^1.5.0",
@@ -32,6 +34,7 @@
     "zod": "^4.1.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.63.0",
     "@types/node": "^22.0.0",
     "@types/react": "^19.2.0",
     "@types/react-dom": "^19.2.0",

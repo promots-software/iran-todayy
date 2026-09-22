@@ -22,7 +22,8 @@ function scriptLanguage(text:string):'ar'|'fa'|'unknown'{
   const article=/^(?:[وف])?(?:[بك]?ال|لل)[\p{L}]{2,}$/u.test(w);
   const feminine=/[\p{L}]{2}ة$/u.test(w);
   const nisba=/[\p{L}]{3}ي(?:ة|ون|ين)?$/u.test(w);
-  if(arGrammar.has(w)||article||feminine){ar.add(w);if(article||feminine)arMorph++;}
+  const arabicPredicate=explicitArabicPreposition&&/^(?:وقع|وقعت|حدث|حدثت|اندلع|اندلعت|هطل|هطلت)$/u.test(w);
+  if(arGrammar.has(w)||article||feminine||arabicPredicate){ar.add(w);if(article||feminine)arMorph++;}
   // Nisba alone is shared with Persian; use it only alongside Arabic feminine
   // or definite constructions, evaluated below.
   if(nisba&&nisbaCount<2&&nisbaSupported){ar.add(w);nisbaCount++;}

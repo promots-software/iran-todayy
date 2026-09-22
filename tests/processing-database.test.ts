@@ -70,7 +70,7 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
     await db.processingJob.update({where:{id:retryJob.id},data:{availableAt:new Date(0)}});
     const unavailable=await claimJob(db,"no-provider");assert.ok(unavailable);
     await processJob(db,unavailable,new UnconfiguredLanguageProvider(),signal);
-    assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:unavailable.sourcePostId}})).status,"NEEDS_REVIEW");
+    assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:unavailable.sourcePostId}})).status,"FAILED");
   } finally {
     const posts=await db.sourcePost.findMany({where:{sourceId:{in:sourceIds}},select:{id:true}});const ids=posts.map(p=>p.id);
     const revisions=await db.eventRevision.findMany({where:{event:{createdAt:{gte:started}}},select:{id:true,eventId:true}});const rids=revisions.map(r=>r.id);

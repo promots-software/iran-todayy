@@ -16,7 +16,7 @@ export function AddSourceForm() {
       <button disabled={pending} type="submit">{pending ? "جارٍ الحفظ…" : "+ إضافة المصدر"}</button>
     </div>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}
-    <p className="muted small">كل مصدر مفعّل يدخل مسار المراقبة عند تهيئة موصل مصرح به. الموصلات الحية غير مفعّلة حالياً.</p>
+    <p className="muted small">تفعيل المصدر لا يثبت اتصال الموصل. حالة Telegram متاحة في العمليات؛ إعداد X لا يعني تفعيل استقباله.</p>
   </form>;
 }
 
@@ -38,10 +38,10 @@ export function ModeForm({ mode }: { mode: "REQUIRE_APPROVAL" | "AUTO_PUBLISH" }
     <h2>طريقة النشر</h2>
     <fieldset>
       <legend className="muted">اختر آلية اعتماد الأخبار</legend>
-      <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>يدوي</strong><small>كل خبر ينتظر الاعتماد قبل النشر. الوضع الافتراضي للاختبار.</small></span></label>
-      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" disabled /><span><strong>تلقائي</strong><small>معطل أثناء اختبار الاستقبال الحي في وضع الظل.</small></span></label>
+      <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>يدوي</strong><small>التحرير البشري والنشر اليدوي يتطلبان اعتماداً صريحاً.</small></span></label>
+      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" disabled /><span><strong>تلقائي</strong><small>التسليم الآلي تحكمه صلاحية مستقلة في مركز العمليات.</small></span></label>
     </fieldset>
-    <p className="notice">الموافقة اليدوية إلزامية. النشر التلقائي معطل؛ إرسال الرسالة المعتمدة يتطلب تأكيداً منفصلاً في صفحة الخبر.</p>
+    <p className="notice">إرسال النسخة البشرية المعتمدة يتطلب تأكيداً منفصلاً. صلاحية التسليم الآلي للأخبار المؤهلة مستقلة عن هذا النموذج.</p>
     <button disabled={pending}>{pending ? "جارٍ الحفظ…" : "حفظ الإعدادات"}</button>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}
   </form>;

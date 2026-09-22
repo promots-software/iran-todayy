@@ -1,0 +1,591 @@
+{
+  "note": "Latest result per suite after full run and focused reruns. Category families overlap; mixed DB files contain unit assertions too.",
+  "files": 72,
+  "tests": 492,
+  "passed": 486,
+  "failed": 0,
+  "skipped": 6,
+  "unitOnlySuitePassed": 341,
+  "databaseOrMixedSuitePassed": 145,
+  "semanticSuitePassed": 200,
+  "stateSuitePassed": 26,
+  "failureInjectionSuitePassed": 109,
+  "rows": [
+    {
+      "file": "tests/automatic-delivery.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/classification-grounding.test.ts",
+      "suiteType": "unit",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/classification-normalization.test.ts",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/classification-preservation.test.ts",
+      "suiteType": "unit",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/clean-e2e.test.ts",
+      "suiteType": "unit",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/constrained-rewrite.test.ts",
+      "suiteType": "unit",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/cost-safety.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-auth.test.ts",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-database.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-http.test.ts",
+      "suiteType": "unit",
+      "tests": 1,
+      "pass": 0,
+      "fail": 0,
+      "skipped": 1
+    },
+    {
+      "file": "tests/dashboard-media-processing.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-pagination.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-publication.test.ts",
+      "suiteType": "unit",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-ui.test.tsx",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/dashboard-user-management.test.ts",
+      "suiteType": "unit",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/database.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/direct-bilingual.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 17,
+      "pass": 17,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/direct-gold.test.ts",
+      "suiteType": "unit",
+      "tests": 28,
+      "pass": 28,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/direct-grounding-fixes.test.ts",
+      "suiteType": "unit",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/direct-newsroom.test.ts",
+      "suiteType": "unit",
+      "tests": 32,
+      "pass": 32,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/direct-processing.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 9,
+      "pass": 9,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/direct-style.test.ts",
+      "suiteType": "unit",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/domain.test.ts",
+      "suiteType": "unit",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/editorial-guidelines.test.ts",
+      "suiteType": "unit",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/editorial-state.test.tsx",
+      "suiteType": "unit",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/extraction-assertions.test.ts",
+      "suiteType": "unit",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/flash-publication.test.ts",
+      "suiteType": "unit",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/flow-recovery.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/gemini-optimization.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/gemini-provider.test.ts",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/groq-split.test.ts",
+      "suiteType": "unit",
+      "tests": 4,
+      "pass": 4,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/groq-validation.test.ts",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/http.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 3,
+      "pass": 0,
+      "fail": 0,
+      "skipped": 3
+    },
+    {
+      "file": "tests/human-editorial-http.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 0,
+      "fail": 0,
+      "skipped": 1
+    },
+    {
+      "file": "tests/human-editorial.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/id-classification.test.ts",
+      "suiteType": "unit",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/local-finalization.test.ts",
+      "suiteType": "unit",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/newsroom-database.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/newsroom-eligibility.test.ts",
+      "suiteType": "unit",
+      "tests": 25,
+      "pass": 25,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/newsroom-fast.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/newsroom-matcher.test.ts",
+      "suiteType": "unit",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/operations.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/optional-review-note.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 8,
+      "pass": 8,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/persian-processing.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/processing-database.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/processing-reliability.test.ts",
+      "suiteType": "unit",
+      "tests": 19,
+      "pass": 19,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/processing.test.ts",
+      "suiteType": "unit",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/production-quality.test.ts",
+      "suiteType": "unit",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/production-worker.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/publication-database.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/publication-destination.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/realtime-queue.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 12,
+      "pass": 12,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/reliability-database.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/review-draft.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/review-notes.test.tsx",
+      "suiteType": "unit",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/review-production-blockers.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 11,
+      "pass": 11,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/rewrite-contract.test.ts",
+      "suiteType": "unit",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/rewrite-grounding.test.ts",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/rewrite-scope.test.ts",
+      "suiteType": "unit",
+      "tests": 3,
+      "pass": 3,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/rewrite-size.test.ts",
+      "suiteType": "unit",
+      "tests": 2,
+      "pass": 2,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/schema-converter.test.ts",
+      "suiteType": "unit",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/seed.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/source-language.test.ts",
+      "suiteType": "unit",
+      "tests": 15,
+      "pass": 15,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/telegram-format.test.ts",
+      "suiteType": "unit",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/telegram-publish-path.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 1,
+      "pass": 0,
+      "fail": 0,
+      "skipped": 1
+    },
+    {
+      "file": "tests/telegram-publisher.test.ts",
+      "suiteType": "unit",
+      "tests": 5,
+      "pass": 5,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/telegram-reconciliation.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 10,
+      "pass": 10,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/telegram-recovery.test.ts",
+      "suiteType": "unit",
+      "tests": 40,
+      "pass": 40,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/telegram-startup-classification.test.ts",
+      "suiteType": "unit",
+      "tests": 1,
+      "pass": 1,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/telegram.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 7,
+      "pass": 7,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/deep-semantics.test.ts",
+      "suiteType": "unit",
+      "tests": 20,
+      "pass": 20,
+      "fail": 0,
+      "skipped": 0
+    },
+    {
+      "file": "tests/deep-state.test.ts",
+      "suiteType": "database-or-mixed",
+      "tests": 6,
+      "pass": 6,
+      "fail": 0,
+      "skipped": 0
+    }
+  ]
+}

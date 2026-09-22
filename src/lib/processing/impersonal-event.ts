@@ -16,5 +16,17 @@ export function completeImpersonalReport(source:string|undefined,x:{actors:unkno
  return lines.length===1&&normalize(lines[0])===fact;
 }
 export function completeEventStructure(u:Understanding,source:string,mode:'NORMAL'|'DIRECT'){
- return !!u.event.action&&u.event.facts.length>0&&(u.event.actors.length>0||(mode==='NORMAL'&&completeImpersonalReport(source,{actors:u.event.actors,action:u.event.action.evidence,location:u.event.location?.evidence??null,statements:u.event.facts.map(f=>({evidence:f.evidence,speaker:f.speaker}))})));
+ const x={actors:u.event.actors,action:u.event.action?.evidence??null,location:u.event.location?.evidence??null,statements:u.event.facts.map(f=>({evidence:f.evidence,speaker:f.speaker}))};
+ return !!u.event.action&&u.event.facts.length>0&&(u.event.actors.length>0||completeObservedEvent(source,x)||(mode==='NORMAL'&&completeImpersonalReport(source,x)));
+}
+
+/** An intransitive event need not have an agent. Require the entire assertion,
+ * not merely a model claim of completeness. Speech and multi-claim text remain
+ * outside this proof; downstream material coverage and semantic review still run. */
+export function completeObservedEvent(source:string|undefined,x:Parameters<typeof completeImpersonalReport>[1]){
+ if(!source||x.actors.length||!x.action||!x.location||x.statements.length!==1||x.statements[0].speaker)return false;
+ const trim=(s:string)=>s.trim().replace(/[.。]$/u,'').replace(/\s+/gu,' ');
+ const prose=source.split('\n').filter(s=>!/^\s*(?:@[\w]+|https?:\/\/\S+)\s*$/u.test(s)).join('\n');
+ const fact=trim(x.statements[0].evidence.excerpt),action=trim(x.action.excerpt);
+ return trim(prose)===fact&&fact.includes(x.location.excerpt)&&fact.startsWith(action+' ')&&/^(?:وقع|وقعت|حدث|حدثت|اندلع|اندلعت|هطل|هطلت|سُجل|سُجلت)(?:\s|$)/u.test(action);
 }

@@ -1,6 +1,8 @@
 import type {PrismaClient} from '@prisma/client';
 import {queueHealth,latencySummary} from './queue-health';
 import {workerIsStale} from './domain';
+export const productionWorkerIds=new Set(['telegram-production-worker','telegram-publisher-worker']);
+export const workerIsProduction=(id:string)=>productionWorkerIds.has(id);
 export const record=(v:unknown):Record<string,unknown>=>v&&typeof v==='object'&&!Array.isArray(v)?v as Record<string,unknown>:{};
 export const safeCode=(v:unknown)=>typeof v==='string'&&/^[A-Z][A-Z0-9_:.-]{0,120}$/.test(v)?v:'غير مصنف';
 export function failureCategory(code:string){return /COST/.test(code)?'cost':/PROVIDER|GEMINI|GROQ|OPENAI/.test(code)?'provider':/SOURCE|LANGUAGE/.test(code)?'source':/EVIDENCE|ATTRIBUTION|UNSUPPORTED|COMPLETENESS|MATERIAL|RENDERING/.test(code)?'validation':/DATABASE|PRISMA/.test(code)?'database':'technical';}
@@ -37,11 +39,11 @@ export async function operationsSnapshot(db:PrismaClient,now=new Date()){
  const counts:Record<string,number>={},modes:Record<string,number>={NORMAL:0,DIRECT:0,UNRECORDED:0};
  for(const p of posts){counts[p.status]=(counts[p.status]??0)+1;const mode=record(p.processingResult).processingMode??record(p.relevanceResult).processingMode;modes[mode==='DIRECT'||mode==='NORMAL'?mode:'UNRECORDED']++;}
  const alerts:{severity:string;component:string;since:Date|null;message:string}[]=[];
- for(const w of workers)if(workerIsStale(w.lastSeenAt,w.intervalMs))alerts.push({severity:'WARNING',component:w.id,since:w.lastSeenAt,message:'النبضة متأخرة؛ تحقق من العامل قبل أي تدخل.'});
+ for(const w of workers)if(workerIsProduction(w.id)&&workerIsStale(w.lastSeenAt,w.intervalMs))alerts.push({severity:'WARNING',component:w.id,since:w.lastSeenAt,message:'النبضة متأخرة؛ تحقق من العامل قبل أي تدخل.'});
  for(const s of sources)if(s.enabled&&s.lastError)alerts.push({severity:'WARNING',component:s.handle,since:null,message:`آخر خطأ للمصدر: ${safeCode(s.lastError)}. وقت بدايته غير مسجل.`});
  if(queue.capacity.reason)alerts.push({severity:'WARNING',component:'Gemini',since:null,message:`حاجز الطلبات الحالي: ${safeCode(queue.capacity.reason)}؛ لا يوقف جمع المصادر.`});
  if(queue.capacity.cost.warning)alerts.push({severity:'WARNING',component:'Cost',since:null,message:'بلغت الكلفة المحسوبة حد التحذير؛ يشمل المجموع الحجوزات المعلقة.'});
  const uncertain=publications.filter(p=>['SENDING','UNKNOWN'].includes(p.status)).reduce((s,p)=>s+p._count,0);
  if(uncertain)alerts.push({severity:'CRITICAL',component:'Publishing',since:null,message:`${uncertain} عمليات إرسال تحتاج إلى تسوية؛ لا تُعد الإرسال.`});
- return {at:now,today,since,databaseMs,workers,queue,settings,sources:sources.map(s=>({...s,lastError:s.lastError?safeCode(s.lastError):null,postsToday:posts.filter(p=>p.sourceId===s.id).length})),counts,modes,totalToday:posts.length,materialUpdates:posts.filter(p=>record(p.processingResult).classification==='MATERIAL_UPDATE').length,jobs,publications,activity:activity.map(({metadata,...a})=>({...a,change:safeAuditChange(metadata)})),usage:usageSummary(usage),failures:failures.map(f=>({...f,lastError:safeCode(f.lastError)})),migrations,lastSent,totalPosts,totalNews,legacyPending,alerts};
+ return {at:now,today,since,databaseMs,workers:workers.map(w=>({...w,production:workerIsProduction(w.id)})),queue,settings,sources:sources.map(s=>({...s,lastError:s.lastError?safeCode(s.lastError):null,postsToday:posts.filter(p=>p.sourceId===s.id).length})),counts,modes,totalToday:posts.length,materialUpdates:posts.filter(p=>record(p.processingResult).classification==='MATERIAL_UPDATE').length,jobs,publications,activity:activity.map(({metadata,...a})=>({...a,change:safeAuditChange(metadata)})),usage:usageSummary(usage),failures:failures.map(f=>({...f,lastError:safeCode(f.lastError)})),migrations,lastSent,totalPosts,totalNews,legacyPending,alerts};
 }

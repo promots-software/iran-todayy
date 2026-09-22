@@ -6,7 +6,7 @@ export function EditorialState({value,status,error}:{value:unknown;status:string
  const data=value&&typeof value==='object'?value as {review?:ReasonInput[]}:{};
  const reasons=reviewMessages(error?[{code:error}]:data.review??[]);
  return <div><strong>{editorialLabels[state]}</strong>
-  {state==='READY_TO_PUBLISH'&&<p className="muted">النشر التلقائي معطّل — تنتظر المادة الموافقة والإرسال اليدوي</p>}
+  {state==='READY_TO_PUBLISH'&&<p className="muted">اجتازت المادة التحقق التحريري؛ قرار الإرسال مستقل ويخضع لإعدادات النشر</p>}
   {state==='PROCESSING_ERROR'?<p>{technicalExplanation}</p>:state==='NEEDS_REVIEW'&&<ul>{(reasons.length?reasons:['يتطلب الخبر مراجعة تحريرية إضافية']).map(r=><li key={r}>{r}</li>)}</ul>}
  </div>;
 }

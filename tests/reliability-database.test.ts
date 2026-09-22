@@ -40,7 +40,7 @@ test('durable native checkpoints survive new adapter, 429 opens circuit, ambiguo
  const fetchMock:typeof fetch=async()=>{calls++;return Response.json({candidates:[],usageMetadata:{}});};
  await guardedTransport(db,postId,fetchMock)('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init);
  const replay=await guardedTransport(db,postId,fetchMock)('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init);assert.equal(calls,1);assert.equal(replay.headers.get('x-worker-checkpoint-replayed'),'true');
- await assert.rejects(guardedTransport(db,randomUUID(),async()=>{calls++;return new Response('unavailable',{status:429,headers:{'retry-after':'120'}});})('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init),/GEMINI_HTTP_429/);
+ await assert.rejects(guardedTransport(db,randomUUID(),async()=>{calls++;return new Response('unavailable',{status:429,headers:{'retry-after':'120'}});})('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init),/PROVIDER_TRANSIENT_WAIT/);
  assert.ok(await providerRequestDelay(db)>0);
  await assert.rejects(guardedTransport(db,randomUUID(),fetchMock)('https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',init),/PROVIDER_CAPACITY_WAIT/);assert.equal(calls,2);
  assert.equal(await db.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget'}}),baseline+2);

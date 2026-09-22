@@ -117,7 +117,7 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     requestStartedAt=nowMs;
     // Lifetime count for this exact operation survives worker restarts and rolling windows.
     operationAttempt=await tx.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget',entityId:'gemini',AND:[{metadata:{path:['postId'],equals:postId}},{metadata:{path:['key'],equals:key}}]}});
-    if(operationAttempt>=1+geminiCostPolicy.retries)throw new ProcessingError('PROVIDER_RETRY_EXHAUSTED',true,undefined,86400000);
+    if(operationAttempt>=1+geminiCostPolicy.retries)throw new ProcessingError('PROVIDER_RETRY_EXHAUSTED');
     operationAttempt++;
     const rows=await readCapacityRows(tx,nowMs);
     const capacity=capacityState(rows,resource,nowMs);
@@ -141,7 +141,7 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
      const delay=transientBackoff(operationAttempt,Math.max(capacityRetryMs(diagnostic),diagnostic.quotas.some(q=>q.period==='DAY')?pacificDay(Date.now()).end-Date.now():0));
      await db.auditLog.create({data:{action:'PROVIDER_HTTP_DIAGNOSTIC',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Sanitized provider rejection; quota unknown unless explicitly reported',metadata:json({resource,postId,key,operationAttempt,...diagnostic})}});
      if(failurePolicy(`GEMINI_HTTP_${response.status}`,1).providerFailure)await db.auditLog.create({data:{action:'PROVIDER_CAPACITY_BLOCKED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Only this model network resource is unavailable; local and cached work continue',metadata:json({resource,code:`GEMINI_HTTP_${response.status}`,until:Date.now()+delay,diagnostic})}});
-     if(failurePolicy(`GEMINI_HTTP_${response.status}`,1).providerFailure)throw new ProcessingError(operationAttempt>=1+geminiCostPolicy.retries?'PROVIDER_RETRY_EXHAUSTED':'PROVIDER_TRANSIENT_WAIT',true,undefined,operationAttempt>=1+geminiCostPolicy.retries?86400000:delay);
+     if(failurePolicy(`GEMINI_HTTP_${response.status}`,1).providerFailure)throw new ProcessingError(operationAttempt>=1+geminiCostPolicy.retries?'PROVIDER_RETRY_EXHAUSTED':'PROVIDER_TRANSIENT_WAIT',operationAttempt<1+geminiCostPolicy.retries,undefined,operationAttempt>=1+geminiCostPolicy.retries?0:delay);
      throw new ProcessingError(`GEMINI_HTTP_${response.status}`,false,undefined,delay);
     }
     const envelope=await response.json(),usd=observedCost(envelope);

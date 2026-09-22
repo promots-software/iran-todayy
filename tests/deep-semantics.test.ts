@@ -1,0 +1,55 @@
+import test from 'node:test';import assert from 'node:assert/strict';
+import {validateDirectExtraction,adaptDirectExtraction} from '../src/lib/processing/direct';
+import {preparePublication,acceptPublication,publicationDraft} from '../src/lib/processing/direct-publication';
+import {resolveContextEvidence} from '../src/lib/processing/groq-validation';
+import {dateTokens,institutionalIdentity} from '../src/lib/processing/text-equivalence';
+import {renderingChecks} from '../src/lib/processing/rendering-contract';
+import {workflowState} from '../src/lib/workflow-state';
+import {failurePolicy} from '../src/lib/processing/failure-policy';
+import {workerIsProduction} from '../src/lib/operations';
+import repeatedLocation from './fixtures/repeated-location.json';
+import {validateMinimalExtraction} from '../src/lib/processing/groq-extraction';
+const ev=(source:string,excerpt:string)=>({excerpt,context:source});
+function setup(source:string,speaker:string|null,action:string,location:string|null){const e=(v:string)=>({...ev(source,v),context:source.indexOf(v)!==source.lastIndexOf(v)&&source.includes('في '+v)?'في '+v:source});const x=validateDirectExtraction({actors:speaker?[e(speaker)]:[],action:e(action),object:null,location:location?e(location):null,event_time:null,statements:[{evidence:e(source),speaker:speaker?e(speaker):null,kind:speaker?'STATEMENT':'FACT',material:true}],safety:{filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false}},source);return adaptDirectExtraction(x,source);}
+const coverage=[{unitId:'u1',factIds:['f1'],nonFactual:false}];
+test('stored repeated-location response resolves only the distinct explicit locative; proposal still needs independent review',()=>{
+ const {source,response}=repeatedLocation;const {publication,coverage,...extraction}=response;const x=validateDirectExtraction(extraction,source);
+ const location=x.extraction.location!;assert.equal(location.start,source.lastIndexOf('بيروت'));assert.equal(source.slice(location.start,location.end),location.excerpt);
+ const u=adaptDirectExtraction(x,source),p=preparePublication(source,u,publication,coverage);
+ assert.equal(p.local,false);assert.throws(()=>acceptPublication(source,u,p),/REVIEW_FAILED/);
+ const proof=review(response.publication);assert.doesNotThrow(()=>acceptPublication(source,u,p,proof));
+ proof.review[1].verdict='UNSUPPORTED';assert.throws(()=>acceptPublication(source,u,p,proof),/REVIEW_FAILED/);
+});
+test('role resolution never chooses between two locatives, an ungrounded actor, or unsupported city references',()=>{
+ const {publication,coverage,...raw}=repeatedLocation.response;void publication;void coverage;
+ for(const source of [repeatedLocation.source.replace('صباح اليوم','في بيروت صباح اليوم'),repeatedLocation.source.replace('في بيروت','وبيروت')]){
+  const update=(v:unknown):unknown=>Array.isArray(v)?v.map(update):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).map(([k,x])=>[k,k==='context'?source:k==='excerpt'&&x===repeatedLocation.source?source:update(x)])):v;
+  assert.throws(()=>validateDirectExtraction(update(raw),source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
+ }
+ const base={...raw,relevance:'POLITICAL_NEWS',statements:raw.statements.map(s=>({evidence:s.evidence,speaker:s.speaker}))};
+ const {safety:_,...minimal}=base;void _;
+ assert.throws(()=>validateMinimalExtraction({...minimal,actors:[]},repeatedLocation.source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
+ assert.throws(()=>validateMinimalExtraction({...minimal,location:{excerpt:'المدينة',context:repeatedLocation.source}},repeatedLocation.source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
+});
+function propose(title:string,body:string[]=[]){return {title:{text:title,factIds:['f1']},body:body.map(text=>({text,factIds:['f1']}))};}
+function review(p:ReturnType<typeof propose>){return {fullSourceCovered:true,publicationQuality:true,issues:[],review:['title',...p.body.map((_,i)=>`body:${i+1}`)].map(id=>({id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]}))};}
+for(const [name,source,speaker,action,location,title,body] of [
+ ['M01 ministry','أعلنت وزارة الصحة في لبنان اليوم افتتاح مركز صحي جديد في بيروت، على أن يبدأ استقبال المواطنين صباح غد.','وزارة الصحة في لبنان','افتتاح','بيروت','وزارة الصحة اللبنانية تعلن افتتاح مركز صحي جديد في بيروت',['أعلنت وزارة الصحة اللبنانية اليوم افتتاح مركز صحي جديد في بيروت، على أن يبدأ استقبال المواطنين صباح غد.']],
+ ['M01 continuation','أعلنت بلدية بيروت افتتاح 3 حدائق عامة جديدة، مؤكدة أن جميع الحدائق ستستقبل الزوار مجاناً.','بلدية بيروت','افتتاح','بيروت','بلدية بيروت تفتتح 3 حدائق عامة وتتيح دخولها مجاناً',['أعلنت بلدية بيروت عن افتتاح 3 حدائق عامة جديدة أمام الجمهور.','وأكدت البلدية أن الحدائق ستكون متاحة لاستقبال الزوار بشكل مجاني.']],
+ ['M02 unique city','أعلن المتحدث باسم بلدية بيروت افتتاح حديقة عامة جديدة في بيروت صباح اليوم.','المتحدث باسم بلدية بيروت','افتتاح','بيروت','المتحدث باسم بلدية بيروت يعلن افتتاح حديقة عامة جديدة',['أعلن المتحدث باسم بلدية بيروت عن افتتاح حديقة عامة جديدة في المدينة صباح اليوم.']],
+ ['M03 regional date','أعلنت بلدية بيروت أن 12 حديقة عامة ستفتح أبوابها أمام المواطنين في 25 أيلول 2026، ابتداءً من الساعة الثامنة صباحاً.','بلدية بيروت','ستفتح','بيروت','بلدية بيروت تفتح 12 حديقة عامة في 25 سبتمبر 2026',['أعلنت بلدية بيروت عن فتح 12 حديقة عامة أمام المواطنين في 25 سبتمبر 2026، وذلك بدءاً من الساعة الثامنة صباحاً.']],
+ ['M04 indirect speech','قال رئيس بلدية بيروت: "لن نغلق أي حديقة عامة خلال عطلة نهاية الأسبوع"، مؤكداً أن فرق البلدية ستواصل أعمال الصيانة بشكل طبيعي.','رئيس بلدية بيروت','نغلق','بيروت','رئيس بلدية بيروت يؤكد عدم إغلاق الحدائق خلال عطلة نهاية الأسبوع',['أعلن رئيس بلدية بيروت عدم إغلاق أي حديقة عامة خلال عطلة نهاية الأسبوع.','وأكد أن فرق البلدية ستواصل تنفيذ أعمال الصيانة بشكل طبيعي خلال هذه الفترة.']],
+ ['M05 event without agent','وقع زلزال بقوة 4.2 درجات في جنوب إيران.',null,'وقع','جنوب إيران','زلزال بقوة 4.2 درجات يضرب جنوب إيران',['سجلت هزة أرضية بقوة 4.2 درجات في جنوب إيران.']],
+] as const)test(name+' passes only independent review, never generator self-attestation',()=>{
+ const u=setup(source,speaker,action,location),p=propose(title,[...body]);const prepared=preparePublication(source,u,p,coverage);assert.equal(prepared.local,false);assert.throws(()=>acceptPublication(source,u,prepared),/REVIEW_FAILED/);
+ const proof=review(p);const accepted=acceptPublication(source,u,prepared,proof);assert.equal(publicationDraft(source,{...u,publicationProposal:accepted}).body,body.join('\n'));
+ for(const check of renderingChecks){const bad=review(p);bad.review[0].checks[check]=false;assert.throws(()=>acceptPublication(source,u,prepared,bad),/REVIEW_FAILED/);}
+});
+test('calendar identity, day/year/numbers and entity corruptions fail locally',()=>{const source='أعلنت بلدية بيروت افتتاح 12 حديقة في 25 أيلول 2026.',u=setup(source,'بلدية بيروت','افتتاح','بيروت');for(const change of ['أعلنت بلدية دمشق افتتاح 12 حديقة في 25 سبتمبر 2026.','أعلنت بلدية بيروت افتتاح 13 حديقة في 25 سبتمبر 2026.','أعلنت بلدية بيروت افتتاح 12 حديقة في 26 سبتمبر 2026.','أعلنت بلدية بيروت افتتاح 12 حديقة في 25 سبتمبر 2027.','أعلنت بلدية بيروت افتتاح 12 حديقة في 25 سبتمبر 2026 بالتقويم الإيراني.','أعلنت بلدية بيروت افتتاح 12 حديقة في 25 أكتوبر 2026.'])assert.throws(()=>preparePublication(source,u,propose(change),coverage));assert.deepEqual(dateTokens('25 أيلول 2026'),dateTokens('25 سبتمبر 2026'));assert.notEqual(institutionalIdentity('وزارة الصحة في لبنان'),institutionalIdentity('وزارة الخارجية اللبنانية'));assert.notEqual(institutionalIdentity('وزارة الصحة في لبنان'),institutionalIdentity('وزارة الصحة السورية'));});
+test('layout-only contexts restore exact source spans; repeated antecedents stay ambiguous',()=>{const source='أعلن المتحدث باسم بلدية بيروت\n\nافتتاح حديقة جديدة في بيروت.';const e={excerpt:'افتتاح حديقة جديدة في بيروت.',context:source.replace(/\n+/g,' '),start:0,end:0};resolveContextEvidence(e,source);assert.equal(source.slice(e.start,e.end),e.excerpt);assert.throws(()=>resolveContextEvidence({excerpt:'بيروت',context:source},source),/AMBIGUOUS/);assert.throws(()=>resolveContextEvidence({excerpt:'المدينة',context:source},source),/AMBIGUOUS/);assert.throws(()=>resolveContextEvidence({excerpt:'دمشق',context:source.replace('بيروت','دمشق')},source),/AMBIGUOUS/);});
+test('M05 event grammar is not earthquake-specific and never fabricates omitted speech/clauses',()=>{for(const source of ['اندلع حريق في جنوب لبنان.','هطلت أمطار في بيروت.','حدث انقطاع للكهرباء في دمشق.'])assert.doesNotThrow(()=>setup(source,null,source.split(' ')[0],source.slice(source.indexOf('في ')+3,-1)));assert.throws(()=>setup('أعلن رئيس البلدية افتتاح مدرسة في بيروت.',null,'افتتاح','بيروت'),/INCOMPLETE/);});
+for(const status of ['SENT','SENDING','UNKNOWN','FAILED','PENDING','CANCELLED'])test('M07 publication '+status+' dominates obsolete ready snapshot appropriately',()=>{const p={status:'PENDING_APPROVAL',validationResult:{validated:true,editorialEligibility:'READY_TO_PUBLISH'},publication:{status}};assert.equal(workflowState(p),({SENT:'PUBLISHED',SENDING:'SENDING',UNKNOWN:'UNKNOWN',FAILED:'DELIVERY_FAILED',PENDING:'APPROVED',CANCELLED:'READY_TO_PUBLISH'} as Record<string,string>)[status]);assert.equal(workflowState({status:'PENDING_APPROVAL'},[p]),status==='CANCELLED'?'NEEDS_REVIEW':workflowState(p));});
+test('terminal, filtered and processing states cannot be overruled by old READY JSON',()=>{for(const status of ['PUBLISHED','REJECTED','FILTERED','DUPLICATE','APPROVED','INGESTED','VALIDATING'])assert.equal(workflowState({status,validationResult:{editorialEligibility:'READY_TO_PUBLISH'}}),status);});
+test('M06 ambiguous outcome stops automatically, remains technical; definite failures retain bounded retry policy',()=>{assert.equal(failurePolicy('PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW',1).retryable,false);assert.equal(workflowState({status:'FAILED',error:'PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW'}),'PROCESSING_ERROR');for(const code of ['GEMINI_HTTP_429','GEMINI_HTTP_503'])assert.equal(failurePolicy(code,1).safeCheckpointRetry,true);assert.equal(failurePolicy('GEMINI_TRANSPORT_FAILED',1).safeCheckpointRetry,false);assert.equal(workerIsProduction('telegram-production-worker'),true);assert.equal(workerIsProduction('legacy-local-worker'),false);});
+
+test('failed or human-edited work cannot inherit a stale READY presentation',()=>{assert.equal(workflowState({status:'FAILED',validationResult:{editorialEligibility:'READY_TO_PUBLISH'}}),'PROCESSING_ERROR');assert.equal(workflowState({status:'PENDING_APPROVAL',humanDraft:{status:'DRAFT'},validationResult:{editorialEligibility:'READY_TO_PUBLISH'}}),'NEEDS_REVIEW');assert.equal(workflowState({status:'FAILED',error:'UNSUPPORTED_OUTPUT'}),'NEEDS_REVIEW');});

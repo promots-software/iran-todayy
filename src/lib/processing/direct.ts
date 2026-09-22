@@ -27,7 +27,7 @@ export function validateDirectExtraction(raw:unknown,source:string){
  if(!parsed.success)throw new ProcessingError('INVALID_DIRECT_EXTRACTION_SCHEMA');
  const {safety,statements,...anchors}=parsed.data;
  const extraction=validateMinimalExtraction({...anchors,relevance:'POLITICAL_NEWS',statements:statements.map(({evidence,speaker})=>({evidence,speaker}))},source);
- requireCompleteExtraction(extraction);
+ requireCompleteExtraction(extraction,source);
  const refs=classificationReferences(extraction);
  const classification={...safety,topic:'UNKNOWN',topicEvidenceId:null,anchorIds:refs.requiredAnchorIds,
   factLabels:statements.map((s,i)=>({id:extraction.statements[i].id,kind:s.kind,material:s.material})),rationaleIds:refs.requiredFactIds};

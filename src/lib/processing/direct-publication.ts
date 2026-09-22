@@ -1,3 +1,4 @@
+import {institutionalIdentity,digits,dateTokens} from './text-equivalence';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {ProcessingError,type Understanding,type Draft} from './contracts';
@@ -6,7 +7,7 @@ import {requireArabic} from './groq-validation';
 import {renderingChecks} from './rendering-contract';
 import {newsroomPrefix} from './newsroom-format';
 const hash=(value:unknown)=>createHash('sha256').update(JSON.stringify(value,(key,value)=>key==='sourcePostId'?undefined:value&&typeof value==='object'&&!Array.isArray(value)?Object.fromEntries(Object.entries(value).sort(([a],[b])=>a.localeCompare(b))):value)).digest('hex');
-const punctuation=/[\s.،,؛;:：!?؟\-–—•]/gu;
+const punctuation=/[\s.،,؛;:：!?؟\-–—•«»“”"]/gu;
 const canonical=(s:string)=>s.trim().replace(/[.。]$/u,'').replace(/\s+/gu,' ');
 export function publicationUnits(source:string){let start=0;return source.split('\n').flatMap((text,i)=>{const unit={id:`u${i+1}`,start,end:start+text.length,text};start+=text.length+1;return text.trim()?[unit]:[];});}
 /** Only standalone URLs/handles are provably non-factual. Prose is never dismissed by model assertion. */
@@ -29,9 +30,8 @@ export function validateSourceCoverage(source:string,u:Understanding,raw:unknown
  }
  return rows;
 }
-const numbers=(s:string):string[]=>s.match(/[0-9٠-٩۰-۹]+(?:[.,][0-9٠-٩۰-۹]+)*/gu)??[];
-const dateWords=/(?:يناير|فبراير|مارس|أبريل|مايو|يونيو|يوليو|أغسطس|سبتمبر|أكتوبر|نوفمبر|ديسمبر|الاثنين|الإثنين|الثلاثاء|الأربعاء|الخميس|الجمعة|السبت|الأحد|غداً|أمس|اليوم)/gu;
-const dates=(s:string):string[]=>s.match(dateWords)??[];
+const numbers=(s:string):string[]=>digits(s).match(/[0-9]+(?:[.,][0-9]+)*/gu)??[];
+const dates=dateTokens;
 const quotes=(s:string):string[]=>s.match(/«[^»]*»|“[^”]*”|"[^"\n]*"/gu)??[];
 function same(a:string[],b:string[]){return JSON.stringify([...a].sort())===JSON.stringify([...b].sort());}
 /** Small, direction-preserving MSA edits; no deletion, entity resolution or reordering. */
@@ -54,14 +54,19 @@ export function preparePublication(source:string,u:Understanding,raw:unknown,cov
   if(quotes(line.text).some(q=>!evidence.includes(q)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
   // Explicit entity anchors cannot disappear or be substituted inside their linked fact.
   const anchors=[...u.event.actors,u.event.location,...refs.map(f=>f.speaker)].filter(x=>!!x);
-  if(anchors.some(a=>evidence.includes(a!.evidence.excerpt)&&!line.text.includes(a!.arabic)))throw new ProcessingError('DIRECT_PUBLICATION_ENTITY_ATTRIBUTION_MISMATCH');
+  // A headline may omit a repeated anchor. It must still be present in the complete
+  // linked publication; a paraphrase or pronoun always needs independent review.
+  const linkedText=all.map(l=>l.text).join(' ');
+  if(anchors.some(a=>evidence.includes(a!.evidence.excerpt)&&!institutionalIdentity(linkedText).includes(institutionalIdentity(a!.arabic))))throw new ProcessingError('DIRECT_PUBLICATION_ENTITY_ATTRIBUTION_MISMATCH');
  }
  if(u.event.facts.some(f=>!used.has(f.id)))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
  const publication=proposal.body.length?proposal.body.map(s=>s.text).join('\n'):proposal.title.text;
  const originalFacts=u.event.facts.map(f=>f.evidence.excerpt).join('\n');
  if(!same(dates(publication),dates(originalFacts)))throw new ProcessingError('DIRECT_PUBLICATION_DATE_MISMATCH');
  if(!same(numbers(publication),numbers(originalFacts)))throw new ProcessingError('DIRECT_PUBLICATION_NUMBER_MISMATCH');
- if(!same(quotes(publication),quotes(originalFacts)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
+ // Existing literal quotes cannot be altered. Faithful indirect speech has no
+ // output quotation marks and is accepted ONLY through independent semantic review.
+ if(quotes(publication).some(q=>!quotes(originalFacts).includes(q)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
  if(proposal.title.text.trim().endsWith(':'))throw new ProcessingError('DIRECT_UNINFORMATIVE_TITLE');
  const local=all.every(line=>line.factIds.length===1&&canonical(line.text)===safeArabicEdit(u.event.facts.find(f=>f.id===line.factIds[0])!.arabic));
  // Same-call attestations are deliberately absent. Unproven wording needs an independent review.

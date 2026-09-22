@@ -240,8 +240,8 @@ test('non-advancing provider page fails closed rather than skipping or looping f
 
 for(const code of ['GEMINI_HTTP_429','GEMINI_HTTP_503','GEMINI_TRANSPORT_FAILED','PROVIDER_COOLDOWN','PROVIDER_REQUEST_LIMIT','PROVIDER_BUDGET_EXHAUSTED'])test(`processing hold ${code} does not throttle collection`,async()=>{
  const state=database();const now=Date.now();
- const rows=code.includes('LIMIT')||code.includes('BUDGET')?[{action:'PROVIDER_RESERVED',metadata:{usd:1},createdAt:new Date(now)}]:[{action:'PROVIDER_CAPACITY_BLOCKED',metadata:{resource:'generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',code,until:now+3600000},createdAt:new Date(now)}];
- Object.assign(state.db,{auditLog:{findMany:async()=>rows}});
+ const rows=code.includes('LIMIT')||code.includes('BUDGET')?[{action:'PROVIDER_RESERVED',metadata:{usd:2},createdAt:new Date(now)}]:[{action:'PROVIDER_CAPACITY_BLOCKED',metadata:{resource:'generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent',code,until:now+3600000},createdAt:new Date(now)}];
+ Object.assign(state.db,{auditLog:{findMany:async()=>rows},processingJob:{...state.db.processingJob,count:async()=>0}});
  assert.ok(await providerRequestDelay(state.db)>0,'only the uncached provider request remains held');
  const history=new Map([['source_alpha',Array.from({length:501},(_,i)=>message(i+11))],['source_beta',Array.from({length:103},(_,i)=>message(i+11))]]);
  const transport=connections(history),worker=new TelegramPoller(transport.factory);

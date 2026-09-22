@@ -1,5 +1,5 @@
 export const labels: Record<string, string> = {
-  READY_TO_PUBLISH:'جاهز للنشر',PROCESSING_ERROR:'خطأ في المعالجة',HOLD:'الإرسال معلّق',
+  DELIVERY_FAILED:'تعذر الإرسال', CANCELLED:'ملغى', READY_TO_PUBLISH:'جاهز للنشر',PROCESSING_ERROR:'خطأ في المعالجة',HOLD:'الإرسال معلّق',
   MATERIAL_UPDATE: "تطور جوهري", UNCERTAIN_MATCH: "مطابقة محتملة — تحتاج مراجعة",
   INGESTED: "تم الاستقبال", NORMALIZED: "تم الاستخراج", CLASSIFYING: "قيد التصنيف", DEDUPLICATING: "فحص التكرار",
   DRAFTING: "قيد التحرير", VALIDATING: "قيد التحقق", NEEDS_REVIEW: "يحتاج مراجعة", PENDING_APPROVAL: "بانتظار الموافقة",

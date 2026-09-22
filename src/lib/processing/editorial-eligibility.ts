@@ -32,10 +32,10 @@ export const arabicReasons:Record<string,string>={
  SINGLE_UNOFFICIAL_FIGURE:'أرقام غير محسومة من مصدر واحد غير رسمي',LEADER_STATUS:'وفاة شخصية قيادية أو هويتها تحتاج إلى تدقيق',SENSITIVE_ACTOR:'هوية الجهة أو سياقها الحساس يحتاج إلى تدقيق',
  ARCHIVE_ONLY:'مادة أرشيفية غير مخصصة للنشر',HUMAN_APPROVAL_REQUIRED:'النسخة البشرية تنتظر موافقة صريحة من المحرر',
 };
-export const technicalExplanation='تعذّرت معالجة الخبر بسبب خطأ تقني، وسيحتاج إلى إعادة المحاولة';
+export const technicalExplanation='تعذّرت المعالجة لسبب تقني. تُستأنف المحاولات الآمنة حسب حالتها؛ النتائج غير المحسومة تتطلب فحصاً تقنياً قبل الإعادة';
 const operational=new Set(['SHADOW_MODE_REVIEW','AUTO_PUBLISH_DISABLED','REQUIRE_APPROVAL','MANUAL_PUBLICATION_REQUIRED']);
 export function isTechnicalFailure(code:string){
- if(isProviderWait(code)||code==='SOURCE_PROCESSING_MODE_CHANGED')return true;
+ if(isProviderWait(code)||code==='SOURCE_PROCESSING_MODE_CHANGED'||code==='SOURCE_DISABLED')return true;
  return /(?:SCHEMA|INVALID_JSON|INVALID_RESPONSE|INVALID_ID_CLASSIFICATION|TRANSPORT|HTTP_|UNAVAILABLE|REQUEST_LIMIT|INPUT_LIMIT|RATE_LIMIT|INTERRUPTED|TIMEOUT|LEASE_|STALE_CLAIM|AUTH_FAILED|API_KEY|PROCESSING_FAILED|REQUEST_REJECTED|REQUEST_TOO_LARGE|REFUSAL|^(?:GEMINI|GROQ|OPENAI)_INCOMPLETE$)/u.test(code);
 }
 export type ReasonInput={code:string;detail?:string};

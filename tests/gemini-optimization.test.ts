@@ -6,7 +6,7 @@ import {compactGeminiRequest,checkpointAliases,type GeminiRequest,type Checkpoin
 import {coverageInstructions} from '../src/lib/processing/editorial-scope';
 import {guardedTransport,geminiResource,budgetDecision,limits} from '../src/worker/provider-guard';
 import {databaseCheckpoints} from '../src/worker/checkpoints';
-import {quotaDecision} from '../src/worker/provider-quota';
+import {quotaDecision,googleQuota} from '../src/worker/provider-quota';
 
 function request(count=1):GeminiRequest{
  const schema={type:'object',properties:{topic:{enum:['UNKNOWN','IRAN_DOMESTIC']}},required:['topic'],additionalProperties:false};
@@ -31,9 +31,9 @@ test('only ID-only output budget scales; large/unknown contracts retain room and
 test('45/hour is superseded, but RPM/TPM/RPD and the dollar ceiling still fail closed',()=>{
  const now=Date.parse('2026-09-21T15:00:00Z');const rows=Array.from({length:60},()=>({at:now-60001,usd:.001,inputTokens:100}));
  assert.equal(limits.hourRequests,null);assert.equal(budgetDecision(rows,1000,now,1024).allowed,true);assert.equal(quotaDecision(rows,1000,now).reason,null);
- assert.equal(quotaDecision(Array.from({length:15},()=>({at:now,inputTokens:1})),1,now).reason,'PROVIDER_RPM_WAIT');
- assert.equal(quotaDecision([{at:now,inputTokens:250000}],1,now).reason,'PROVIDER_TPM_WAIT');
- assert.equal(quotaDecision(Array.from({length:500},()=>({at:now-60001,inputTokens:1})),1,now).reason,'PROVIDER_RPD_WAIT');
+ assert.equal(quotaDecision(Array.from({length:googleQuota.rpm},()=>({at:now,inputTokens:1})),1,now).reason,'PROVIDER_RPM_WAIT');
+ assert.equal(quotaDecision([{at:now,inputTokens:googleQuota.inputTpm}],1,now).reason,'PROVIDER_TPM_WAIT');
+ assert.equal(quotaDecision(Array.from({length:googleQuota.rpd},()=>({at:now-60001,inputTokens:1})),1,now).reason,'PROVIDER_RPD_WAIT');
  assert.equal(budgetDecision([{at:now,usd:3}],1,now,1024).reason,'PROVIDER_COST_WAIT');
 });
 test('legacy completed request reuses output during outage; ambiguous legacy request is never resent',{skip:!process.env.TEST_DATABASE_URL},async()=>{

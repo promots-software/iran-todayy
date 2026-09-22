@@ -14,7 +14,7 @@ export async function newsPage(db:PrismaClient,mode:'readonly'|'review'|'approva
   const [count]=await tx.$queryRaw<{total:number}[]>(Prisma.sql`SELECT count(*)::int AS total FROM "NewsItem" n WHERE ${eligible}`);
   const paging=pageWindow(requested,count.total);
   const ids=await tx.$queryRaw<{id:string}[]>(Prisma.sql`SELECT n.id FROM "NewsItem" n WHERE ${eligible} ORDER BY n."createdAt" DESC,n.id DESC LIMIT ${paging.take} OFFSET ${paging.skip}`);
-  const items=await tx.newsItem.findMany({where:{id:{in:ids.map(x=>x.id)}},orderBy:[{createdAt:'desc'},{id:'desc'}],include:{evidence:{include:{sourcePost:{include:{source:true}}}}}});
+  const items=await tx.newsItem.findMany({where:{id:{in:ids.map(x=>x.id)}},orderBy:[{createdAt:'desc'},{id:'desc'}],include:{publication:true,evidence:{include:{sourcePost:{include:{source:true}}}}}});
   return {items,...paging};
  },{isolationLevel:'RepeatableRead'});
 }

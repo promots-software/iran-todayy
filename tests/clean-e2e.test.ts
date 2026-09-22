@@ -11,10 +11,13 @@ test('context space-codepoint repair retains exact factual excerpt and original 
  const excerpt='افتتح المجلس مدرسة جديدة.',e={excerpt,context:source.replaceAll('\u00a0',' '),start:-1,end:-1};
  resolveContextEvidence(e,source);assert.equal(source.slice(e.start,e.end),excerpt);assert.equal(e.start,source.indexOf(excerpt));
 });
+test('excerpt layout repair restores original bytes and offsets',()=>{
+ const source='خبر\u00a0هنا',e={excerpt:'خبر هنا',context:'خبر هنا',start:-1,end:-1};resolveContextEvidence(e,source);assert.equal(e.excerpt,source);assert.equal(source.slice(e.start,e.end),source);
+});
+
 test('space repair cannot pick repeated context or alter factual words/excerpt',()=>{
  for(const [source,excerpt,context]of [
  ['خبر\u00a0هنا\nخبر\u00a0هنا','خبر','خبر هنا'],
- ['خبر\u00a0هنا','خبر هنا','خبر هنا'],
  ['خبر\u00a0هنا','خبر','خبر هناك'],
  ['خبر خبر\u00a0هنا','خبر','خبر خبر هنا'],
  ])assert.throws(()=>resolveContextEvidence({excerpt,context},source),/AMBIGUOUS_EVIDENCE_CONTEXT/);

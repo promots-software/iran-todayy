@@ -1,0 +1,4 @@
+// Only launched by the isolated QA runner. Fail closed on every non-local request.
+if(new URL(process.env.DATABASE_URL).hostname!=='127.0.0.1'||!new URL(process.env.DATABASE_URL).pathname.startsWith('/qa_')||process.env.TELEGRAM_BOT_TOKEN!=='123:offline')throw Error('LOCAL_QA_REQUIRED');
+const original=globalThis.fetch;let calls=0;
+globalThis.fetch=async(input,options)=>{const u=new URL(String(input));if(['127.0.0.1','localhost'].includes(u.hostname))return original(input,options);if(u.href!=='https://api.telegram.org/bot123:offline/sendMessage')throw Error('EXTERNAL_NETWORK_BLOCKED');const p=JSON.parse(options.body);if(p.chat_id!=='-100123'||p.allow_paid_broadcast!==false)throw Error('WRONG_FAKE_DESTINATION');calls++;if(calls>1)throw Error('DUPLICATE_FAKE_SEND');return Response.json({ok:true,result:{message_id:777,chat:{id:-100123}}});};

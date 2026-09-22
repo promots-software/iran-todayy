@@ -1,8 +1,9 @@
 "use client";
-import {useActionState} from 'react';
+import {useActionState,useState} from 'react';
 import {sourceProcessingModeAction} from '@/app/actions';
 export function SourceProcessingModeControl({value="NORMAL"}:{value?:"NORMAL"|"DIRECT"}) {
- return <><label>طريقة المعالجة<select name="processingMode" defaultValue={value}><option value="NORMAL">المعالجة العادية</option><option value="DIRECT">المعالجة المباشرة</option></select></label><p className="muted small">يُعتبر كل محتوى هذا المصدر ضمن نطاق المشروع، ويُعاد تحريره أو ترجمته مباشرة دون فحص الصلة بالموضوع.</p></>;
+ const [mode,setMode]=useState(value);
+ return <><label>طريقة المعالجة<select name="processingMode" value={mode} onChange={e=>setMode(e.target.value as "NORMAL"|"DIRECT")}><option value="NORMAL">المعالجة العادية</option><option value="DIRECT">المعالجة المباشرة</option></select></label><p className="muted small">{mode==="DIRECT"?"يُعتبر محتوى المصدر ضمن نطاق المشروع؛ تبقى مراجعة الأدلة والصياغة والسلامة مطلوبة.":"يُفحص نطاق الخبر وصلته بالموضوع قبل استكمال المعالجة التحريرية."}</p></>;
 }
 export function SourceProcessingModeForm({id,value}:{id:string;value:"NORMAL"|"DIRECT"}) {
  const [state,action,pending]=useActionState(sourceProcessingModeAction,{ok:false,message:""});

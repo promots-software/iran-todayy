@@ -19,7 +19,7 @@ export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evid
  if(fact.start<=speaker.start&&speaker.end<fact.end){
   const before=source.slice(fact.start,speaker.start).replace(decoration,'').trim();
   const after=source.slice(speaker.end,fact.end);
-  if((before===''&&(/^\s*[:：]\s*\S/u.test(after)||persianIntroduction.test(after)||arabicSpeakerFirst.test(after))) || (arabicIntroduction.test(before)&&/^\s+\S/u.test(after)))return;
+  if((before===''&&(/^\s*[:：]\s*\S/u.test(after)||persianIntroduction.test(after)||arabicSpeakerFirst.test(after))) || (arabicIntroduction.test(before)&&/^(?:\s+|\s*[:：]\s*)\S/u.test(after)))return;
  }
  const paragraphStart=source.lastIndexOf('\n',fact.start)+1;
  if(speaker.start>=paragraphStart&&speaker.end<=fact.start)return;

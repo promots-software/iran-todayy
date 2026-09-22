@@ -1,3 +1,4 @@
+import {layoutProjection} from './text-equivalence';
 import { ProcessingError, type Understanding } from './contracts';
 import {validateSpeakerEvidence} from './speaker-evidence';
 import {resolveRendering} from './evidence-rendering';
@@ -8,7 +9,7 @@ export function requireArabic(text:string) {
   if(!/[\u0621-\u064a]/u.test(text) || /[پچژگکی]/u.test(text) || /(?:^|\s)(?:که|را|شده|بودند|گفته|است)(?:\s|$)/u.test(text))throw new ProcessingError('NON_ARABIC_OUTPUT');
 }
 /** All evidence must identify exactly one source occurrence, including repeated excerpts. */
-export function resolveContextEvidence(value:unknown,source:string):number {
+export function resolveContextEvidence(value:unknown,source:string,locationActors?:ReadonlyArray<{start:number;end:number}>):number {
   let aligned=0;
   function visit(node:unknown){
     if(!node||typeof node!=='object')return;
@@ -17,17 +18,29 @@ export function resolveContextEvidence(value:unknown,source:string):number {
     if(typeof o.excerpt==='string') {
       const excerpt=o.excerpt,rawContext=o.context;
       if(typeof rawContext!=='string'||!rawContext||!excerpt)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
-      let context=rawContext;
-      // Repair only equal-length space-codepoint changes in surrounding context.
-      // Never normalize the factual excerpt, punctuation, words or source text.
-      if(!source.includes(context)){
-        const spaces=(text:string)=>text.replace(/[\u00a0\u202f]/gu,' ');
-        const normalized=spaces(source),needle=spaces(context),at=normalized.indexOf(needle);
-        if(at>=0&&normalized.lastIndexOf(needle)===at)context=source.slice(at,at+context.length);
+      const contextView=layoutProjection(rawContext).value;
+      const sourceView=layoutProjection(source);
+      const base=sourceView.value.indexOf(contextView);
+      if(base<0||sourceView.value.lastIndexOf(contextView)!==base)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
+      const excerptView=layoutProjection(excerpt).value;
+      if(!contextView||!excerptView)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
+      let relative=contextView.indexOf(excerptView);
+      if(relative<0)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
+      if(contextView.lastIndexOf(excerptView)!==relative){
+        // Location-only structural proof: every other occurrence belongs to an
+        // already validated actor span, and the sole remaining one has an explicit
+        // locative preposition. Never resolve a repeated fact/speaker this way.
+        const outside:number[]=[];
+        for(let i=relative;i>=0;i=contextView.indexOf(excerptView,i+1)){
+          const a=sourceView.starts[base+i],b=sourceView.ends[base+i+excerptView.length-1];
+          if(!locationActors?.some(actor=>actor.start<=a&&actor.end>=b))outside.push(i);
+        }
+        if(!locationActors?.length||outside.length!==1||!/(?:^|[\s،,:;])(?:في|داخل|در|in|at)\s+$/iu.test(contextView.slice(0,outside[0])))throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
+        relative=outside[0];
       }
-      const base=source.indexOf(context),relative=context.indexOf(excerpt);
-      if(base<0||source.lastIndexOf(context)!==base||relative<0||context.lastIndexOf(excerpt)!==relative)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
-      const start=base+relative,end=start+excerpt.length;
+      const start=sourceView.starts[base+relative],end=sourceView.ends[base+relative+excerptView.length-1];
+      // Restore the exact original source slice; immutable evidence/offset checks remain byte-exact.
+      o.excerpt=source.slice(start,end);
       if(o.start!==start||o.end!==end)aligned++;
       o.start=start;o.end=end;delete o.context;
       return;
