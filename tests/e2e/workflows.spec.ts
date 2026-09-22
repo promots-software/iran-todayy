@@ -45,7 +45,7 @@ test('SUPER_ADMIN operations holds, source controls and settings persist with au
   const form=page.locator('form').filter({has:page.locator(`input[name=kind][value=${kind}]`)}).filter({has:page.locator(`input[name=target][value="${kind==='SOURCE_PROCESSING_HOLD'?'qa-source':'1'}"]`)});await form.locator('..').locator('summary').click();await form.locator('[name=confirmed]').check();await form.getByRole('button',{name:'تنفيذ التغيير'}).click();await expect.poll(async()=>kind==='SOURCE_PROCESSING_HOLD'?(await db.source.findUniqueOrThrow({where:{id:'qa-source'}})).processingPaused:(await db.appSettings.findUniqueOrThrow({where:{id:1}}))[kind==='PROCESSING_HOLD'?'processingPaused':'publishingPaused']).toBe(value==='true');await page.reload();
   if(kind==='SOURCE_PROCESSING_HOLD')expect((await db.source.findUniqueOrThrow({where:{id:'qa-source'}})).processingPaused).toBe(value==='true');else expect((await db.appSettings.findUniqueOrThrow({where:{id:1}}))[kind==='PROCESSING_HOLD'?'processingPaused':'publishingPaused']).toBe(value==='true');
  }
- await page.goto('/settings');await page.getByRole('button',{name:'حفظ الإعدادات',exact:true}).click();await expect(page.getByRole('status').filter({hasText:'حفظ شرط الموافقة'})).toBeVisible();expect((await db.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode).toBe('REQUIRE_APPROVAL');
+ await page.goto('/settings');await expect(page.locator('[name=publishingMode]')).toHaveCount(0);expect((await db.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode).toBe('REQUIRE_APPROVAL');
  await page.goto('/logs');await expect(page.getByRole('link',{name:'فتح الخبر'}).first()).toBeVisible();expect(await db.auditLog.count({where:{actor:{startsWith:'user:'}}})).toBeGreaterThan(0);
 });
 

@@ -5,7 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { db } from "@/lib/db";
 
-import { saveSource, changeSource, changeMode, changeSourceProcessingMode } from "@/lib/source-service";
+import { saveSource, changeSource, changeSourceProcessingMode } from "@/lib/source-service";
 import { saveSourceProfile } from "@/lib/processing/source-profile";
 import {approvePublication,publishApprovedManually} from '@/lib/telegram/publisher';
 
@@ -40,14 +40,6 @@ export async function sourceAction(_: ActionState, form: FormData): Promise<Acti
     await changeSource(db, id, operation, user);
     revalidatePath("/", "layout");
     return { ok: true, message: "تم حفظ التغيير" };
-  } catch (error) { return failure(error); }
-}
-export async function modeAction(_: ActionState, form: FormData): Promise<ActionState> {
-  try {
-    const user = await actor(true);
-    await changeMode(db, form.get("publishingMode"), user);
-    revalidatePath("/", "layout");
-    return { ok: true, message: "تم حفظ شرط الموافقة؛ صلاحية التسليم الآلي المستقلة لم تتغير." };
   } catch (error) { return failure(error); }
 }
 export async function sourceProfileAction(_:ActionState,form:FormData):Promise<ActionState> {

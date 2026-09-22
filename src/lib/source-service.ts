@@ -1,8 +1,8 @@
 import {lockEditorialPublication} from './human-editorial-contract';
 import {syncAutomaticSources} from './telegram/source-authorization';
-import { Prisma, PrismaClient } from "@prisma/client";
-import { sourceSchema, sourceProcessingModeSchema, sourceUrl, publishingModeSchema } from "./domain";
-import { assertApprovalMode } from "./processing/shadow";
+import { PrismaClient } from "@prisma/client";
+import { sourceSchema, sourceProcessingModeSchema, sourceUrl } from "./domain";
+
 
 export async function saveSource(client: PrismaClient, input: unknown, actor: string) {
   const source = sourceSchema.parse(input);
@@ -30,14 +30,10 @@ export async function changeSource(client: PrismaClient, id: string, operation: 
   });
 }
 
-export async function changeMode(client: PrismaClient, input: unknown, actor: string) {
-  const publishingMode = publishingModeSchema.parse(input);
-  assertApprovalMode(publishingMode);
-  return client.$transaction(async tx => {
-    const previous = await tx.appSettings.findUnique({ where: { id: 1 } });
-    await tx.appSettings.upsert({ where: { id: 1 }, create: { id: 1, publishingMode }, update: { publishingMode } });
-    await tx.auditLog.create({ data: { actor, action: "PUBLISHING_MODE_CHANGED", entityType: "AppSettings", entityId: "1", message: "تغيير وضع النشر", metadata: { previous: previous?.publishingMode ?? "REQUIRE_APPROVAL", publishingMode } } });
-  }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
+/** Retained for old callers: publishing policy is managed only by SUPER_ADMIN operations. */
+export async function changeMode(_client: PrismaClient, _input: unknown, _actor: string) {
+  void _client; void _input; void _actor;
+  throw new Error('LEGACY_PUBLISHING_MODE_REMOVED');
 }
 
 /** Authenticated ADMIN action supplies actor; row lock preserves accurate old/new audit. */

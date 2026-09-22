@@ -72,9 +72,6 @@ test("production source and mode forms persist changes and show validation error
     assert.equal((await client.source.findUniqueOrThrow({ where: { id: source.id } })).enabled, true);
     await submit("/sources", selectRow, { id: source.id, operation: "remove" });
     assert.ok((await client.source.findUniqueOrThrow({ where: { id: source.id } })).deletedAt);
-    await submit("/settings", form => form.includes('name="publishingMode"'), { publishingMode: "AUTO_PUBLISH" });
-    assert.equal((await client.appSettings.findUniqueOrThrow({ where: { id: 1 } })).publishingMode, "AUTO_PUBLISH");
-    await submit("/settings", form => form.includes('name="publishingMode"'), { publishingMode: "REQUIRE_APPROVAL" });
     assert.equal((await client.appSettings.findUniqueOrThrow({ where: { id: 1 } })).publishingMode, "REQUIRE_APPROVAL");
     assert.ok(await client.auditLog.count({ where: { entityId: source.id } }) >= 4);
   } finally {

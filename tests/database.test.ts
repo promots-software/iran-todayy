@@ -33,7 +33,7 @@ test("PostgreSQL persistence, audit, event constraints and publication intent", 
     assert.equal(restored.id, source.id);
     assert.equal(restored.deletedAt, null);
     assert.ok(await client.auditLog.count({ where: { entityId: source.id } }) >= 5);
-    await assert.rejects(changeMode(client, "AUTO_PUBLISH", "integration-test"), /REQUIRE_APPROVAL_REQUIRED/);
+    await assert.rejects(changeMode(client, "AUTO_PUBLISH", "integration-test"), /LEGACY_PUBLISHING_MODE_REMOVED/);
     assert.equal((await client.appSettings.findUniqueOrThrow({ where: { id: 1 } })).publishingMode, "REQUIRE_APPROVAL");
     assert.equal((await client.sourcePost.findUniqueOrThrow({ where: { id: post.id } })).modeAtProcessing, "REQUIRE_APPROVAL");
     await assert.rejects(client.appSettings.create({ data: { id: 2 } }));
@@ -53,7 +53,7 @@ test("PostgreSQL persistence, audit, event constraints and publication intent", 
     const secondRevision = await client.eventRevision.create({ data: { eventId: event.id, revision: 2, facts: [], materialChange: "TEST update" } });
     await client.newsItem.create({ data: { eventRevisionId: secondRevision.id, title: "TEST update" } });
   } finally {
-    await changeMode(client, "REQUIRE_APPROVAL", "integration-test");
+
     if (publicationId) await client.publication.deleteMany({ where: { id: publicationId } });
     if (postId) await client.eventMatch.deleteMany({ where: { sourcePostId: postId } });
     if (eventId) {
