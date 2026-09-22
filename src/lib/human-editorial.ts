@@ -1,3 +1,4 @@
+import {formatTelegram} from './telegram/format';
 import {sourceHasMedia} from './publication-media';
 import {Prisma,type PrismaClient} from '@prisma/client';
 import {z} from 'zod';
@@ -63,9 +64,10 @@ export async function approveHumanDraft(db:PrismaClient,input:{id:string;digest:
   const snapshot=original.snapshot;
   const hasMedia='metadata' in snapshot?sourceHasMedia(snapshot.metadata):snapshot.evidence.some(e=>sourceHasMedia(e.sourcePost.metadata));
   if(hasMedia&&!d.mediaDecisionAt)throw new ProcessingError('SOURCE_MEDIA_DECISION_REQUIRED');
-  const p=await tx.publication.create({data:{humanDraftId:d.id,idempotencyKey:humanPublicationDigest(d,chatId),destination:chatId,publicationImageId:d.publicationImageId,contentSnapshot:humanText(d)}});
+  const telegramFormatSnapshot=target==='TELEGRAM'?formatTelegram(d.title,d.body):null;
+  const p=await tx.publication.create({data:{...(telegramFormatSnapshot?{telegramFormatSnapshot:json(telegramFormatSnapshot)}:{}),humanDraftId:d.id,idempotencyKey:humanPublicationDigest(d,chatId,telegramFormatSnapshot),destination:chatId,publicationImageId:d.publicationImageId,contentSnapshot:humanText(d)}});
   await tx.humanEditorialDraft.update({where:{id:d.id},data:{status:'APPROVED',approvedBy:actor,approvedAt:new Date(),approvalNote:note}});
-  await tx.auditLog.create({data:{actor,action:'HUMAN_EDIT_APPROVED',entityType:'Publication',entityId:p.id,message:'Editor explicitly approves human-authored revision, not failed AI output',metadata:json({draftId:d.id,revision:d.revision,note,digest:input.digest,originalSnapshot:d.originalSnapshot})}});
+  await tx.auditLog.create({data:{actor,action:'HUMAN_EDIT_APPROVED',entityType:'Publication',entityId:p.id,message:'Editor explicitly approves human-authored revision, not failed AI output',metadata:json({draftId:d.id,revision:d.revision,note,digest:input.digest,publicationDigest:p.idempotencyKey,telegramFormatVersion:telegramFormatSnapshot?.version??null,originalSnapshot:d.originalSnapshot})}});
   return p;
  });
 }

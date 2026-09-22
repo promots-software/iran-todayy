@@ -32,6 +32,6 @@ export default async function NewsDetailPage({params,searchParams}:{params:Promi
  {editable&&!item.humanDraft&&<RejectStory kind="news" id={id}/>}
  {item.publication&&<section className="panel"><h2>سجل النشر المجمد</h2><Badge value={item.publication.status}/><p className="original">{item.publication.contentSnapshot}</p><p>الوجهة: <bdi>{item.publication.destination}</bdi> · رسالة Telegram: {item.publication.telegramMessageId??'—'}</p></section>}
  {item.publication?.status==='PENDING'&&stalePreview&&<p role="alert">المحتوى المجمد يحتاج إلى إعادة مراجعة واعتماد قبل النشر؛ لم تُغيّر النسخة المعتمدة.</p>}
- {item.publication?.status==='PENDING'&&item.publication.attemptCount===0&&item.status==='APPROVED'&&<PublicationSend id={item.publication.id} digest={item.publication.idempotencyKey} destination={item.publication.destination} content={item.publication.contentSnapshot} enabled={!stalePreview&&(item.publication.destination==='WEB'||telegram)}/>}
+ {item.publication?.status==='PENDING'&&item.publication.attemptCount===0&&item.status==='APPROVED'&&<PublicationSend id={item.publication.id} digest={item.publication.idempotencyKey} destination={item.publication.destination} content={item.publication.contentSnapshot} telegramFormatSnapshot={item.publication.telegramFormatSnapshot} enabled={!stalePreview&&(item.publication.destination==='WEB'||telegram)}/>}
  </>;
 }

@@ -272,6 +272,7 @@ model Publication {
   status            PublicationStatus    @default(PENDING)
   publicationImageId String?
   contentSnapshot   String               @db.Text
+  telegramFormatSnapshot Json?
   destination       String
   telegramMessageId String?
   telegramResult    Json?

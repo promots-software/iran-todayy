@@ -1,3 +1,4 @@
+import {iranNowStyleInstructions} from './iran-now-style';
 import {publicationDraft} from './direct-publication';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
@@ -13,7 +14,7 @@ export const directBilingualSchema=directExtractionSchema.extend({
  statements:z.array(directStatementSchema(evidence)).max(100),
 }).strict();
 export const bilingualInstructions=directInstructions.replace('Do not generate summary, translations, invented factual prose, IDs, keys, offsets or verification.','Do not generate summary, invented factual prose, IDs, keys, offsets or verification. Proposed Arabic is permitted only in attached arabic fields.')+' '+renderingInstructions.replace('Return only id and arabic.','Return translations only in the attached arabic fields.').replace('IDs and evidence are immutable.','Original evidence excerpts and contexts are immutable.').replace('Every supplied ID must appear exactly once.','Every extracted evidence object must have exactly one attached arabic field; IDs are assigned locally.')+
- ' This combined generation response must attach one proposed arabic string to EACH evidence object, including anchors, statement evidence and any explicit speaker/date. Do not return IDs or offsets. Keep excerpt/context in the original language verbatim and separate from Arabic. Arabic is an untrusted proposal, not evidence. Never attest or review your own rendering. Preserve every material assertion; the next independent reviewer will compare against the entire original post. Output the complete object, never truncate or drop assertions to fit.';
+ ' This combined generation response must attach one proposed arabic string to EACH evidence object, including anchors, statement evidence and any explicit speaker/date. Do not return IDs or offsets. Keep excerpt/context in the original language verbatim and separate from Arabic. Arabic is an untrusted proposal, not evidence. Never attest or review your own rendering. Preserve every material assertion; the next independent reviewer will compare against the entire original post. Output the complete object, never truncate or drop assertions to fit.'+'\n'+iranNowStyleInstructions;
 const hash=(source:string)=>createHash('sha256').update(source).digest('hex');
 /** Line boundaries preserve the original text and offsets; full source is also
  * provided intact. The reviewer must check ALL assertions within each line. */

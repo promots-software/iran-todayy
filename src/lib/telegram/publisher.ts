@@ -1,3 +1,5 @@
+import {formatTelegram,readTelegramSnapshot} from './format';
+import {transportApprovalDigest} from './format-digest';
 import {createHash} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
 import {Prisma,type PrismaClient,type NewsItem} from '@prisma/client';
@@ -51,7 +53,7 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   const item=await tx.newsItem.findUniqueOrThrow({where:{id:input.newsItemId},include:{publication:true,eventRevision:true,evidence:{include:{sourcePost:true}}}});
   const digest=approvalDigest(item);
   if(digest!==input.digest)throw new ProcessingError('DRAFT_CHANGED_REVIEW_AGAIN');
-  if(item.publication){if(item.publication.destination!==chatId)throw new ProcessingError('PUBLICATION_DESTINATION_LOCKED');if(item.publication.idempotencyKey===digest)return item.publication;throw new ProcessingError('PUBLICATION_ALREADY_EXISTS');}
+  if(item.publication){if(item.publication.destination!==chatId)throw new ProcessingError('PUBLICATION_DESTINATION_LOCKED');if(item.publication.idempotencyKey===transportApprovalDigest(digest,chatId,item.publication.telegramFormatSnapshot))return item.publication;throw new ProcessingError('PUBLICATION_ALREADY_EXISTS');}
   if(!['NEEDS_REVIEW','PENDING_APPROVAL'].includes(item.status)||!['NEEDS_REVIEW','PASSED'].includes(item.validationStatus)||item.error)throw new ProcessingError('DRAFT_NOT_APPROVABLE');
   const validation=validationSchema.parse(item.validationResult);
   if(validation.review.some(r=>!humanReview.has(r.code)))throw new ProcessingError('UNRESOLVED_VALIDATION_FAILURE');
@@ -71,16 +73,18 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   let remainder=`${item.title}\n${publicationBodyForProvenance(item.arabicContent!)}`;
   for(const s of [...sentences].sort((a,b)=>b.text.length-a.text.length))remainder=remainder.split(s.text).join('');
   if(remainder.trim())throw new ProcessingError('INCOMPLETE_DRAFT_PROVENANCE');
-  const publication=await tx.publication.create({data:{newsItemId:item.id,idempotencyKey:digest,contentSnapshot:content,destination:chatId}});
+  const telegramFormatSnapshot=target==='TELEGRAM'?formatTelegram(item.title,item.arabicContent!):null;
+  const publication=await tx.publication.create({data:{newsItemId:item.id,idempotencyKey:transportApprovalDigest(digest,chatId,telegramFormatSnapshot),contentSnapshot:content,destination:chatId,...(telegramFormatSnapshot?{telegramFormatSnapshot:json(telegramFormatSnapshot)}:{})}});
   await tx.newsItem.update({where:{id:item.id},data:{status:'APPROVED',approvedAt:new Date(),approvedBy:actor}});
-  await tx.auditLog.create({data:{action:automatic==='DIRECT'?'DIRECT_AUTO_PUBLICATION_APPROVED':automatic?'CONTROLLED_AUTO_PUBLICATION_APPROVED':'MANUAL_PUBLICATION_APPROVED',actor,entityType:'Publication',entityId:publication.id,message:automatic?'Clean validated READY content frozen under one-shot authorization; no message sent':'Explicit review and approval of frozen content; no message sent',metadata:json({digest,resolutions:input.resolutions,review:validation.review})}});
+  await tx.auditLog.create({data:{action:automatic==='DIRECT'?'DIRECT_AUTO_PUBLICATION_APPROVED':automatic?'CONTROLLED_AUTO_PUBLICATION_APPROVED':'MANUAL_PUBLICATION_APPROVED',actor,entityType:'Publication',entityId:publication.id,message:automatic?'Clean validated READY content frozen under one-shot authorization; no message sent':'Explicit review and approval of frozen content; no message sent',metadata:json({digest,publicationDigest:publication.idempotencyKey,telegramFormatVersion:telegramFormatSnapshot?.version??null,resolutions:input.resolutions,review:validation.review})}});
   return publication;
 }
 export type SendResult={status:'SENT';messageId:string;chatId:string}|{status:'FAILED'|'UNKNOWN';error:string};
 /** No automatic transport retry: Bot API has no client idempotency key. */
-export async function sendTelegramOnce(config:{token:string;chatId:string},text:string,transport:typeof fetch=fetch):Promise<SendResult>{
+export async function sendTelegramOnce(config:{token:string;chatId:string},text:string,transport:typeof fetch=fetch,formatSnapshot:unknown=null):Promise<SendResult>{
+ const frozen=readTelegramSnapshot(formatSnapshot);
  try{
-  const response=await transport(`https://api.telegram.org/bot${config.token}/sendMessage`,{method:'POST',redirect:'error',signal:AbortSignal.timeout(25000),headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:config.chatId,text,link_preview_options:{is_disabled:true},allow_paid_broadcast:false})});
+  const response=await transport(`https://api.telegram.org/bot${config.token}/sendMessage`,{method:'POST',redirect:'error',signal:AbortSignal.timeout(25000),headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:config.chatId,text:frozen?.text??text,...(frozen?{parse_mode:frozen.parseMode}:{}),link_preview_options:{is_disabled:true},allow_paid_broadcast:false})});
   const data=await response.json();
   if(response.ok&&data.ok===true&&Number.isSafeInteger(data.result?.message_id)&&data.result.message_id>0&&String(data.result.chat?.id)===config.chatId)return {status:'SENT',messageId:String(data.result.message_id),chatId:config.chatId};
   if(data.ok===false&&[400,401,403,404,429].includes(data.error_code))return {status:'FAILED',error:`TELEGRAM_REJECTED_${data.error_code}`};
@@ -114,7 +118,10 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   if(p.humanDraft){
    const d=p.humanDraft;
    if(d.status!=='APPROVED'||!d.approvedBy||!d.approvedAt||p.destination!==config.chatId||!matchesHumanPublication(d,p)||p.contentSnapshot!==humanText(d))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
-  }else if(!p.newsItem||p.destination!==config.chatId||p.newsItem.status!=='APPROVED'||!['PASSED','NEEDS_REVIEW'].includes(p.newsItem.validationStatus)||p.newsItem.error||!p.newsItem.approvedAt||!p.newsItem.approvedBy||p.idempotencyKey!==approvalDigest(p.newsItem)||p.contentSnapshot!==publicationText(p.newsItem))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
+  }else if(!p.newsItem||p.destination!==config.chatId||p.newsItem.status!=='APPROVED'||!['PASSED','NEEDS_REVIEW'].includes(p.newsItem.validationStatus)||p.newsItem.error||!p.newsItem.approvedAt||!p.newsItem.approvedBy||p.idempotencyKey!==transportApprovalDigest(approvalDigest(p.newsItem),p.destination,p.telegramFormatSnapshot)||p.contentSnapshot!==publicationText(p.newsItem))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
+  const frozen=readTelegramSnapshot(p.telegramFormatSnapshot);
+  const source=p.humanDraft?{title:p.humanDraft.title,body:p.humanDraft.body}:{title:p.newsItem!.title,body:p.newsItem!.arabicContent!};
+  if(frozen&&JSON.stringify(frozen)!==JSON.stringify(formatTelegram(source.title,source.body)))throw new ProcessingError('APPROVAL_OR_CONTENT_CHANGED');
   const claimed=await tx.publication.updateMany({where:{id,status:'PENDING',attemptCount:0},data:{status:'SENDING',attemptCount:1,claimedAt:new Date(),nextRetryAt:null}});
   if(!claimed.count)return null;
   await tx.publicationAttempt.create({data:{publicationId:id,attempt:1}});
@@ -122,7 +129,7 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   return p;
  });
  if(!intent)return {status:'NOT_SENT_ALREADY_CLAIMED'};
- const outcome=await sendTelegramOnce(config,intent.contentSnapshot,transport);
+ const outcome=await sendTelegramOnce(config,intent.contentSnapshot,transport,intent.telegramFormatSnapshot);
  // If persisting the result fails after Telegram accepted the message, SENDING
  // remains a stop state. Never resend to recover a lost acknowledgement.
  await db.$transaction(async tx=>{

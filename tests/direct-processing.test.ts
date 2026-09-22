@@ -76,7 +76,7 @@ test('local database dynamic switching, audit, normal scope, DIRECT failure wait
  }finally{await db.$disconnect();}
 });
 
-test('DIRECT full local pipeline, guarded unattended path, duplicate claim and exact-text dedup',{skip:!process.env.TEST_DATABASE_URL},async()=>{
+test('DIRECT full local pipeline bypasses selection-only P4/filter labels, guarded unattended path and dedup',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const db=new PrismaClient({datasourceUrl:process.env.TEST_DATABASE_URL});
  const env={AUTO_PUBLISH:'true',REQUIRE_APPROVAL:'true',SHADOW_MODE:'false',TELEGRAM_PUBLISH_ENABLED:'true',TELEGRAM_BOT_TOKEN:'123:offline_token',TELEGRAM_CHAT_ID:'-100123'};
  try{
@@ -85,7 +85,7 @@ test('DIRECT full local pipeline, guarded unattended path, duplicate claim and e
  const p=await ingest(db,src.id,{externalId:'a',url:src.url+'/a',content:source,publishedAt:new Date()});
  const other=await db.processingJob.findMany({where:{sourcePostId:{not:p.id}},select:{sourcePostId:true}});
  const job=await claimJob(db,'complete',new Date(),false,other.map(j=>j.sourcePostId));assert.ok(job);
- let ai=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{ai++;return response(publicationRaw());}),signal());
+ let ai=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{ai++;return response({...publicationRaw(),safety:{...safety,priority:'P4',filterReason:'ADVERTISING'}});}),signal());
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:p.id}}}});
  assert.equal(item.validationStatus,'PASSED');assert.equal(item.status,'PENDING_APPROVAL');assert.equal(ai,1);
  const eligible=await db.newsItem.findUniqueOrThrow({where:{id:item.id},include:{humanDraft:true,publication:true,eventRevision:true,evidence:{include:{sourcePost:{include:{source:true,jobs:true,matches:true,humanDraft:true}}}}}});
@@ -94,7 +94,7 @@ test('DIRECT full local pipeline, guarded unattended path, duplicate claim and e
  assert.equal(eligibleDirectPublication({...eligible,validationResult:{...Object(eligible.validationResult),review:[{code:'UNSUPPORTED_OUTPUT'}]}}),false);
  assert.equal(eligibleDirectPublication({...eligible,error:'INVALID_EVIDENCE'}),false);
  const normal=structuredClone(eligible);normal.evidence[0].sourcePost.source.processingMode='NORMAL';assert.equal(eligibleDirectPublication(normal),false);
- let sends=0;const transport:typeof fetch=async()=>{sends++;return Response.json({ok:true,result:{message_id:99,chat:{id:-100123}}});};
+ let sends=0;const transport:typeof fetch=async(_url,init)=>{sends++;const outgoing=JSON.parse(String(init?.body));assert.equal(outgoing.parse_mode,'HTML');assert.ok(outgoing.text.startsWith('<b>إيران الآن | '));return Response.json({ok:true,result:{message_id:99,chat:{id:-100123}}});};
  await assert.rejects(publishReadyDirect(db,item.id,{...env,AUTO_PUBLISH:'false'},transport),/DIRECT_AUTO_DISABLED/);assert.equal(sends,0);
  await assert.rejects(publishReadyDirect(db,item.id,{...env,SHADOW_MODE:'true'},transport),/PUBLISH_DISABLED/);assert.equal(sends,0);
  const results=await Promise.all([publishReadyDirect(db,item.id,env,transport),publishReadyDirect(db,item.id,env,transport)]);

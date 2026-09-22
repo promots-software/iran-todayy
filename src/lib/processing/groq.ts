@@ -1,3 +1,4 @@
+import {selectionBlocksDraft} from './direct-policy';
 import {publicationUnits,preparePublication,acceptPublication,publicationReviewInput,publicationReviewInstructions} from './direct-publication';
 import {directPublicationReviewSchema} from './direct-publication-contract';
 import {directBilingualSchema,bilingualInstructions,prepareDirectBilingual,directReviewSchema,directReviewInstructions,directReviewInput,finalizeDirectBilingual} from './direct-bilingual';
@@ -104,7 +105,7 @@ export class GroqLanguageProvider implements LanguageProvider {
     return this.request("compare", input, ruleSet, signal);
   }
   draft(input: Parameters<LanguageProvider["draft"]>[0], signal: AbortSignal) {
-    if (input.understanding.relevance !== "POLITICAL_NEWS" || input.understanding.priority === "P4") throw new ProcessingError("GROQ_DRAFT_NOT_ACCEPTED");
+    if (selectionBlocksDraft(input.understanding,input.processingMode??'NORMAL')) throw new ProcessingError("GROQ_DRAFT_NOT_ACCEPTED");
     const { rules, ...data } = input;
     return this.request("draft", data, rules, signal);
   }

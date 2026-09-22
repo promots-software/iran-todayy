@@ -1,3 +1,4 @@
+import {formatTelegram} from '../src/lib/telegram/format';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -21,16 +22,16 @@ test('human revisions preserve failed AI, revoke approval, freeze exact text and
   const approve=(id:string,digest:string)=>approveHumanDraft(db,{id,digest,confirmed:true,note:'Human editor checked the original source, attribution and language.'},'editor',env);
   await assert.rejects(approveHumanDraft(db,{id:d.id,digest:humanDigest(d),confirmed:false,note:'No confirmation'},'editor',env),/HUMAN_RESPONSIBILITY/);
   const [p,p2]=await Promise.all([approve(d.id,humanDigest(d)),approve(d.id,humanDigest(d))]);pubIds.push(p.id);assert.equal(p.id,p2.id);
-  assert.equal(p.contentSnapshot,humanText(d));assert.equal(p.newsItemId,null);
+  assert.equal(p.contentSnapshot,humanText(d));assert.equal(p.newsItemId,null);assert.deepEqual(p.telegramFormatSnapshot,formatTelegram(d.title,d.body));
   await assert.rejects(publishOne(db,p.id,{...env,SHADOW_MODE:'false',TELEGRAM_PUBLISH_ENABLED:'true'},async()=>{throw Error('MUST_NOT_CALL');}),/HUMAN_PUBLICATION_MANUAL_ONLY/);
   const revised=await saveHumanDraft(db,{...input,revision:1,title:'المتحدث يؤكد انتهاء الاجتماع'},'editor');
   assert.equal(revised.status,'DRAFT');assert.equal(revised.approvedAt,null);assert.equal(revised.approvedBy,null);
   assert.equal((await db.publication.findUniqueOrThrow({where:{id:p.id}})).status,'CANCELLED');
-  assert.equal((await db.publication.findUniqueOrThrow({where:{id:p.id}})).contentSnapshot,humanText(d));
+  assert.equal((await db.publication.findUniqueOrThrow({where:{id:p.id}})).contentSnapshot,humanText(d));assert.deepEqual((await db.publication.findUniqueOrThrow({where:{id:p.id}})).telegramFormatSnapshot,p.telegramFormatSnapshot);
   await assert.rejects(approve(d.id,humanDigest(d)),/STALE/);
   await assert.rejects(saveHumanDraft(db,{...input,revision:1,title:'عنوان قديم'},'editor'),/STALE/);
   const next=await approve(revised.id,humanDigest(revised));pubIds.push(next.id);assert.notEqual(next.id,p.id);
-  let calls=0;const transport:typeof fetch=async(_url,options)=>{calls++;assert.equal(JSON.parse(String(options?.body)).text,humanText(revised));return Response.json({ok:true,result:{message_id:881,chat:{id:-100123}}});};
+  let calls=0;const transport:typeof fetch=async(_url,options)=>{calls++;assert.equal(JSON.parse(String(options?.body)).text,formatTelegram(revised.title,revised.body).text);assert.equal(JSON.parse(String(options?.body)).parse_mode,'HTML');return Response.json({ok:true,result:{message_id:881,chat:{id:-100123}}});};
   const send=(p:typeof next)=>publishApprovedManually(db,{publicationId:p.id,digest:p.idempotencyKey,destination:p.destination,confirmed:true},'editor',env,transport);
   await send(p);assert.equal(calls,0);
   await Promise.all([send(next),send(next)]);await send(next);assert.equal(calls,1);

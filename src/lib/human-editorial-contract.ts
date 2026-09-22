@@ -1,3 +1,4 @@
+import {transportApprovalDigest} from './telegram/format-digest';
 import {createHash} from 'node:crypto';
 import type {HumanEditorialDraft,Prisma} from '@prisma/client';
 import {ProcessingError} from './processing/contracts';
@@ -17,9 +18,10 @@ export function humanDigest(d:Pick<HumanEditorialDraft,'id'|'title'|'body'|'revi
 }
 
 /** New frozen approvals bind content to a destination; legacy records stay immutable. */
-export function humanPublicationDigest(d:Parameters<typeof humanDigest>[0],destination:string){
- return createHash('sha256').update(JSON.stringify(['HUMAN_DESTINATION_V1',humanDigest(d),destination])).digest('hex');
+export function humanPublicationDigest(d:Parameters<typeof humanDigest>[0],destination:string,formatSnapshot:unknown=null){
+ const base=createHash('sha256').update(JSON.stringify(['HUMAN_DESTINATION_V1',humanDigest(d),destination])).digest('hex');
+ return transportApprovalDigest(base,destination,formatSnapshot);
 }
-export function matchesHumanPublication(d:Parameters<typeof humanDigest>[0],p:{idempotencyKey:string;destination:string}){
- return p.idempotencyKey===humanPublicationDigest(d,p.destination)||p.idempotencyKey===humanDigest(d);
+export function matchesHumanPublication(d:Parameters<typeof humanDigest>[0],p:{idempotencyKey:string;destination:string;telegramFormatSnapshot?:unknown}){
+ return p.idempotencyKey===humanPublicationDigest(d,p.destination,p.telegramFormatSnapshot)||(!p.telegramFormatSnapshot&&p.idempotencyKey===humanDigest(d));
 }
