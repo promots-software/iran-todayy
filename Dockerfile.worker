@@ -11,4 +11,4 @@ COPY src/worker ./src/worker
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 USER node
-CMD ["node", "--import", "tsx", "src/worker/production.ts"]
+CMD ["node", "--import", "tsx", "src/worker/start-production.ts"]

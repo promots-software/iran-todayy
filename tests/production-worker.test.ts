@@ -77,9 +77,9 @@ test('uncertain provider attempt is held for review on restart, never automatica
   await assert.rejects(checkpointProvider(base,store).understand(input,signal),/PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW/);
   assert.equal(calls,1);
 });
-test('deployment starts Node directly and has no publisher or dashboard build',()=>{
+test('deployment starts role supervisor directly; processing has no publisher or dashboard build',()=>{
   const docker=readFileSync('Dockerfile.worker','utf8');assert.ok(docker.includes('USER node'));
-  assert.ok(docker.includes('CMD ["node", "--import", "tsx", "src/worker/production.ts"]'));
+  assert.ok(docker.includes('CMD ["node", "--import", "tsx", "src/worker/start-production.ts"]'));
   assert.ok(!docker.includes('COPY . .'));assert.ok(!docker.includes('npm run build'));
   const worker=readFileSync('src/worker/production.ts','utf8');
   assert.ok(!/publishOne|sendMessage|TELEGRAM_BOT_TOKEN/.test(worker));
