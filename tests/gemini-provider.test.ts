@@ -7,8 +7,8 @@ import {unknownProfile} from '../src/lib/processing/contracts';
 
 test('cached stage responses consume no new-request allowance or token/cost accounting',async()=>{
  const f=fixture('cached','قال المسؤول إن الاجتماع انتهى.','ar','قال المسؤول إن الاجتماع انتهى.');
- const provider=new GeminiLanguageProvider('offline',async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({titleAtomId:'cached:visit',bodyAtomIds:['cached:visit']})}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10}},{headers:{'x-worker-checkpoint-replayed':'true'}}),u=>{assert.equal(u.estimatedCostUsd,0);assert.equal(u.inputTokens,0);assert.equal(u.replayed,true);});
- for(let i=0;i<10;i++)await provider.draft({content:f.content,understanding:f.understanding,rules:ruleSet},new AbortController().signal);
+ const provider=new GeminiLanguageProvider('offline',async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'نفس الحدث'})}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10}},{headers:{'x-worker-checkpoint-replayed':'true'}}),u=>{assert.equal(u.estimatedCostUsd,0);assert.equal(u.inputTokens,0);assert.equal(u.replayed,true);});
+ for(let i=0;i<10;i++)await provider.compare({incoming:f.understanding.event,existing:f.understanding.event},new AbortController().signal);
 });
 test('Gemini extraction uses fixed model, no thinking and leaves 503 retry to durable queue',async()=>{
  const f=fixture('gemini-offline','قال المسؤول إن الاجتماع انتهى.','ar','قال المسؤول إن الاجتماع انتهى.');let calls=0;

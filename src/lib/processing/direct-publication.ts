@@ -1,4 +1,6 @@
 import {institutionalIdentity,digits,dateTokens} from './text-equivalence';
+import {EDITORIAL_CONTRACT_SHA256,isGroundedTerminologyQuote} from './editorial-contract';
+import {validateEditorialGrounding} from './editorial-grounding';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {ProcessingError,type Understanding,type Draft} from './contracts';
@@ -39,8 +41,11 @@ export function safeArabicEdit(s:string){
  return canonical(s).replace(/(^|\s)رح (تبدأ|يبدأ|تستمر|يستمر|تعلن|يعلن|تكون|يكون)(?=\s|[.،]|$)/gu,'$1س$2').replace(/الأسبوع الجاي/gu,'الأسبوع المقبل');
 }
 export function preparePublication(source:string,u:Understanding,raw:unknown,coverage:unknown){
+ validateEditorialGrounding(u,source);
  const parsed=directProposalSchema.safeParse(raw);if(!parsed.success)throw new ProcessingError('DIRECT_PUBLICATION_INVALID');
  const proposal=parsed.data,rows=validateSourceCoverage(source,u,coverage);
+ // Store one transport-neutral headline; final output adds the exact prefix once.
+ if(proposal.title.text.startsWith(newsroomPrefix))proposal.title.text=proposal.title.text.slice(newsroomPrefix.length);
  const all=[proposal.title,...proposal.body],used=new Set<string>();
  for(const line of all){
   requireArabic(line.text);
@@ -49,9 +54,12 @@ export function preparePublication(source:string,u:Understanding,raw:unknown,cov
   line.factIds.forEach(id=>used.add(id));
   const refs=line.factIds.map(id=>u.event.facts.find(f=>f.id===id)!);
   const evidence=refs.map(f=>f.evidence.excerpt+' '+(f.speaker?.evidence.excerpt??'')).join(' ');
-  if(dates(line.text).some(d=>!dates(evidence).includes(d)))throw new ProcessingError('DIRECT_PUBLICATION_DATE_MISMATCH');
+  // Non-Arabic renderings have already passed the independent translation receipt
+  // above. Compare Arabic date labels with that proof, never raw Persian spelling.
+  const writingEvidence=u.language==='ar'?evidence:refs.map(f=>f.arabic+' '+(f.speaker?.arabic??'')).join(' ');
+  if(dates(line.text).some(d=>!dates(writingEvidence).includes(d)))throw new ProcessingError('DIRECT_PUBLICATION_DATE_MISMATCH');
   if(numbers(line.text).some(n=>!numbers(evidence).includes(n)))throw new ProcessingError('DIRECT_PUBLICATION_NUMBER_MISMATCH');
-  if(quotes(line.text).some(q=>!evidence.includes(q)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
+  if(quotes(line.text).some(q=>!evidence.includes(q)&&!writingEvidence.includes(q)&&!isGroundedTerminologyQuote(q,writingEvidence)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
   // Explicit entity anchors cannot disappear or be substituted inside their linked fact.
   const anchors=[...u.event.actors,u.event.location,...refs.map(f=>f.speaker)].filter(x=>!!x);
   // A headline may omit a repeated anchor. It must still be present in the complete
@@ -62,11 +70,12 @@ export function preparePublication(source:string,u:Understanding,raw:unknown,cov
  if(u.event.facts.some(f=>!used.has(f.id)))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
  const publication=proposal.body.length?proposal.body.map(s=>s.text).join('\n'):proposal.title.text;
  const originalFacts=u.event.facts.map(f=>f.evidence.excerpt).join('\n');
- if(!same(dates(publication),dates(originalFacts)))throw new ProcessingError('DIRECT_PUBLICATION_DATE_MISMATCH');
+ const writingFacts=u.language==='ar'?originalFacts:u.event.facts.map(f=>f.arabic).join('\n');
+ if(!same(dates(publication),dates(writingFacts)))throw new ProcessingError('DIRECT_PUBLICATION_DATE_MISMATCH');
  if(!same(numbers(publication),numbers(originalFacts)))throw new ProcessingError('DIRECT_PUBLICATION_NUMBER_MISMATCH');
  // Existing literal quotes cannot be altered. Faithful indirect speech has no
  // output quotation marks and is accepted ONLY through independent semantic review.
- if(quotes(publication).some(q=>!quotes(originalFacts).includes(q)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
+ if(quotes(publication).some(q=>!quotes(originalFacts).includes(q)&&!quotes(writingFacts).includes(q)&&!isGroundedTerminologyQuote(q,writingFacts)))throw new ProcessingError('DIRECT_PUBLICATION_QUOTE_MISMATCH');
  if(proposal.title.text.trim().endsWith(':'))throw new ProcessingError('DIRECT_UNINFORMATIVE_TITLE');
  const local=all.every(line=>line.factIds.length===1&&canonical(line.text)===safeArabicEdit(u.event.facts.find(f=>f.id===line.factIds[0])!.arabic));
  // Same-call attestations are deliberately absent. Unproven wording needs an independent review.
@@ -81,7 +90,7 @@ export function acceptPublication(source:string,u:Understanding,p:ReturnType<typ
   const ids=['title',...p.proposal.body.map((_,i)=>`body:${i+1}`)];
   if(!review.fullSourceCovered||!review.issues.every(isSoftReviewIssue)||review.review.length!==ids.length||new Set(review.review.map(r=>r.id)).size!==ids.length||ids.some(id=>!review!.review.some(r=>r.id===id))||review.review.some(r=>!factualReviewPassed(r)))throw new ProcessingError('DIRECT_PUBLICATION_REVIEW_FAILED');
  }
- return directPublicationReceiptSchema.parse({version:'direct-publication-v1',sourceHash:hash(source),factsHash:hash(u.event),coverage:p.coverage,proposal:p.proposal,method:checked.local?'LOCAL':'INDEPENDENT',review});
+ return directPublicationReceiptSchema.parse({version:'direct-publication-v1',editorialContractHash:EDITORIAL_CONTRACT_SHA256,sourceHash:hash(source),factsHash:hash(u.event),coverage:p.coverage,proposal:p.proposal,method:checked.local?'LOCAL':'INDEPENDENT',review});
 }
 export function publicationDraft(source:string,u:Understanding):Draft{
  const receipt=directPublicationReceiptSchema.parse(u.publicationProposal);

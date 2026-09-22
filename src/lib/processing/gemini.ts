@@ -1,9 +1,6 @@
-import {selectionBlocksDraft} from './direct-policy';
-import {publicationDraft} from './direct-publication';
 import {GroqLanguageProvider} from './groq';
 import {failurePolicy,retryAfter} from './failure-policy';
 import {ProcessingError,type LanguageProvider} from './contracts';
-import {buildAtoms,renderSelection} from './constrained-rewrite';
 import {compactGeminiRequest,checkpointAliases,type CheckpointRequestInit} from './gemini-request';
 export {readLocalGeminiKey} from './gemini-key';
 export type GeminiUsage={stage:string;attempt:number;httpStatus:number|null;inputTokens:number|null;outputTokens:number|null;thinkingTokens:number|null;estimatedCostUsd:number|null;replayed?:boolean;durationMs?:number};
@@ -46,13 +43,5 @@ export class GeminiLanguageProvider implements LanguageProvider{
  understand(i:Parameters<LanguageProvider['understand']>[0],s:AbortSignal){return this.delegate.understand(i,s);}
  classifyExtracted(...args:Parameters<GroqLanguageProvider['classifyExtracted']>){return this.delegate.classifyExtracted(...args);}
  compare(i:Parameters<LanguageProvider['compare']>[0],s:AbortSignal){return this.delegate.compare(i,s);}
- async draft(i:Parameters<LanguageProvider['draft']>[0],s:AbortSignal){
-  s.throwIfAborted();
-  if(selectionBlocksDraft(i.understanding,i.processingMode??'NORMAL'))throw new ProcessingError('DRAFT_NOT_ACCEPTED');
-  if(i.understanding.publicationProposal)return publicationDraft(i.content,i.understanding);
-  const atoms=buildAtoms(i.content,i.understanding);
-  // Retain validated source order and every fact; selection adds no new wording.
-  const title=atoms.format==='STATEMENT'?atoms.atoms[0]:atoms.atoms.reduce((shortest,a)=>a.renderedText.length<shortest.renderedText.length?a:shortest);
-  return renderSelection({titleAtomId:title.id,bodyAtomIds:atoms.atoms.map(a=>a.id)},atoms);
- }
+ draft(i:Parameters<LanguageProvider['draft']>[0],s:AbortSignal){return this.delegate.draft(i,s);}
 }

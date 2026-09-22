@@ -1,9 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {editorialContract,EDITORIAL_CONTRACT_SHA256} from '../src/lib/processing/editorial-contract';
 import {editoriallyFiltered,selectionBlocksDraft} from '../src/lib/processing/direct-policy';
-import {validateDirectExtraction,adaptDirectExtraction,directArabicInstructions} from '../src/lib/processing/direct';
-import {bilingualInstructions} from '../src/lib/processing/direct-bilingual';
+import {validateDirectExtraction,adaptDirectExtraction} from '../src/lib/processing/direct';
 import {IRAN_NOW_STYLE_PROFILE_V1,iranNowStyleInstructions} from '../src/lib/processing/iran-now-style';
 import {editorialDecision} from '../src/lib/processing/editorial-eligibility';
 const source='افتتح المجلس مدرسة جديدة في العاصمة.';
@@ -22,13 +22,12 @@ test('clean candidate ready with safe publishing flags, errors/review/human over
  for(const input of [{validated:true},{validated:true,humanOverride:true},{error:'UNSUPPORTED_OUTPUT'},{validated:true,review:[{code:'UNCERTAIN_MATCH'}]}])assert.equal(editorialDecision(input,flags).deliveryDecision,'HOLD');
  assert.equal(editorialDecision({validated:true,humanOverride:true},{autoPublish:true,shadowMode:false,requireApproval:false}).deliveryDecision,'HOLD');
 });
-test('versioned style goes only to DIRECT generation, not NORMAL instructions',()=>{
+test('style reference is the complete authoritative artifact shared by both modes',()=>{
  assert.equal(IRAN_NOW_STYLE_PROFILE_V1.corpus.pairedSourceGold,0);
- assert.ok(directArabicInstructions.includes(iranNowStyleInstructions));assert.ok(bilingualInstructions.includes(iranNowStyleInstructions));
- assert.ok(iranNowStyleInstructions.includes('byte-for-byte'));
- assert.ok(iranNowStyleInstructions.includes('never fabricate a body'));
- assert.ok(iranNowStyleInstructions.includes('Style never overrides semantic safety'));
- assert.ok(!readFileSync('src/lib/processing/gemini-benchmark-prompt.ts','utf8').includes('iranNowStyleInstructions'));
+ assert.equal(IRAN_NOW_STYLE_PROFILE_V1.revision,EDITORIAL_CONTRACT_SHA256);
+ assert.equal(iranNowStyleInstructions,editorialContract);
+ assert.equal(iranNowStyleInstructions,readFileSync('config/editorial/iran-now-contract.txt','utf8'));
+ assert.ok(iranNowStyleInstructions.includes('40. FINAL QUALITY CHECK BEFORE OUTPUT'));
 });
 
 for(const mode of ['NORMAL','DIRECT'] as const)for(const autoPublish of [false,true])test(mode+' publishing routing: '+(autoPublish?'AUTO_PUBLISH':'REQUIRE_APPROVAL'),()=>{

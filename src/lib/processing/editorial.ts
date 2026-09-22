@@ -1,3 +1,4 @@
+import {EDITORIAL_CONTRACT_SHA256,isGroundedTerminologyQuote} from './editorial-contract';
 import {attributionLead,normalizeAttributionAgreement} from './attribution-rendering';
 import {finalizeBodyPunctuation} from '../publication-finalization';
 import {guidelineFindings} from './guideline-checks';
@@ -49,6 +50,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   const parsed = draftSchema.safeParse(raw);
   if (!parsed.success) throw new ProcessingError("INVALID_DRAFT_SCHEMA");
   const draft: Draft = parsed.data;
+  const canonicalWriting=u.publicationProposal?.editorialContractHash===EDITORIAL_CONTRACT_SHA256;
   const review = initialReview(u, profile,content);
   const sourceQuotes = literalQuotes(content);
   const outputText = draft.title + "\n" + draft.body;
@@ -66,7 +68,8 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   const sourceNumbers=new Set(digits(content).match(/\d+(?:[.,]\d+)*/g)??[]);
   if ((digits(joined).match(/\d+(?:[.,]\d+)*/g)??[]).some(n=>!sourceNumbers.has(n))) review.push(reason("UNSUPPORTED_OUTPUT","رقم في المسودة غير موجود في المصدر؛ التحويل يحتاج دليلاً"));
   // Quotes may be faithfully paraphrased; only output presented as literal is protected.
-  for (const q of literalQuotes(joined)) if (!content.includes(q.text)) review.push(reason("UNSUPPORTED_OUTPUT", "QUOTE_INTEGRITY_FAILURE"));
+  const groundedWriting=canonicalWriting&&hasEditorialGrounding(u,content)?u.event.facts.map(f=>f.arabic).join('\n'):'';
+  for (const q of literalQuotes(joined)) if (!content.includes(q.text)&&!(canonicalWriting&&(isGroundedTerminologyQuote(q.text,content+'\n'+groundedWriting)||u.language!=='ar'&&literalQuotes(groundedWriting).some(p=>p.text===q.text)))) review.push(reason("UNSUPPORTED_OUTPUT", "QUOTE_INTEGRITY_FAILURE"));
   const factIds = new Set(u.event.facts.map(f=>f.id));
   const used = new Set<string>();
   for (const s of draft.sentences) {
@@ -89,6 +92,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   // Owner convention is typography, not a geographical/political substitution.
   transform(s=>s.replace(boundary('إسرائيل'),'"إسرائيل"'));
   for (const rule of terminology.filter(r=>r.mode === "automatic")) {
+    if(canonicalWriting)continue; // Historical PDF substitutions cannot override the new writing contract.
     if (!literalAutomatic.has(rule.id)) continue;
     for (const from of rule.from) transform(s=>s.replace(boundary(from),()=>{ applied.push({ruleId:rule.id,from,to:rule.to[0],reference:rule.reference});return rule.to[0]; }));
   }
@@ -111,7 +115,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
     if (!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(title) || (body.trim()&&!scopedStatement&&!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(body))) review.push(reason("UNSUPPORTED_OUTPUT", "النسب الصريح مطلوب في العنوان والمتن"));
   }
   if ((joined.match(/زعم|ادّعى|ادعى/gu)?.length ?? 0)>1) review.push(reason("FORMAT_REVIEW", "الإفراط في أفعال التشكيك"));
-  for (const [from,to] of Object.entries(names.aliases)) transform(s=>s.replace(boundary(from),to));
+  if(!canonicalWriting)for (const [from,to] of Object.entries(names.aliases)) transform(s=>s.replace(boundary(from),to));
   for (const [from,to] of Object.entries(spelling)) transform(s=>s.replace(boundary(from),to));
   transform(s=>s.replace(/[٠-٩۰-۹]/gu,c=>String("٠١٢٣٤٥٦٧٨٩".includes(c)?"٠١٢٣٤٥٦٧٨٩".indexOf(c):"۰۱۲۳۴۵۶۷۸۹".indexOf(c))).replace(/(?<!\d),|,(?!\d)/g,"،").replace(/;/g,"؛").replace(/\?/g,"؟").replace(/\s+([،؛؟!:.])/gu,"$1").replace(/([!؟])\1+/gu,"$1"));
   const beforeTitle=title;
@@ -123,7 +127,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
     sentenceEvidence.push({...entry,text:title,factIds:[...entry.factIds]});
     if(!body.includes(beforeTitle))sentenceEvidence.splice(sentenceEvidence.indexOf(entry),1);
   }
-  transform(monthLabelConvention);
+  if(!canonicalWriting)transform(monthLabelConvention);
   if(Object.keys(persianMonths).some(m=>unprotectedText(title+'\n'+body,protectedTexts).includes(m)))review.push(reason('FORMAT_REVIEW','تاريخ إيراني محدد يحتاج تحويلاً تقويمياً موثقاً؛ تبديل اسم الشهر لا يكفي'));
   const hashtags:string[]=[];
   if(!title.startsWith(newsroomPrefix)){

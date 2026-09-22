@@ -24,7 +24,7 @@ for(const language of ['fa','en'] as const)test(`DIRECT ${language}: exactly two
  assert.equal(calls,2);assert.equal(data.originalSource,f.source);assert.deepEqual(data.validatedReferences,p.refs);assert.ok(data.validatedReferences.every((r:{evidence:{start:number;end:number;excerpt:string}})=>f.source.slice(r.evidence.start,r.evidence.end)===r.evidence.excerpt));assert.deepEqual(data.sourceUnits,sourceCoverageUnits(f.source));
  return Response.json(geminiEnvelope(passingReview(f.source,p)));});
  const u=validateUnderstanding(await provider.understand(input(f.source),signal()),f.source);assertDirectFullCoverage(f.source,u);
- await provider.draft({content:f.source,understanding:u,rules:ruleSet},signal());assert.equal(calls,2);assert.equal(u.event.facts[0].arabic,f.raw.statements[0].evidence.arabic);
+ assert.equal(calls,2);assert.equal(u.event.facts[0].arabic,f.raw.statements[0].evidence.arabic);
 });
 test('Call 1 alone is not a trusted receipt and cannot supply an approved translation',()=>{
  const f=bilingualFixture(),p=prepareDirectBilingual(f.raw,f.source);assert.ok(!('review' in p.rendered));assert.throws(()=>adaptDirectExtraction(p.grounded,f.source),/VALIDATED_ARABIC_RENDERING_REQUIRED/);assert.throws(()=>finalizeDirectBilingual(f.source,p,{}),/INVALID_DIRECT_REVIEW_SCHEMA/);
@@ -86,7 +86,7 @@ test('bilingual candidate cannot auto-deliver without full coverage; valid recei
  try{
  const src=await saveSource(db,{platform:'TELEGRAM',handle:'bilingualoffline',name:'offline',processingMode:'DIRECT'},'user:admin');await db.source.update({where:{id:src.id},data:{editorialProfile:{...unknownProfile,verified:true,classification:'NEUTRAL',authority:'AGENCY'}}});
  const f=bilingualFixture(),p=prepareDirectBilingual(f.raw,f.source),post=await ingest(db,src.id,{externalId:'1',url:src.url+'/1',content:f.source,publishedAt:new Date()});const job=await claimJob(db,'bilingual');assert.ok(job);
- let calls=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(calls===1?f.raw:passingReview(f.source,p)));}),signal());assert.equal(calls,2);
+ let calls=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(calls===1?f.raw:calls===2?passingReview(f.source,p):{coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:'إيران الآن | '+f.raw.statements[0].evidence.arabic.replace(/\.$/u,''),factIds:['f1']},body:[]}}));}),signal());assert.equal(calls,3);
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:post.id}}}});assert.equal(item.validationStatus,'PASSED');
  await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{version:'telegram-auto-v1',id:'11111111-1111-4111-8111-111111111111',state:'ACTIVE',destination:env.TELEGRAM_CHAT_ID,notBefore:new Date(Date.now()-60000).toISOString(),sourceIds:[src.id],canaryCandidateId:null,authorizedBy:'offline-owner'}}});
  let sends=0;const transport:typeof fetch=async()=>{sends++;return Response.json({ok:true,result:{message_id:88,chat:{id:-100123}}});};

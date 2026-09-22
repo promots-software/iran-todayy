@@ -8,6 +8,7 @@ RUN npm run db:generate
 COPY tsconfig.json ./
 COPY src/lib ./src/lib
 COPY src/worker ./src/worker
+COPY config/editorial ./config/editorial
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 USER node

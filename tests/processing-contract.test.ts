@@ -43,11 +43,11 @@ test('one bounded full-source repair restores omitted material; persistent omiss
 });
 test('NORMAL relevance runs once; accepted uncertain Iran story survives priority and opinion labels',async()=>{
  const text='قال الوفد إن التعاون مع إيران سيستمر.';const u=newsroom(text,[text],'الوفد');u.relevance='UNCERTAIN';u.priority='P4';u.filterReason='OPINION';const parts=minimalParts(u);let calls=0;
- const p=new GeminiLanguageProvider('offline',async()=>response(parts[calls++]));
+ const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response(calls<=2?parts[calls-1]:{coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:'إيران الآن | '+text.replace(/\.$/u,''),factIds:['f1']},body:[]}});});
  const result=validateUnderstanding(await p.understand(input(text,'NORMAL'),signal()),text);
  assert.equal(result.relevance,'POLITICAL_NEWS');assert.equal(editoriallyFiltered(result,false,'NORMAL'),false);assert.equal(selectionBlocksDraft(result,'NORMAL'),false);
  const draft=await p.draft({content:text,processingMode:'NORMAL',understanding:result,rules:ruleSet},signal());
- const final=finalizeConstrainedDraft(draft,text,result,unknownProfile);assert.equal(editorialDecision({validated:true,review:final.review},held).editorialEligibility,'READY_TO_PUBLISH');assert.equal(calls,2);
+ const final=finalizeConstrainedDraft(draft,text,result,unknownProfile);assert.equal(editorialDecision({validated:true,review:final.review},held).editorialEligibility,'READY_TO_PUBLISH');assert.equal(calls,3);
  assert.equal(editoriallyFiltered({...result,relevance:'IRRELEVANT'},false,'NORMAL'),true);
 });
 test('soft diagnostics cannot alone hold validated output; material checks and human review remain',()=>{

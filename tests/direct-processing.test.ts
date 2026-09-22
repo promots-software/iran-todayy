@@ -40,11 +40,11 @@ test('Arabic DIRECT one factual request, no relevance/topic decision, local grou
  const draft=await provider.draft({content:source,understanding:u,rules:ruleSet},signal());
  const final=finalizeConstrainedDraft(draft,source,u,unknownProfile);assert.ok(final.title.includes('مدرسة'));assert.ok(!final.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));assert.equal(calls,1);
 });
-test('Persian DIRECT uses combined generation and independent review only',async()=>{
+test('Persian DIRECT extraction uses combined generation and independent review',async()=>{
  const {source:fa,raw}=bilingualFixture();let calls=0;
  const provider=new GeminiLanguageProvider('offline',async()=>{calls++;if(calls===1)return response(raw);if(calls===2)return response(passingReview(fa,prepareDirectBilingual(raw,fa)));throw Error('UNEXPECTED_CALL');});
  const u=validateUnderstanding(await provider.understand(input(fa),signal()),fa);assert.equal(u.language,'fa');assert.equal(u.event.facts[0].arabic,raw.statements[0].evidence.arabic);assert.equal(calls,2);
- const draft=await provider.draft({content:fa,understanding:u,rules:ruleSet},signal());assert.ok(draft.title.includes('مدرسة'));assert.equal(calls,2);
+ assert.ok(u.rendering);assert.equal(calls,2);
 });
 
 test('strict completeness, speaker, reference and Arabic validators remain fail-closed',()=>{
