@@ -1,3 +1,5 @@
+import {requireAutoPolicy} from './auto-policy';
+import {recordDeliveryReceipt,reconcileDelivery,retryPersistence} from './delivery-receipt';
 import {assertPublishingActive} from '../operations-controls';
 import {formatTelegram,readTelegramSnapshot} from './format';
 import {transportApprovalDigest} from './format-digest';
@@ -6,7 +8,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {Prisma,type PrismaClient,type NewsItem} from '@prisma/client';
 import {z} from 'zod';
 import {assertApprovalMode} from '../processing/shadow';
-import {checkEvidence,eventSchema,ProcessingError} from '../processing/contracts';
+import {checkEvidence,eventSchema,sourceProfileSchema,ProcessingError} from '../processing/contracts';
 import {renderPublicationText} from '../publication-text';
 
 import {matchesHumanPublication,humanText,lockEditorialPublication} from '../human-editorial-contract';
@@ -114,6 +116,13 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   await lockEditorialPublication(tx);
   await assertPublishingActive(tx);
   const p=await tx.publication.findUniqueOrThrow({where:{id},include:{newsItem:true,humanDraft:true}});
+  if(p.automaticPolicyId){
+   const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}}),policy=requireAutoPolicy(settings.telegramAutoPolicy,env);
+   if(policy.id!==p.automaticPolicyId||policy.destination!==p.destination||!p.newsItemId||(policy.state==='CANARY'&&policy.canaryCandidateId!==p.newsItemId))throw new ProcessingError('AUTOMATIC_AUTHORIZATION_CHANGED');
+   const item=await tx.newsItem.findUniqueOrThrow({where:{id:p.newsItemId},include:{humanDraft:true,evidence:{include:{sourcePost:{include:{source:true,humanDraft:true}}}}}});
+   const mode=(item.validationResult as {processingMode?:string}|null)?.processingMode;
+   if(item.humanDraft||!item.evidence.length||item.evidence.some(e=>e.sourcePost.humanDraft||!policy.sourceIds.includes(e.sourcePost.sourceId)||!e.sourcePost.source.enabled||e.sourcePost.source.deletedAt||e.sourcePost.source.processingMode!==mode||!sourceProfileSchema.safeParse(e.sourcePost.source.editorialProfile).success||!sourceProfileSchema.parse(e.sourcePost.source.editorialProfile).verified||sourceProfileSchema.parse(e.sourcePost.source.editorialProfile).flagged))throw new ProcessingError('AUTOMATIC_AUTHORIZATION_CHANGED');
+  }
   if(p.humanDraft&&!manual)throw new ProcessingError('HUMAN_PUBLICATION_MANUAL_ONLY');
   if(manual&&(p.idempotencyKey!==manual.digest||p.destination!==manual.destination))throw new ProcessingError('PUBLICATION_PREVIEW_CHANGED');
   if(p.status!=='PENDING')return null; // SENT / UNKNOWN / FAILED / SENDING are never retried implicitly.
@@ -132,15 +141,13 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
  });
  if(!intent)return {status:'NOT_SENT_ALREADY_CLAIMED'};
  const outcome=await sendTelegramOnce(config,intent.contentSnapshot,transport,intent.telegramFormatSnapshot);
- // If persisting the result fails after Telegram accepted the message, SENDING
- // remains a stop state. Never resend to recover a lost acknowledgement.
- await db.$transaction(async tx=>{
-  const changed=await tx.publication.updateMany({where:{id,status:'SENDING',attemptCount:1},data:{status:outcome.status,telegramMessageId:outcome.status==='SENT'?outcome.messageId:null,telegramResult:json(outcome),error:outcome.status==='SENT'?null:outcome.error,sentAt:outcome.status==='SENT'?new Date():null}});
-  if(changed.count!==1)throw new ProcessingError('PUBLICATION_STATE_CHANGED');
-  await tx.publicationAttempt.update({where:{publicationId_attempt:{publicationId:id,attempt:1}},data:{finishedAt:new Date(),result:json(outcome),error:outcome.status==='SENT'?null:outcome.error}});
-  if(intent.newsItemId)await tx.newsItem.update({where:{id:intent.newsItemId},data:{status:outcome.status==='SENT'?'PUBLISHED':'APPROVED'}});
-  if(intent.humanDraftId&&outcome.status==='SENT')await tx.humanEditorialDraft.update({where:{id:intent.humanDraftId},data:{status:'PUBLISHED'}});
-  await tx.auditLog.create({data:{action:`PUBLICATION_${outcome.status}`,actor:manual?.actor,entityType:'Publication',entityId:id,message:outcome.status==='SENT'?'Telegram message ID persisted':'Delivery stopped; operator reconciliation required',metadata:json(outcome)}});
- });
+ // Journal acknowledgement separately before the aggregate transaction.
+ // A crash after this write is recoverable without any second Telegram request.
+ try{await recordDeliveryReceipt(db,id,intent.idempotencyKey,outcome);}catch{
+  // Safe recovery evidence only: never log token, payload or raw exception.
+  console.error(JSON.stringify({event:'TELEGRAM_ACK_PERSISTENCE_FAILED',publicationId:id,digest:intent.idempotencyKey,outcome}));
+  throw new ProcessingError('DELIVERY_ACK_PERSISTENCE_FAILED');
+ }
+ await retryPersistence(()=>reconcileDelivery(db,id,manual?.actor??'telegram-publisher'));
  return outcome;
 }

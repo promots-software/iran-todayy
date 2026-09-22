@@ -17,7 +17,7 @@
     "db:verify": "node --env-file-if-exists=.env scripts/verify-database.mjs",
     "db:seed": "node --env-file-if-exists=.env --import tsx prisma/seed.ts",
     "worker": "node --env-file-if-exists=.env --import tsx src/worker/index.ts",
-    "worker:production": "node --import tsx src/worker/production.ts",
+    "worker:production": "node --import tsx src/worker/start-production.ts",
     "telegram:authorize": "node --env-file=.env --import tsx scripts/telegram-authorize.ts",
     "benchmark:direct": "node --import tsx scripts/benchmark-direct.ts"
   },

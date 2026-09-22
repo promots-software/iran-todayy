@@ -96,6 +96,7 @@ enum WorkerState {
 }
 
 model AppSettings {
+  telegramAutoPolicy Json?
   id             Int            @id @default(1)
   publishingMode PublishingMode @default(REQUIRE_APPROVAL)
   publishingPaused Boolean @default(false)
@@ -266,6 +267,7 @@ model EditorialRuleSet {
 }
 
 model Publication {
+  automaticPolicyId String?
   id                String               @id @default(cuid())
   newsItemId        String?              @unique
   newsItem          NewsItem?            @relation(fields: [newsItemId], references: [id], onDelete: Restrict)

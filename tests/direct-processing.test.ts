@@ -13,8 +13,10 @@ import {unknownProfile,validateUnderstanding,ProcessingError} from '../src/lib/p
 import {ruleSet} from '../src/lib/processing/rules';
 import {finalizeConstrainedDraft} from '../src/lib/processing/local-finalization';
 import {editorialDecision} from '../src/lib/processing/editorial-eligibility';
-import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
+import {ingest as realIngest,claimJob,processJob} from '../src/lib/processing/engine';
 import {assertRole} from '../src/lib/dashboard-permissions';
+// Fixture admission must not depend on database microsecond rounding versus JS milliseconds.
+async function ingest(...args:Parameters<typeof realIngest>){const post=await realIngest(...args);await args[0].processingJob.updateMany({where:{sourcePostId:post.id,status:'PENDING'},data:{availableAt:new Date(0)}});return post;}
 const source='افتتح المجلس مدرسة جديدة في العاصمة.';
 const ev=(excerpt:string,context=source)=>({excerpt,context});
 const safety={filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false};

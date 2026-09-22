@@ -23,7 +23,7 @@ export function usageSummary(rows:{metadata:unknown}[]){
 }
 export async function operationsSnapshot(db:PrismaClient,now=new Date()){
  const today=beirutDayStart(now),since=new Date(now.getTime()-86400000),start=performance.now();await db.$queryRaw`SELECT 1`;const databaseMs=Math.round(performance.now()-start);
- const [workers,queue,settings,sources,posts,jobs,publications,activity,usage,failures,migrations,lastSent,totalPosts,totalNews]=await Promise.all([
+ const [workers,queue,settings,sources,posts,jobs,publications,activity,usage,failures,migrations,lastSent,totalPosts,totalNews,legacyPending]=await Promise.all([
   db.workerHeartbeat.findMany({orderBy:{lastSeenAt:'desc'}}),queueHealth(db),db.appSettings.findUnique({where:{id:1}}),
   db.source.findMany({where:{deletedAt:null},select:{id:true,name:true,handle:true,platform:true,enabled:true,processingMode:true,processingPaused:true,cursor:true,lastPollAt:true,lastError:true,posts:{orderBy:{ingestedAt:'desc'},take:1,select:{sourcePostId:true,ingestedAt:true}}}}),
   db.sourcePost.findMany({where:{ingestedAt:{gte:today,lte:now}},select:{id:true,sourceId:true,status:true,relevanceResult:true,processingResult:true}}),
@@ -32,7 +32,7 @@ export async function operationsSnapshot(db:PrismaClient,now=new Date()){
   db.auditLog.findMany({where:{action:'AI_STAGE_USAGE',createdAt:{gte:since,lte:now}},select:{metadata:true}}),
   db.processingJob.findMany({where:{status:{in:['FAILED','RETRY']}},orderBy:{updatedAt:'desc'},take:100,select:{id:true,sourcePostId:true,status:true,stage:true,lastError:true,attemptCount:true,availableAt:true,updatedAt:true}}),
   db.$queryRaw<{migration_name:string;finished_at:Date|null;rolled_back_at:Date|null}[]>`SELECT migration_name,finished_at,rolled_back_at FROM "_prisma_migrations" ORDER BY started_at DESC LIMIT 20`,
-  db.publication.findFirst({where:{status:'SENT'},orderBy:{sentAt:'desc'},select:{id:true,sentAt:true,destination:true,telegramMessageId:true}}),db.sourcePost.count(),db.newsItem.count(),
+  db.publication.findFirst({where:{status:'SENT'},orderBy:{sentAt:'desc'},select:{id:true,sentAt:true,destination:true,telegramMessageId:true}}),db.sourcePost.count(),db.newsItem.count(),db.publication.count({where:{status:'PENDING',automaticPolicyId:null}}),
  ]);
  const counts:Record<string,number>={},modes:Record<string,number>={NORMAL:0,DIRECT:0,UNRECORDED:0};
  for(const p of posts){counts[p.status]=(counts[p.status]??0)+1;const mode=record(p.processingResult).processingMode??record(p.relevanceResult).processingMode;modes[mode==='DIRECT'||mode==='NORMAL'?mode:'UNRECORDED']++;}
@@ -43,5 +43,5 @@ export async function operationsSnapshot(db:PrismaClient,now=new Date()){
  if(queue.capacity.cost.warning)alerts.push({severity:'WARNING',component:'Cost',since:null,message:'بلغت الكلفة المحسوبة حد التحذير؛ يشمل المجموع الحجوزات المعلقة.'});
  const uncertain=publications.filter(p=>['SENDING','UNKNOWN'].includes(p.status)).reduce((s,p)=>s+p._count,0);
  if(uncertain)alerts.push({severity:'CRITICAL',component:'Publishing',since:null,message:`${uncertain} عمليات إرسال تحتاج إلى تسوية؛ لا تُعد الإرسال.`});
- return {at:now,today,since,databaseMs,workers,queue,settings,sources:sources.map(s=>({...s,lastError:s.lastError?safeCode(s.lastError):null,postsToday:posts.filter(p=>p.sourceId===s.id).length})),counts,modes,totalToday:posts.length,materialUpdates:posts.filter(p=>record(p.processingResult).classification==='MATERIAL_UPDATE').length,jobs,publications,activity:activity.map(({metadata,...a})=>({...a,change:safeAuditChange(metadata)})),usage:usageSummary(usage),failures:failures.map(f=>({...f,lastError:safeCode(f.lastError)})),migrations,lastSent,totalPosts,totalNews,alerts};
+ return {at:now,today,since,databaseMs,workers,queue,settings,sources:sources.map(s=>({...s,lastError:s.lastError?safeCode(s.lastError):null,postsToday:posts.filter(p=>p.sourceId===s.id).length})),counts,modes,totalToday:posts.length,materialUpdates:posts.filter(p=>record(p.processingResult).classification==='MATERIAL_UPDATE').length,jobs,publications,activity:activity.map(({metadata,...a})=>({...a,change:safeAuditChange(metadata)})),usage:usageSummary(usage),failures:failures.map(f=>({...f,lastError:safeCode(f.lastError)})),migrations,lastSent,totalPosts,totalNews,legacyPending,alerts};
 }

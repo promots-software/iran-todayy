@@ -1,3 +1,4 @@
+import {reconcileDelivery} from '../src/lib/telegram/delivery-receipt';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -37,6 +38,8 @@ test('manual approval freezes content, concurrent delivery sends once, uncertain
   await assert.rejects(publishApprovedManually(db,{...input(approved[0]),digest:'stale'},'editor',manualEnv,transport),/PUBLICATION_PREVIEW_CHANGED/);
   for(const patch of [{AUTO_PUBLISH:'true'},{REQUIRE_APPROVAL:'false'},{TELEGRAM_MANUAL_PUBLISH_ENABLED:'false'},{SHADOW_MODE:'false'}])await assert.rejects(publishApprovedManually(db,input(approved[0]),'editor',{...manualEnv,...patch},transport),/MANUAL_PUBLISH_DISABLED/);
   assert.equal(calls,0);
+  const beforeSendFailure=new Proxy(db,{get(target,key){if(key==='$transaction')return async()=>{throw Error('DB_BEFORE_SEND');};return Reflect.get(target,key);}});
+  await assert.rejects(publishApprovedManually(beforeSendFailure,input(approved[0]),'editor',manualEnv,transport),/DB_BEFORE_SEND/);assert.equal(calls,0);
   await Promise.all([publishApprovedManually(db,input(approved[0]),'editor',manualEnv,transport),publishApprovedManually(db,input(approved[0]),'editor',manualEnv,transport)]);
   await publishApprovedManually(db,input(approved[0]),'editor',manualEnv,transport);
   assert.equal(manualEnv.SHADOW_MODE,'true');assert.equal(manualEnv.AUTO_PUBLISH,'false');
@@ -62,13 +65,14 @@ test('manual approval freezes content, concurrent delivery sends once, uncertain
   await publishApprovedManually(db,input(sp),'editor',manualEnv,transport);assert.equal(calls,1);
   const lost=await draft();const lp=await approvePublication(db,lost.input,'editor',env);let transactions=0,lostCalls=0;
   const broken=new Proxy(db,{get(target,key){
-   if(key==='$transaction')return (...args:Parameters<typeof db.$transaction>)=>{if(++transactions===2)throw new Error('SIMULATED_RESULT_PERSISTENCE_FAILURE');return Reflect.apply(target.$transaction,target,args);};
+   if(key==='$transaction')return (...args:Parameters<typeof db.$transaction>)=>{if(++transactions>=2)throw new Error('SIMULATED_RESULT_PERSISTENCE_FAILURE');return Reflect.apply(target.$transaction,target,args);};
    return Reflect.get(target,key);
   }});
   const accepted:typeof fetch=async()=>{lostCalls++;return Response.json({ok:true,result:{message_id:999,chat:{id:-100123}}});};
   await assert.rejects(publishApprovedManually(broken,input(lp),'editor',manualEnv,accepted),/SIMULATED_RESULT/);
   assert.equal((await db.publication.findUniqueOrThrow({where:{id:lp.id}})).status,'SENDING');
   await publishApprovedManually(db,input(lp),'editor',manualEnv,accepted);assert.equal(lostCalls,1);
+  assert.equal((await reconcileDelivery(db,lp.id)).status,'SENT');assert.equal((await db.publication.findUniqueOrThrow({where:{id:lp.id}})).telegramMessageId,'999');assert.equal(lostCalls,1);
   assert.equal((await db.newsItem.findUniqueOrThrow({where:{id:a.item.id}})).status,'PUBLISHED');
   assert.equal(await db.auditLog.count({where:{entityId:sent.id,action:'PUBLICATION_SENT',actor:'editor'}}),1);
   assert.ok(await db.auditLog.count({where:{entityType:'Publication',entityId:sent.id,action:'PUBLICATION_SENT'}}));
