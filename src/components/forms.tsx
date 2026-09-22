@@ -35,11 +35,10 @@ export function SourceControls({ id, enabled }: { id: string; enabled: boolean }
 export function ModeForm({ mode }: { mode: "REQUIRE_APPROVAL" | "AUTO_PUBLISH" }) {
   const [state, action, pending] = useActionState(modeAction, initial);
   return <form action={action} className="panel form-panel">
-    <h2>طريقة النشر</h2>
+    <h2>اعتماد التحرير البشري</h2>
     <fieldset>
       <legend className="muted">اختر آلية اعتماد الأخبار</legend>
       <label className="radio-card"><input type="radio" name="publishingMode" value="REQUIRE_APPROVAL" defaultChecked={mode === "REQUIRE_APPROVAL"} /><span><strong>يدوي</strong><small>التحرير البشري والنشر اليدوي يتطلبان اعتماداً صريحاً.</small></span></label>
-      <label className="radio-card"><input type="radio" name="publishingMode" value="AUTO_PUBLISH" disabled /><span><strong>تلقائي</strong><small>التسليم الآلي تحكمه صلاحية مستقلة في مركز العمليات.</small></span></label>
     </fieldset>
     <p className="notice">إرسال النسخة البشرية المعتمدة يتطلب تأكيداً منفصلاً. صلاحية التسليم الآلي للأخبار المؤهلة مستقلة عن هذا النموذج.</p>
     <button disabled={pending}>{pending ? "جارٍ الحفظ…" : "حفظ الإعدادات"}</button>
