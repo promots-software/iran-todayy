@@ -75,6 +75,7 @@ export interface Monitor {
   poll(input: { handle: string; cursor: unknown }, signal: AbortSignal): Promise<{ posts: Incoming[]; cursor: unknown; retryAfterMs?: number; hasMore?: boolean }>;
 }
 export class ProcessingError extends Error {
+  availableDraft?: import('./available-draft').AvailableDraft;
   constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}, public readonly retryAfterMs=0) { super(code); }
 }
 export function checkEvidence(content: string, evidence: z.infer<typeof evidenceSchema>) {

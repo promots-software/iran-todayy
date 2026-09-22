@@ -12,3 +12,6 @@ body,input,textarea,select,button,.platform,pre,.brand div>span{font-family:var(
 @media(max-width:900px){.sidebar{visibility:hidden}.sidebar.drawer-open{visibility:visible}}
 
 .workspace{width:calc(100% - 244px)}@media(max-width:900px){.workspace{width:100%}}
+
+/* Compact operations tables preserve RTL and small-screen horizontal access. */
+.table-scroll{max-width:100%;overflow-x:auto}.table-scroll table{width:100%;border-collapse:collapse;text-align:start}.table-scroll th,.table-scroll td{padding:10px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}.table-scroll details{min-width:150px}.table-scroll summary{white-space:normal}

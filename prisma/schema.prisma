@@ -98,6 +98,8 @@ enum WorkerState {
 model AppSettings {
   id             Int            @id @default(1)
   publishingMode PublishingMode @default(REQUIRE_APPROVAL)
+  publishingPaused Boolean @default(false)
+  processingPaused Boolean @default(false)
   updatedAt      DateTime       @updatedAt
 }
 
@@ -113,6 +115,7 @@ model Source {
   name       String
   url        String
   enabled    Boolean      @default(true)
+  processingPaused Boolean @default(false)
   deletedAt  DateTime?
   cursor     Json?
   editorialProfile Json?
@@ -372,6 +375,7 @@ model HumanEditorialDraft {
 }
 
 enum DashboardRole {
+  SUPER_ADMIN
   ADMIN
   EDITOR
 }

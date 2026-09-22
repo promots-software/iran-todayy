@@ -1,4 +1,5 @@
 import {attributionLead} from './attribution-rendering';
+import {guidelineFindings} from './guideline-checks';
 import { checkEvidence, draftSchema, type Draft, type SourceProfile, type Understanding, ProcessingError } from "./contracts";
 import { names, reviewReasons, terminology, type ReviewCode } from "./rules";
 import {hasEditorialGrounding,unresolvedTerms} from './editorial-grounding';
@@ -130,6 +131,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
     sentenceEvidence.push({...entry,text:title,factIds:[...entry.factIds]});
     if(!body.includes(entry.text))sentenceEvidence.splice(sentenceEvidence.indexOf(entry),1);
   }
+  for(const detail of guidelineFindings(title,body,draft.protectedSpans.filter(s=>s.kind==='QUOTE').map(s=>s.text)))review.push(reason('FORMAT_REVIEW',detail));
   const unique = [...new Map(review.map(r=>[r.code+":"+(r.detail??""),r])).values()];
   if(!sentenceEvidence.some(s=>s.text===title)||sentenceEvidence.some(s=>!(title+'\n'+body).includes(s.text)))throw new ProcessingError("INVALID_FINAL_PROVENANCE");
   return { title, body,format:draft.format, hashtags, protectedQuotes: sourceQuotes, protectedSpans: draft.protectedSpans, applied, review: unique, sentenceEvidence };

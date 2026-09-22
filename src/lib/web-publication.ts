@@ -1,3 +1,4 @@
+import {assertPublishingActive} from './operations-controls';
 import type {PrismaClient} from '@prisma/client';
 import {lockEditorialPublication,matchesHumanPublication,humanText} from './human-editorial-contract';
 import {approvalDigest,publicationText} from './telegram/publisher';
@@ -5,7 +6,7 @@ import {assertApprovalMode} from './processing/shadow';
 export async function publishWeb(db:PrismaClient,input:{id:string;digest:string;confirmed:boolean},actor:string){
  if(!actor.trim()||!input.confirmed)throw new Error('EXPLICIT_APPROVAL_REQUIRED');
  return db.$transaction(async tx=>{
-  await lockEditorialPublication(tx);assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
+  await lockEditorialPublication(tx);await assertPublishingActive(tx);assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
   const p=await tx.publication.findUniqueOrThrow({where:{id:input.id},include:{humanDraft:true,newsItem:true}});
   if(p.destination!=='WEB'||p.idempotencyKey!==input.digest)throw new Error('PREVIEW_CHANGED');
   if(p.status==='SENT')return p;

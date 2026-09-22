@@ -26,7 +26,7 @@ export async function HumanEditorialPanel({kind,id,initialTitle='',initialBody='
  {active?.status==='PENDING'&&draft?.status==='APPROVED'&&<PublicationSend id={active.id} digest={active.idempotencyKey} destination={active.destination} content={active.contentSnapshot} telegramFormatSnapshot={active.telegramFormatSnapshot} enabled={!stalePreview&&(active.destination==='WEB'||enabled)}/>}
  {draft&&<details className="panel"><summary>سجل المراجعة</summary><p>المحرر: {name(draft.editedBy)} · الاعتماد: {name(draft.approvedBy)}</p><p>{draft.approvalNote}</p>
  {draft.publications.map(p=><article key={p.id}><Badge value={p.status}/><p className="original">{p.contentSnapshot}</p><p>الوجهة: <bdi>{p.destination}</bdi> · رسالة Telegram: {p.telegramMessageId??'—'}</p><p>{p.error}</p></article>)}
- {user.role==='ADMIN'&&<details><summary>تفاصيل تقنية</summary><JsonView value={draft.originalSnapshot}/></details>}</details>}
+ {user.role!=='EDITOR'&&<details><summary>تفاصيل تقنية</summary><JsonView value={draft.originalSnapshot}/></details>}</details>}
  </>;
 }
 export async function HumanEditorialQueue({published=false,approved=false,params={}}:{published?:boolean;approved?:boolean;params?:PageParams}){

@@ -1,3 +1,4 @@
+import {availableDraft,type AvailableDraft,reviewPrefill} from './available-draft';
 import {editoriallyFiltered,selectionBlocksDraft} from './direct-policy';
 import {IRAN_NOW_STYLE_PROFILE_V1} from './iran-now-style';
 import {assertDirectFullCoverage} from './direct-bilingual';
@@ -48,6 +49,7 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
   // A fresh opaque claim token fences stale processes after restart or lease recovery.
   const token=`${workerId}:${randomUUID()}`;
   return client.$transaction(async tx=>{
+    if((await tx.appSettings.findUnique({where:{id:1}}))?.processingPaused)return null;
     let slot=0;
     if(newsroom){
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(20916013)`;
@@ -61,13 +63,14 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
       if(reclaimed.count && exhausted)await tx.sourcePost.update({where:{id:job.sourcePostId},data:{status:"NEEDS_REVIEW",error:"LEASE_EXHAUSTED",nextRetryAt:null}});
     }
     const scope = telegramOnly ? Prisma.sql`AND EXISTS (SELECT 1 FROM "SourcePost" p JOIN "Source" s ON s."id" = p."sourceId" WHERE p."id" = "ProcessingJob"."sourcePostId" AND p."status" IN ('INGESTED','FAILED') AND s."platform" = 'TELEGRAM' AND s."enabled" = true AND s."deletedAt" IS NULL)` : Prisma.empty;
+    const sourceHold=Prisma.sql`AND NOT EXISTS (SELECT 1 FROM "SourcePost" p JOIN "Source" s ON s.id=p."sourceId" WHERE p.id="ProcessingJob"."sourcePostId" AND s."processingPaused"=true)`;
     const exclusions = excludePostIds.length ? Prisma.sql`AND "sourcePostId" NOT IN (${Prisma.join(excludePostIds)})` : Prisma.empty;
     const ordering=newsroom&&!oldestSlot(slot)?Prisma.sql`"createdAt" DESC,"id"`:Prisma.sql`"availableAt","createdAt","id"`;
     // Prisma stores DateTime as UTC timestamp-without-time-zone. A bound Date
     // is timestamptz in raw SQL; implicit conversion uses the DB session zone
     // and can claim future retries early. Compare explicit UTC wall timestamps.
     const due=costRecheckBefore ? Prisma.sql`("availableAt" <= CAST(${now.toISOString()} AS timestamp) OR ("status"='RETRY' AND "lastError"='PROVIDER_COST_WAIT' AND "updatedAt" < CAST(${costRecheckBefore.toISOString()} AS timestamp)))` : Prisma.sql`"availableAt" <= CAST(${now.toISOString()} AS timestamp)`;
-    const rows=await tx.$queryRaw<{id:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${exclusions} ORDER BY ${ordering} FOR UPDATE SKIP LOCKED LIMIT 1`;
+    const rows=await tx.$queryRaw<{id:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${sourceHold} ${exclusions} ORDER BY ${ordering} FOR UPDATE OF "ProcessingJob" SKIP LOCKED LIMIT 1`;
     if (!rows.length) return null;
     if(rows[0].lastError==='PROVIDER_COST_WAIT'&&rows[0].availableAt>now&&costRecheckBefore)await tx.auditLog.create({data:{action:'PROCESSING_COST_WAIT_RECHECKED',actor:workerId,entityType:'ProcessingJob',entityId:rows[0].id,message:'Normal single-job claim reconsidered an obsolete cost schedule; actual request guard still required',metadata:{previousAvailableAt:rows[0].availableAt.toISOString(),capacityObservedAt:costRecheckBefore.toISOString()}}});
     if(newsroom){
@@ -140,6 +143,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
   const profile=sourceProfileSchema.safeParse(post.source.editorialProfile);
   const sourceProfile=profile.success ? profile.data : unknownProfile;
   let processingMode=post.source.processingMode;
+  let proposal:AvailableDraft|null=null;
   try {
     signal.throwIfAborted();
     // Reject stale workers before spending a provider call, not only at commit.
@@ -198,6 +202,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     if(snapshot?.legacy&&preparedMatch?.classification==='NEW_EVENT'){preparedMatch.classification='UNCERTAIN_MATCH';preparedMatch.rationale='توجد أحداث قديمة بلا استخراج منظم؛ يلزم فحصها قبل إنشاء حدث جديد';preparedMatch.evidence={legacyEvents:snapshot.legacy};}
     const skipDraft=provider.draftOnlyAccepted&&(selectionBlocksDraft(u,processingMode)||!u.event.action||!u.event.actors.length||!u.event.facts.length||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
     const preparedDraft=!filter&&!skipDraft?await provider.draft({...processingMode==='DIRECT'?{processingMode:'DIRECT' as const}:{},content:post.originalContent,understanding:u,rules:ruleSet},signal):null;
+    proposal=availableDraft(preparedDraft,'REVIEW_REQUIRED');
     signal.throwIfAborted();
     return await client.$transaction(async tx=>{
       // One project, one serial event decision boundary. Read candidates AFTER taking the lock.
@@ -296,7 +301,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code,...(budgetHold?{attemptCount:{decrement:1}}:{})}});
       if (changed.count) {
         const decision=editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
-        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,recovery:{state:terminal?(retryable?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(retryable?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
         await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(retryable?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
         if(isProviderWait(code))await audit(tx,post.id,'PROCESSING_PROVIDER_WAIT','Provider-dependent stage scheduled; processing lane released',{jobId:job.id,code,eligibleAt:next.toISOString(),startedAt:new Date().toISOString()});
       }

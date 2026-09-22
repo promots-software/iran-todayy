@@ -97,11 +97,13 @@ async function main() {
             requireLease();await safety();
             if([...processing.values()].some(start=>Date.now()-start>210000))throw new ProcessingError('WORKER_JOB_DEADLINE');
             const telegramReady=poller!.ready;
+            const processingPaused=(await db.appSettings.findUnique({where:{id:1}}))?.processingPaused??false;
             await renewLease(db,runId,processing.size?'BUSY':telegramReady?'IDLE':'ERROR',{
               shadowMode:true,requireApproval:true,autoPublish:false,externalPublishingEnabled:false,
-              telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:true,pollErrors,provider:'gemini-3.1-flash-lite',
+              telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:!processingPaused,pollErrors,provider:'gemini-3.1-flash-lite',
               pollPhase,activeSource,lastPollError,lastPollCompletedAt,
               processingCapacity,
+              commit:/^[a-f0-9]{40}$/.test(process.env.RAILWAY_GIT_COMMIT_SHA??'')?process.env.RAILWAY_GIT_COMMIT_SHA:null,
             });
             lastRenewed=lastDatabaseCheck=Date.now();
             log('WORKER_HEARTBEAT',{telegramReady,processing:processing.size>0,processingCount:processing.size,processingState:processingCapacity?.state??'UNKNOWN',capacityReason:processingCapacity?.reason??null,pollErrors,pollPhase,activeSource,lastPollError,lastPollCompletedAt});

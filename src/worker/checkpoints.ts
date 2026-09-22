@@ -27,7 +27,7 @@ export function checkpointProvider(provider:LanguageProvider, store:CheckpointSt
     signal.throwIfAborted();
     const context=input as {processingMode?:string;content?:string};
     const directBilingual=name==='understand'&&context.processingMode==='DIRECT'&&typeof context.content==='string'&&sourceLanguage(context.content)!=='ar';
-    const key=createHash('sha256').update(JSON.stringify([directBilingual?'worker-direct-bilingual-v3-style1':name==='understand'&&context.processingMode==='DIRECT'?'worker-direct-arabic-publication-v2-style1':name==='draft'?'worker-local-draft-v3':'worker-checkpoint-v1',provider.id,name,input])).digest('hex');
+    const key=createHash('sha256').update(JSON.stringify([directBilingual?'worker-direct-bilingual-v4-guidelines40':name==='understand'&&context.processingMode==='DIRECT'?'worker-direct-arabic-publication-v3-guidelines40':name==='draft'?'worker-local-draft-v3':'worker-checkpoint-v1',provider.id,name,input])).digest('hex');
     return checkpointCall(store,key,call);
   }
   return {

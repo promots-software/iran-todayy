@@ -30,3 +30,9 @@ test('versioned style goes only to DIRECT generation, not NORMAL instructions',(
  assert.ok(iranNowStyleInstructions.includes('Style never overrides semantic safety'));
  assert.ok(!readFileSync('src/lib/processing/gemini-benchmark-prompt.ts','utf8').includes('iranNowStyleInstructions'));
 });
+
+for(const mode of ['NORMAL','DIRECT'] as const)for(const autoPublish of [false,true])test(mode+' publishing routing: '+(autoPublish?'AUTO_PUBLISH':'REQUIRE_APPROVAL'),()=>{
+ const decision=editorialDecision({validated:true,review:[]},{autoPublish,shadowMode:true,requireApproval:true});
+ assert.equal(decision.editorialEligibility,'READY_TO_PUBLISH');assert.equal(decision.deliveryDecision,'HOLD','editorial readiness cannot bypass the independent delivery guards');
+ const unsafe=editorialDecision({validated:true,review:[{code:'UNSUPPORTED_OUTPUT'}]},{autoPublish,shadowMode:false,requireApproval:false});assert.equal(unsafe.editorialEligibility,'NEEDS_REVIEW');assert.equal(unsafe.deliveryDecision,'HOLD');
+});

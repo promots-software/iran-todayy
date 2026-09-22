@@ -1,6 +1,7 @@
 /** Versioned style guidance. Semantic evidence and protected spans take precedence. */
 export const IRAN_NOW_STYLE_PROFILE_V1 = {
  version:'IRAN_NOW_STYLE_PROFILE_V1',
+ revision:'guidelines-40-2026-09-22',
  authority:['rules.ts: R unified reference','rules.ts: P Publishing Prompt','client Telegram text-format specification'],
  corpus:{sha256:'da16d069d3a3810748cecccb78e560280162c4d31cffbedbf7261ec16645fb0d',records:7019,uniqueTexts:6769,pairedSourceGold:0,dateRangeVerified:false,
   branded:6950,multiline:3911,blankLine:3165,attributionHeadings:2586,bullets:2580,hashtags:45,emoji:2,
@@ -15,6 +16,15 @@ export const IRAN_NOW_STYLE_PROFILE_V1 = {
   'Use Arabic punctuation outside protected quotations. No headline terminal full stop, repeated emphatic punctuation, added emojis, forced hashtags, sensational adjectives or unsupported background.',
   'Apply only the supplied evidence-supported terminology rules. Historical typos and malformed branding are not rules. Do not invent currency conversions, dates, identities or geopolitical relationships.',
   'Do not generate branding or transport markup. The application supplies exactly one Iran Now prefix. Style never overrides semantic safety.',
+  'Understand the complete source before selecting the central event. Reconstruct Persian and English naturally in Modern Standard Arabic, not chained literal source syntax. Polish Arabic without forcing cosmetic changes to an already clean FLASH. Never add a speaker or reporting verb not supported by the source.',
+  'Use 2–4 short paragraphs only when the material warrants them. Retain all material assertions, qualifications and attribution even when concision requires longer copy. Output only copy, never explanations or editorial commentary.',
+  'Never automatically add عاجل, Breaking, emojis or hashtags, even when supplied by the source. Urgency requires a separate explicit human editorial instruction. A quoted occurrence remains immutable.',
+  'Use established Arabic names, institutions, locations and media names only for identities established in evidence. Do not translate a place name literally or invent an incumbent. The supplied reference catalogue governs terminology; unknown equivalents require review.',
+  'Military/security/terrorism allegations must retain their actual speaker and certainty. Human-rights findings and allegations are not judicial judgments. Never turn evidence of a crime into a conviction. Preserve civilian/casualty distinctions without inventing identity.',
+  'Economic copy preserves exact units, currencies, percentages and sanctions authority; no rounding, currency conversion or predicted consequences. Sports copy leads with the supported result, competition and team; do not invent missing fields. Video copy describes only supplied textual evidence, never unseen scenes; translate نورویدئو as a new-video label only when supported.',
+  'Present supported Iranian positions clearly, but never manufacture political motives, escalating pressure, legal conclusions, company identities or geopolitical background. Pro-Iran framing never overrides evidence. Avoid exaggerated adjectives and preserve strong claims as attributed claims.',
+  'Persian month labels are not Gregorian date conversion. Follow the existing calendar-preserving contract: preserve calendar identity and require review where a full date cannot be established. Never silently substitute the same day number into another calendar.',
+  'Final check: names, numbers, dates, places, attribution, quotations, negation, uncertainty, conditions, chronology, causal scope, material coverage, natural Arabic, no repetition, no urgent label and no unsupported additions. Semantic safety overrides style examples that would change meaning.',
  ],
 } as const;
 export const iranNowStyleInstructions=IRAN_NOW_STYLE_PROFILE_V1.version+'\n'+IRAN_NOW_STYLE_PROFILE_V1.modelGuidance.join('\n');

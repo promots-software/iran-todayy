@@ -1,3 +1,4 @@
+import {assertPublishingActive} from '../operations-controls';
 import {formatTelegram,readTelegramSnapshot} from './format';
 import {transportApprovalDigest} from './format-digest';
 import {createHash} from 'node:crypto';
@@ -111,6 +112,7 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
  const intent=await db.$transaction(async tx=>{
   assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
   await lockEditorialPublication(tx);
+  await assertPublishingActive(tx);
   const p=await tx.publication.findUniqueOrThrow({where:{id},include:{newsItem:true,humanDraft:true}});
   if(p.humanDraft&&!manual)throw new ProcessingError('HUMAN_PUBLICATION_MANUAL_ONLY');
   if(manual&&(p.idempotencyKey!==manual.digest||p.destination!==manual.destination))throw new ProcessingError('PUBLICATION_PREVIEW_CHANGED');

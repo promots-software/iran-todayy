@@ -1,3 +1,4 @@
+import {availableDraft,proposalDraft} from './available-draft';
 import {selectionBlocksDraft} from './direct-policy';
 import {publicationUnits,preparePublication,acceptPublication,publicationReviewInput,publicationReviewInstructions} from './direct-publication';
 import {directPublicationReviewSchema} from './direct-publication-contract';
@@ -71,18 +72,22 @@ export class GroqLanguageProvider implements LanguageProvider {
     const direct=input.processingMode==='DIRECT';
     if(direct&&detectedLanguage!=='ar'){
       const combined=await this.request('understand',{...data,detectedLanguage},rules,signal,'direct_bilingual',[],true);
+      try {
       const prepared=prepareDirectBilingual(combined,input.content);
       const review=await this.request('understand',directReviewInput(input.content,prepared),rules,signal,'direct_review',prepared.refs,true);
       const receipt=finalizeDirectBilingual(input.content,prepared,review);
       return adaptDirectExtraction(prepared.grounded,input.content,receipt);
+      } catch(error){if(error instanceof ProcessingError)error.availableDraft=proposalDraft(combined,error.code)??undefined;throw error;}
     }
     if(direct){
       const raw=directArabicSchema.parse(await this.request('understand',{...data,detectedLanguage,sourceUnits:publicationUnits(input.content)},rules,signal,'direct_extract'));
+      try {
       const {coverage,publication,...extraction}=raw;
       const u=adaptDirectExtraction(validateDirectExtraction(extraction,input.content),input.content);
       const prepared=preparePublication(input.content,u,publication,coverage);
       const review=prepared.local?null:await this.request('understand',publicationReviewInput(input.content,u,prepared),rules,signal,'direct_publication_review',[],true);
       return {...u,publicationProposal:acceptPublication(input.content,u,prepared,review)};
+      } catch(error){if(error instanceof ProcessingError)error.availableDraft=proposalDraft(raw,error.code)??undefined;throw error;}
     }
     const raw=await this.request("understand", {...data,detectedLanguage}, rules, signal, "extract");
     const extracted=validateMinimalExtraction(raw,input.content);
@@ -90,16 +95,26 @@ export class GroqLanguageProvider implements LanguageProvider {
     if(detectedLanguage!=='ar'){
       const refs=classificationReferences(extracted).entries.filter(e=>e.role!=='event_time') as RenderingReference[];
       const rendered=await this.request('understand',renderingInput(refs),rules,signal,'render',refs,direct);
+      try {
       const reviewed=await this.request('understand',renderingReviewInput(refs,rendered),rules,signal,'review_rendering',refs,direct);
       rendering=validateRendering(input.content,refs,rendered,reviewed);
+      }catch(error){
+       if(error instanceof ProcessingError){const entries=(rendered as {entries?:{id:string;arabic:string}[]}).entries??[];const facts=refs.filter(r=>r.role==='fact').map(r=>entries.find(e=>e.id===r.id)?.arabic);if(facts.length&&facts.every(v=>typeof v==='string'))error.availableDraft=availableDraft({title:facts[0],body:facts.slice(1).join('\n\n')},error.code)??undefined;}
+       throw error;
+      }
     }
     return this.classifyExtracted(input,extracted,signal,rendering);
   }
   async classifyExtracted(input:Parameters<LanguageProvider["understand"]>[0],extracted:GroundedExtraction,signal:AbortSignal,rendering?:RenderingReceipt){
     // A saved, validated extraction can resume here without a second extraction request.
+    try {
     preflightIdClassification(extracted,input.content,rendering);
     const classification = await this.request("understand", {extraction:extracted,profile:input.profile}, input.rules, signal, "classify");
     return adaptIdClassification(extracted,classification,input.content,rendering);
+    } catch(error){
+      if(error instanceof ProcessingError&&rendering){const facts=classificationReferences(extracted).entries.filter(r=>r.role==='fact').map(r=>rendering.entries.find(e=>e.id===r.id)?.arabic);if(facts.length&&facts.every(v=>typeof v==='string'))error.availableDraft=availableDraft({title:facts[0],body:facts.slice(1).join('\n\n')},error.code)??undefined;}
+      throw error;
+    }
   }
   compare(input: Parameters<LanguageProvider["compare"]>[0], signal: AbortSignal) {
     return this.request("compare", input, ruleSet, signal);

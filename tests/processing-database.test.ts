@@ -18,7 +18,10 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
   const figures=fixture("figures","وردت أنباء عن 5 ضحايا في طهران","ar","وردت أنباء عن 5 ضحايا في طهران");figures.understanding.event.facts[0].kind="FIGURE";
   const records=[...scenarios,sport,uncovered,figures];const provider=fixtureProvider(records);
   async function createSource(platform:"TELEGRAM"|"X",i:number){const s=await db.source.create({data:{platform,handle:`p2${tag}${i}`,name:"اختبار المرحلة الثانية",url:`https://${platform === "X"?"x.com":"t.me"}/p2${tag}${i}`,editorialProfile:json(official)}});sourceIds.push(s.id);return s;}
-  async function incoming(sourceId:string,id:string,index=0){const f=records.find(r=>r.id===id)!;return ingest(db,sourceId,{externalId:id,url:`https://t.me/fixture/${index+1}`,content:f.content,publishedAt:new Date("2026-08-10T10:00:00Z"),metadata:{fixture:id}});}
+  async function incoming(sourceId:string,id:string,index=0){const f=records.find(r=>r.id===id)!;const post=await ingest(db,sourceId,{externalId:id,url:`https://t.me/fixture/${index+1}`,content:f.content,publishedAt:new Date("2026-08-10T10:00:00Z"),metadata:{fixture:id}});
+    // Local DB timestamps may round 1ms ahead of the JS clock. Make fixture jobs
+    // explicitly due; concurrency assertions must not depend on that clock race.
+    await db.processingJob.updateMany({where:{sourcePostId:post.id,status:"PENDING"},data:{availableAt:new Date(0)}});return post;}
   async function run(){const job=await claimJob(db,"test-worker");assert.ok(job);const result=await processJob(db,job,provider,signal);assert.ok(!("error" in result),JSON.stringify(result));return db.sourcePost.findUniqueOrThrow({where:{id:job.sourcePostId},include:{matches:true}});}
   try {
     const a=await createSource("TELEGRAM",1),b=await createSource("TELEGRAM",2),x=await createSource("X",3);
