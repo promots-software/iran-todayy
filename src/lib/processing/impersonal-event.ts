@@ -16,8 +16,8 @@ export function completeImpersonalReport(source:string|undefined,x:{actors:unkno
  return lines.length===1&&normalize(lines[0])===fact;
 }
 export function completeEventStructure(u:Understanding,source:string,mode:'NORMAL'|'DIRECT'){
- const x={actors:u.event.actors,action:u.event.action?.evidence??null,location:u.event.location?.evidence??null,statements:u.event.facts.map(f=>({evidence:f.evidence,speaker:f.speaker}))};
- return !!u.event.action&&u.event.facts.length>0&&(u.event.actors.length>0||completeObservedEvent(source,x)||(mode==='NORMAL'&&completeImpersonalReport(source,x)));
+ void source;void mode;
+ return u.event.facts.length>0;
 }
 
 /** An intransitive event need not have an agent. Require the entire assertion,

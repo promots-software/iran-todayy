@@ -53,3 +53,20 @@ function finalizeValidatedDraft(draft:ReturnType<typeof renderSelection>,content
  const result=editDraft(draft,content,u,profile);
  return {...result,attestations:draft.attestation,attestationReasons:reasons};
 }
+
+/** One deterministic repair from already grounded immutable facts, never a model loop. */
+export function finalizeWithRepair(raw:unknown,content:string,u:Understanding,profile:SourceProfile,constrained:boolean){
+ const finalize=(value:unknown)=>constrained?finalizeConstrainedDraft(value,content,u,profile):editDraft(value,content,u,profile);
+ let original:ReturnType<typeof finalize>|undefined;
+ try{
+  original=finalize(raw);
+  if(!original.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'||(r.code==='QUOTE_REVIEW'&&r.detail)))return original;
+ }catch(error){
+  if(!(error instanceof ProcessingError)||!['CONSTRAINED_DRAFT_CHANGED','CONSTRAINED_TEXT_CHANGED','MISSING_TITLE_PROVENANCE','INVALID_DRAFT_FACT_LINK','UNSUPPORTED_OUTPUT'].includes(error.code))throw error;
+  if(!hasEditorialGrounding(u,content))throw error;
+ }
+ if(!hasEditorialGrounding(u,content))return original!;
+ const atoms=buildAtoms(content,u);
+ const repaired=u.publicationProposal?publicationDraft(content,u):renderSelection({titleAtomId:atoms.atoms[0].id,bodyAtomIds:atoms.atoms.map(a=>a.id)},atoms);
+ return {...finalizeConstrainedDraft(repaired,content,u,profile),repair:{attempts:1,method:'IMMUTABLE_FACTS'}};
+}

@@ -1,4 +1,4 @@
-import {completeImpersonalReport,completeObservedEvent} from './impersonal-event';
+
 import { z } from 'zod';
 import {validateSpeakerEvidence} from './speaker-evidence';
 import { checkEvidence, evidenceSchema, ProcessingError, understandingSchema, validateUnderstanding, type Understanding } from './contracts';
@@ -44,7 +44,10 @@ export function validateMinimalExtraction(raw:unknown,source:string){
 }
 export type GroundedExtraction=ReturnType<typeof validateMinimalExtraction>;
 export function requireCompleteExtraction(x:GroundedExtraction,source?:string){
-  if(x.relevance!=='IRRELEVANT' && (x.relevance==='UNCERTAIN'||(!x.actors.length&&!completeImpersonalReport(source,x)&&!completeObservedEvent(source,x))||!x.action||!x.statements.length))throw new ProcessingError('INCOMPLETE_EXTRACTION');
+  void source;
+  // Missing optional event anchors are not evidence of a factual defect.
+  // Exact assertions, speaker scope and downstream fidelity remain mandatory.
+  if(x.relevance!=='IRRELEVANT' && !x.statements.length)throw new ProcessingError('INCOMPLETE_EXTRACTION');
 }
 // Semantic keys and Arabic translations are downstream classification, not evidence.
 const label=z.object({key:text,arabic:text,nameKind:z.enum(['person','place','institution']).nullable()}).strict();

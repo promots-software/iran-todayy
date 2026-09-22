@@ -85,3 +85,17 @@ test('source disabled after freeze cannot claim; re-enable cannot send its histo
  await changeSource(db,a.source.id,'disable','offline');await assert.rejects(publishOne(db,p.id,env,transport),/AUTOMATIC_AUTHORIZATION_CHANGED/);
  await changeSource(db,a.source.id,'enable','offline');await automaticDeliveryCycle(db,env,transport);assert.equal(sends,0);assert.equal(await db.publicationAttempt.count(),0);
 });
+
+// Publisher must consume acceptance, never repeat editorial selection.
+test('accepted NORMAL receipt stays eligible despite later soft classification metadata and source identity',async()=>{
+ const a=await make('NORMAL');assert(a.item);const item=structuredClone(a.item);
+ for(const link of item.evidence){
+  const post=link.sourcePost, result=post.processingResult as Record<string,unknown>;
+  assert.equal((result.acceptance as {accepted:boolean}).accepted,true);
+  const extraction=result.extraction as Record<string,unknown>;extraction.priority='P4';extraction.filterReason='OPINION';extraction.relevance='UNCERTAIN';
+  post.relevance='UNCERTAIN';post.source.editorialProfile={...official,verified:false,flagged:true,classification:'WESTERN'};
+ }
+ assert.equal(eligibleAutomatic(item,a.policy),true);
+ (item.evidence[0].sourcePost.processingResult as Record<string,unknown>).acceptance={version:'iran-acceptance-v1',mode:'NORMAL',accepted:false};
+ assert.equal(eligibleAutomatic(item,a.policy),false);
+});

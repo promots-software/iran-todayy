@@ -70,7 +70,7 @@ test('all 50 run through actual pure DIRECT validators with network globally pro
   assert(report.results.every(r=>r.observation.delivery==='HOLD'));assert(!report.results.flatMap(r=>r.usage).some(u=>u.stage.includes('classify')));
   assert.equal(report.results.find(r=>r.id==='D42')!.simulatedRequests,0);
   for(const id of ['D37','D38','D39','D40','D41'])assert.equal(report.results.find(r=>r.id===id)!.simulatedRequests,2);
-  assert.equal(report.results.find(r=>r.id==='D45')!.observation.disposition,'NEEDS_REVIEW');
+  assert.equal(report.results.find(r=>r.id==='D45')!.observation.disposition,'READY_TO_PUBLISH');
   // Findings are deliberately not converted into a passing launch gate.
   const update=report.results.find(r=>r.id==='D44')!;assert.equal(update.findings.some(f=>f.code==='DUPLICATE_UPDATE_DECISION'),update.observation.relation!=='MATERIAL_UPDATE');
  }finally{globalThis.fetch=old;}

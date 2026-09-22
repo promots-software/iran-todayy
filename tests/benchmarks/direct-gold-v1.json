@@ -5048,11 +5048,11 @@
       "category": "I",
       "tags": [
         "unresolved-possessive",
-        "flagged-source-never-auto-eligible"
+        "source-profile-diagnostic-only"
       ],
       "sourceText": "قال المتحدث إن قواعدنا ستخضع للصيانة.",
       "sourceType": "SYNTHETIC",
-      "expectedDisposition": "NEEDS_REVIEW",
+      "expectedDisposition": "READY_TO_PUBLISH",
       "materialFacts": [
         {
           "id": "f1",
@@ -5133,7 +5133,7 @@
         "kind": "NEW_EVENT",
         "previousCaseId": null
       },
-      "notes": "Synthetic editorial fixture; not real news. Gold authored for engineering; owner/editor sign-off still required. This case uses a flagged synthetic source; review is mandatory independently of factual fidelity.",
+      "notes": "Synthetic editorial fixture; not real news. Preserved unresolved possessive and flagged source are non-blocking under iran-acceptance-v1; invented nationality remains forbidden. Gold authored for engineering; owner/editor sign-off still required.",
       "goldReviewStatus": "ENGINEERING_DRAFT_NOT_HUMAN_SIGNED_OFF",
       "replay": {
         "actors": [

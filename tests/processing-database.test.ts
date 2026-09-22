@@ -13,7 +13,7 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
   const db=new PrismaClient({datasourceUrl:url});const signal=new AbortController().signal;
   const tag=randomUUID().replaceAll("-","").slice(0,8);const sourceIds:string[]=[];
   const started=new Date();
-  const sport=fixture("sport","إعلان تجاري عن متجر في طهران","ar","إعلان تجاري عن متجر في طهران");sport.understanding.relevance="IRRELEVANT";sport.understanding.filterReason="ADVERTISING";
+  const sport=fixture("sport","إعلان تجاري عن متجر محلي في باريس","ar","إعلان تجاري عن متجر محلي في باريس");sport.understanding.relevance="IRRELEVANT";sport.understanding.filterReason="ADVERTISING";
   const uncovered=fixture("uncovered","ظهر مصطلح سياسي جديد في طهران","ar","ظهر مصطلح سياسي جديد في طهران");uncovered.understanding.uncoveredTerms=["مصطلح سياسي جديد"];
   const figures=fixture("figures","وردت أنباء عن 5 ضحايا في طهران","ar","وردت أنباء عن 5 ضحايا في طهران");figures.understanding.event.facts[0].kind="FIGURE";
   const records=[...scenarios,sport,uncovered,figures];const provider=fixtureProvider(records);
@@ -41,7 +41,7 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
     assert.equal(await db.canonicalEvent.count(),count);
     await assert.rejects(db.sourcePost.update({where:{id:original.id},data:{originalContent:"changed"}}));
     await incoming(a.id,"sport");assert.equal((await run()).status,"FILTERED");
-    await incoming(a.id,"uncovered");assert.equal((await run()).status,"NEEDS_REVIEW");
+    await incoming(a.id,"uncovered");const softPost=await run();assert.equal(softPost.status,"PENDING_APPROVAL");assert.match(JSON.stringify(softPost.processingResult),/UNCOVERED_TERM/);
     await db.source.update({where:{id:b.id},data:{editorialProfile:json({...official,authority:"NEWSPAPER"})}});
     await incoming(b.id,"figures");const figurePost=await run();assert.match(JSON.stringify(figurePost.processingResult),/SINGLE_UNOFFICIAL_FIGURE/);
     const news=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePost:{sourceId:a.id}}}}});

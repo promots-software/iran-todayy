@@ -65,7 +65,7 @@ test('local database dynamic switching, audit, normal scope, DIRECT failure wait
  const src=await saveSource(db,{platform:'TELEGRAM',handle:'directoffline',name:'offline'},'user:admin');assert.equal(src.processingMode,'NORMAL');
  const p=await ingest(db,src.id,{externalId:'1',url:src.url+'/1',content:source,publishedAt:new Date()});
  const normal=await claimJob(db,'normal');assert.ok(normal);
- const provider=new GeminiLanguageProvider('offline',async()=>{throw Error('NO_CALL_EXPECTED');});await processJob(db,normal,provider,signal());assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:p.id}})).error,'UNCERTAIN_SCOPE');
+ const provider={id:'offline-normal-selection',live:false,understand:async()=>({...adaptDirectExtraction(validateDirectExtraction(raw(),source),source),relevance:'IRRELEVANT'}),draft:async()=>{throw Error('FILTERED_NO_DRAFT');},compare:async()=>{throw Error('FILTERED_NO_MATCH');}};await processJob(db,normal,provider,signal());assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:p.id}})).status,'FILTERED');
  await changeSourceProcessingMode(db,src.id,'DIRECT','user:admin');
  const q=await ingest(db,src.id,{externalId:'2',url:src.url+'/2',content:source,publishedAt:new Date()});await ingest(db,src.id,{externalId:'2',url:src.url+'/2',content:source,publishedAt:new Date()});
  assert.equal(await db.processingJob.count({where:{sourcePostId:q.id}}),1);

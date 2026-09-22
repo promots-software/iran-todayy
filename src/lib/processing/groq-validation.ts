@@ -18,11 +18,18 @@ export function resolveContextEvidence(value:unknown,source:string,locationActor
     if(typeof o.excerpt==='string') {
       const excerpt=o.excerpt,rawContext=o.context;
       if(typeof rawContext!=='string'||!rawContext||!excerpt)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
-      const contextView=layoutProjection(rawContext).value;
+      let contextView=layoutProjection(rawContext).value;
       const sourceView=layoutProjection(source);
-      const base=sourceView.value.indexOf(contextView);
-      if(base<0||sourceView.value.lastIndexOf(contextView)!==base)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
+      let base=sourceView.value.indexOf(contextView);
       const excerptView=layoutProjection(excerpt).value;
+      // One deterministic context repair: a globally unique verbatim excerpt
+      // needs no model-selected context. Speaker scope is checked separately.
+      const unique=sourceView.value.indexOf(excerptView);
+      if(excerptView&&unique>=0&&sourceView.value.lastIndexOf(excerptView)===unique&&
+        (base<0||sourceView.value.lastIndexOf(contextView)!==base||!contextView.includes(excerptView))){
+        contextView=excerptView;base=unique;
+      }
+      if(base<0||sourceView.value.lastIndexOf(contextView)!==base)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');
       if(!contextView||!excerptView)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
       let relative=contextView.indexOf(excerptView);
       if(relative<0)throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');

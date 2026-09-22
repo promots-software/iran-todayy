@@ -66,7 +66,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   const sourceNumbers=new Set(digits(content).match(/\d+(?:[.,]\d+)*/g)??[]);
   if ((digits(joined).match(/\d+(?:[.,]\d+)*/g)??[]).some(n=>!sourceNumbers.has(n))) review.push(reason("UNSUPPORTED_OUTPUT","رقم في المسودة غير موجود في المصدر؛ التحويل يحتاج دليلاً"));
   // Quotes may be faithfully paraphrased; only output presented as literal is protected.
-  for (const q of literalQuotes(joined)) if (!content.includes(q.text)) review.push(reason("QUOTE_REVIEW", "اقتباس غير موجود حرفياً في المصدر"));
+  for (const q of literalQuotes(joined)) if (!content.includes(q.text)) review.push(reason("UNSUPPORTED_OUTPUT", "QUOTE_INTEGRITY_FAILURE"));
   const factIds = new Set(u.event.facts.map(f=>f.id));
   const used = new Set<string>();
   for (const s of draft.sentences) {

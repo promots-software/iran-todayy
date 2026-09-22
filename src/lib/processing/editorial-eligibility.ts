@@ -3,6 +3,7 @@ import {isProviderWait} from "./failure-policy";
 export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR';
 export const editorialLabels:Record<EditorialEligibility,string>={READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
 export const arabicReasons:Record<string,string>={
+ MATERIAL_EVIDENCE_UNRESOLVED:'تعذّر تثبيت موضع الدليل أو نسبة المعلومة بأمان بعد محاولة الإصلاح',
  SOURCE_TEXT_REQUIRED:'المنشور بلا نص؛ يلزم محتوى مكتوب قبل إعداد خبر للنشر',
  UNCERTAIN_SCOPE:'لم تثبت صلة جغرافية واضحة بنطاق التغطية',
  CLASSIFICATION_ENTITY_UNSUPPORTED:'التصنيف يتضمن جهة أو نطاقاً غير مثبت في الأدلة',
@@ -34,12 +35,19 @@ export const arabicReasons:Record<string,string>={
 };
 export const technicalExplanation='تعذّرت المعالجة لسبب تقني. تُستأنف المحاولات الآمنة حسب حالتها؛ النتائج غير المحسومة تتطلب فحصاً تقنياً قبل الإعادة';
 const operational=new Set(['SHADOW_MODE_REVIEW','AUTO_PUBLISH_DISABLED','REQUIRE_APPROVAL','MANUAL_PUBLICATION_REQUIRED']);
+const soft=new Set(['UNCERTAIN_SCOPE','AMBIGUOUS_EVIDENCE_CONTEXT','CONTEXT_REQUIRED','ARCHIVE_ONLY','UNVERIFIED_SOURCE','FLAGGED_SOURCE','SINGLE_UNOFFICIAL_FIGURE','UNCOVERED_TERM','UNKNOWN_NAME','FORMAT_REVIEW','QUOTE_REVIEW','EDITORIAL_ATTESTATION_REQUIRED']);
+export function softEditorialReason(r:ReasonInput){
+ if(r.code==='QUOTE_REVIEW'&&r.detail)return false;
+ // An unexamined media dependency is a factual evidence gap, not a style note.
+ if(r.code==='EDITORIAL_ATTESTATION_REQUIRED'&&r.detail?.startsWith('SOURCE_MEDIA_EVIDENCE_REVIEW_REQUIRED'))return false;
+ return soft.has(r.code);
+}
 export function isTechnicalFailure(code:string){
  if(isProviderWait(code)||code==='SOURCE_PROCESSING_MODE_CHANGED'||code==='SOURCE_DISABLED')return true;
  return /(?:SCHEMA|INVALID_JSON|INVALID_RESPONSE|INVALID_ID_CLASSIFICATION|TRANSPORT|HTTP_|UNAVAILABLE|REQUEST_LIMIT|INPUT_LIMIT|RATE_LIMIT|INTERRUPTED|TIMEOUT|LEASE_|STALE_CLAIM|AUTH_FAILED|API_KEY|PROCESSING_FAILED|REQUEST_REJECTED|REQUEST_TOO_LARGE|REFUSAL|^(?:GEMINI|GROQ|OPENAI)_INCOMPLETE$)/u.test(code);
 }
 export type ReasonInput={code:string;detail?:string};
-export function blockingEditorialReasons<T extends ReasonInput>(review:T[]){return review.filter(r=>!operational.has(r.code));}
+export function blockingEditorialReasons<T extends ReasonInput>(review:T[]){return review.filter(r=>!operational.has(r.code)&&!softEditorialReason(r));}
 export function reviewMessages(reasons:ReasonInput[]){
  const priority=(code:string)=>/UNSUPPORTED|NUMBER|DATE|QUOTE|FACT_OMISSION/u.test(code)?0:/SPEAKER|ATTRIBUTION|IDENTITY/u.test(code)?1:2;
  const messages=reasons.filter(r=>!operational.has(r.code)).sort((a,b)=>priority(a.code)-priority(b.code)).map(r=>{

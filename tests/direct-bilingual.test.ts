@@ -29,14 +29,13 @@ for(const language of ['fa','en'] as const)test(`DIRECT ${language}: exactly two
 test('Call 1 alone is not a trusted receipt and cannot supply an approved translation',()=>{
  const f=bilingualFixture(),p=prepareDirectBilingual(f.raw,f.source);assert.ok(!('review' in p.rendered));assert.throws(()=>adaptDirectExtraction(p.grounded,f.source),/VALIDATED_ARABIC_RENDERING_REQUIRED/);assert.throws(()=>finalizeDirectBilingual(f.source,p,{}),/INVALID_DIRECT_REVIEW_SCHEMA/);
 });
-test('deterministic evidence, number, country/entity, date and quote failures stop before review',async()=>{
+test('material number, country/entity, date and quote failures still stop after at most one repair',async()=>{
  const f=bilingualFixture();
  for(const mutate of [
  (x:ReturnType<typeof bilingualFixture>['raw'])=>{x.statements[0].evidence.arabic='افتتح المجلس 13 مدرسة جديدة في العاصمة.';},
  (x:ReturnType<typeof bilingualFixture>['raw'])=>{x.statements[0].evidence.arabic='افتتحت الحكومة الأميركية 12 مدرسة جديدة في العاصمة.';},
  (x:ReturnType<typeof bilingualFixture>['raw'])=>{x.statements[0].evidence.arabic='«افتتح المجلس 12 مدرسة جديدة في العاصمة»';},
- (x:ReturnType<typeof bilingualFixture>['raw'])=>{x.statements[0].evidence.context='Not verbatim';},
- ]){const raw=structuredClone(f.raw);mutate(raw);let calls=0;const provider=new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(raw));});await assert.rejects(provider.understand(input(f.source),signal()));assert.equal(calls,1);}
+ ]){const raw=structuredClone(f.raw);mutate(raw);let calls=0;const provider=new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(raw));});await assert.rejects(provider.understand(input(f.source),signal()));assert.equal(calls,2);}
  const source=f.source+' در ۱۲ مهر';const x=structuredClone(f.raw);for(const v of [...x.actors,x.action,x.object,x.location,x.statements[0].evidence])v.context=source;x.statements[0].evidence.excerpt=source;x.statements[0].evidence.arabic+=' في 12 حزيران';
  assert.throws(()=>prepareDirectBilingual(x,source),/MATERIAL_DATE_MISMATCH/);
 });

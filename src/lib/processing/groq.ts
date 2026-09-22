@@ -1,3 +1,4 @@
+import {withOneRepair,repairInstructions} from './automatic-repair';
 import {availableDraft,proposalDraft} from './available-draft';
 import {selectionBlocksDraft} from './direct-policy';
 import {publicationUnits,preparePublication,acceptPublication,publicationReviewInput,publicationReviewInstructions} from './direct-publication';
@@ -11,7 +12,7 @@ import {buildAtoms,atomSelectionSchema,renderSelection,selectionInstructions} fr
 import { readFileSync } from "node:fs";
 import { parseEnv } from "node:util";
 import { z } from "zod";
-import { ProcessingError, type LanguageProvider } from "./contracts";
+import { ProcessingError, type Understanding, type LanguageProvider } from "./contracts";
 import { schemas, tasks, type Stage } from "./openai";
 import { ruleSet } from "./rules";
 import { assertShadowMode } from "./shadow";
@@ -64,9 +65,13 @@ export class GroqLanguageProvider implements LanguageProvider {
     if (!apiKey) throw new ProcessingError("GROQ_API_KEY_REQUIRED");
   }
   async understand(input: Parameters<LanguageProvider["understand"]>[0], signal: AbortSignal) {
+    const selection:{relevance?:'POLITICAL_NEWS'|'IRRELEVANT'|'UNCERTAIN'}={};
+    return withOneRepair(()=>this.understandOnce(input,signal,selection),code=>this.understandOnce(input,signal,selection,code));
+  }
+  private async understandOnce(input: Parameters<LanguageProvider["understand"]>[0], signal: AbortSignal, selection:{relevance?:'POLITICAL_NEWS'|'IRRELEVANT'|'UNCERTAIN'}, repairCode?:string):Promise<Understanding> {
     // Publication time stays in engine metadata for temporal matching, never textual evidence.
     const { rules } = input;
-    const data = { content: input.content, profile: input.profile };
+    const data = { content: input.content, profile: input.profile, ...(repairCode?{repair:{code:repairCode,instructions:repairInstructions}}:{}) };
     const detectedLanguage=sourceLanguage(input.content);
     if(detectedLanguage === "unknown") throw new ProcessingError("SOURCE_LANGUAGE_UNCERTAIN");
     const direct=input.processingMode==='DIRECT';
@@ -90,7 +95,15 @@ export class GroqLanguageProvider implements LanguageProvider {
       } catch(error){if(error instanceof ProcessingError)error.availableDraft=proposalDraft(raw,error.code)??undefined;throw error;}
     }
     const raw=await this.request("understand", {...data,detectedLanguage}, rules, signal, "extract");
-    const extracted=validateMinimalExtraction(raw,input.content);
+    const parsed=minimalExtractionSchema.parse(raw);
+    // The first relevance decision survives repair; uncertainty is acceptance.
+    selection.relevance??=parsed.relevance==='IRRELEVANT'?'IRRELEVANT':'POLITICAL_NEWS';
+    if(selection.relevance==='IRRELEVANT')return {
+      language:detectedLanguage,relevance:'IRRELEVANT',filterReason:'UNRELATED',topic:'UNKNOWN',priority:'P4',rationale:'قرر فحص الصلة الأولي أن الخبر غير مرتبط بإيران',
+      sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false,names:[],uncoveredTerms:[],
+      event:{actors:[],action:null,object:null,location:null,eventTime:null,facts:[],summary:null},
+    };
+    const extracted=validateMinimalExtraction({...parsed,relevance:selection.relevance},input.content);
     let rendering:RenderingReceipt|undefined;
     if(detectedLanguage!=='ar'){
       const refs=classificationReferences(extracted).entries.filter(e=>e.role!=='event_time') as RenderingReference[];

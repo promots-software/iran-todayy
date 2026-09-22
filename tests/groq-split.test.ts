@@ -38,7 +38,7 @@ test('invalid or incomplete extraction never reaches classification',async()=>{
   const values=minimalParts(sample.understanding);let calls=0;
   if(mode==='fabricated')values[0].actors[0].excerpt='invented nationality';else values[0].statements=[];
   const provider=new GroqLanguageProvider('mock',async()=>{calls++;return response(values[0]);},()=>{});
-  await assert.rejects(provider.understand(input,new AbortController().signal),mode==='fabricated'?/AMBIGUOUS_EVIDENCE_CONTEXT/:/INCOMPLETE_EXTRACTION/);assert.equal(calls,1);
+  await assert.rejects(provider.understand(input,new AbortController().signal),mode==='fabricated'?/MATERIAL_EVIDENCE_UNRESOLVED/:/INCOMPLETE_EXTRACTION/);assert.equal(calls,2);
  }
 });
 test('classification cannot replace evidence, omit statements, change IDs, or infer absent anchors',()=>{

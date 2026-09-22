@@ -1,7 +1,7 @@
 import {Prisma} from '@prisma/client';
-import {validateUnderstanding,sourceProfileSchema} from '../processing/contracts';
+import {validateUnderstanding} from '../processing/contracts';
 import {assertDirectFullCoverage} from '../processing/direct-bilingual';
-import {editorialScope} from '../processing/editorial-scope';
+
 import type {AutoPolicy} from './auto-policy';
 
 export const publicationCandidateInclude={humanDraft:true,publication:true,eventRevision:true,evidence:{include:{sourcePost:{include:{source:true,jobs:true,matches:true,humanDraft:true}}}}} satisfies Prisma.NewsItemInclude;
@@ -19,19 +19,25 @@ export function publicationContributors(item:PublicationCandidate){
 }
 
 /** Processing receipts are revalidated here, not used to select AUTO versus manual.
- * NORMAL scope and DIRECT full-source coverage remain distinct processing contracts. */
+ * Acceptance is authoritative; factual receipts and DIRECT full-source coverage are rechecked. */
 export function publicationReady(item:PublicationCandidate,frozen=false){
  const mode=record(item.validationResult).processingMode;
  if(!['NORMAL','DIRECT'].includes(String(mode))||item.status!==(frozen?'APPROVED':'PENDING_APPROVAL')||item.validationStatus!=='PASSED'||item.error||item.rejectionReason||item.needsReviewReasons.length||item.humanDraft||(!frozen&&item.publication)||!clean(item.validationResult,mode))return false;
  const contributors=publicationContributors(item);if(!contributors.length)return false;
  for(const post of contributors){
-  const result=record(post.processingResult),profile=sourceProfileSchema.safeParse(post.source.editorialProfile);
-  if(post.source.processingMode!==mode||!post.source.enabled||post.source.deletedAt||post.source.platform!=='TELEGRAM'||!profile.success||!profile.data.verified||profile.data.flagged||post.humanDraft||post.status!=='PENDING_APPROVAL'||post.error||post.rejectionReason||!clean(result,mode))return false;
+  const result=record(post.processingResult);
+  if(post.source.processingMode!==mode||!post.source.enabled||post.source.deletedAt||post.source.platform!=='TELEGRAM'||post.humanDraft||post.status!=='PENDING_APPROVAL'||post.error||post.rejectionReason||!clean(result,mode))return false;
   if(!post.jobs.length||post.jobs.some(j=>j.status!=='COMPLETED')||result.eventRevisionId!==item.eventRevisionId||!['NEW_EVENT','MATERIAL_UPDATE'].includes(String(result.classification))||!post.matches.some(m=>m.eventRevisionId===item.eventRevisionId&&['NEW_EVENT','MATERIAL_UPDATE'].includes(m.classification))||post.matches.some(m=>['UNCERTAIN','UNCERTAIN_MATCH'].includes(m.classification)))return false;
   try{
    const u=validateUnderstanding(result.extraction,post.originalContent);
    if(mode==='DIRECT')assertDirectFullCoverage(post.originalContent,u);
-   else if(post.relevance!=='POLITICAL_NEWS'||editorialScope(post.originalContent).status!=='IN_SCOPE'||u.relevance!=='POLITICAL_NEWS'||u.filterReason!=='NONE'||u.priority==='P4')return false;
+   else {
+    const acceptance=record(result.acceptance);
+    // Legacy READY receipts keep their original decision; never reconsider
+    // geography, source identity, category, priority or editorial preference.
+    if(Object.keys(acceptance).length){if(acceptance.version!=='iran-acceptance-v1'||acceptance.mode!==mode||acceptance.accepted!==true)return false;}
+    else if(u.relevance==='IRRELEVANT')return false;
+   }
   }catch{return false;}
  }
  return true;
