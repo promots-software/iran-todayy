@@ -16,6 +16,3 @@ for(let i=0;i<files.length;i++){
  if(run.status)process.exitCode=1;
 }
 fs.writeFileSync('.test-tools/regressions/results.json',JSON.stringify(results,null,2));
-
-
-
