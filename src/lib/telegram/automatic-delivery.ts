@@ -26,7 +26,7 @@ export async function automaticDeliveryCycle(db:PrismaClient,env:Record<string,s
   await lockEditorialPublication(tx);
   const current=await tx.appSettings.findUniqueOrThrow({where:{id:1}});if(current.publishingPaused)return null;
   const p=requireAutoPolicy(current.telegramAutoPolicy,env);if(p.id!==policy.id)return null;
-  const owned=await tx.publication.findMany({where:{automaticPolicyId:p.id},orderBy:{createdAt:'asc'}});
+  const owned=await tx.publication.findMany({where:{automaticPolicyId:p.id},select:{id:true,status:true,newsItemId:true},orderBy:{createdAt:'asc'}});
   if(p.state==='CANARY'&&owned.some(x=>x.status==='SENT'))return null;
   if(owned.some(x=>['SENDING','UNKNOWN','FAILED'].includes(x.status)))return null;
   for(const pending of owned.filter(x=>x.status==='PENDING'&&(!candidateId||x.newsItemId===candidateId))){

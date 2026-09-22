@@ -111,7 +111,7 @@ async function exactDirectDuplicate(client:PrismaClient,job:ClaimedJob,processin
 }
 
 async function eventSnapshot(db:Pick<Prisma.TransactionClient,'canonicalEvent'>){
- const events=await db.canonicalEvent.findMany({include:{revisions:{orderBy:{revision:'desc'},take:1,include:{newsItem:{include:{publication:true}},matches:{include:{sourcePost:true}}}}}});
+ const events=await db.canonicalEvent.findMany({select:{id:true,createdAt:true,revisions:{orderBy:{revision:'desc'},take:1,select:{id:true,revision:true,facts:true,newsItem:{select:{publication:{select:{status:true}}}},matches:{select:{sourcePost:{select:{sourcePublishedAt:true}}}}}}}});
  const candidates:Candidate[]=[];let legacy=0;
  for(const e of events){
   const revision=e.revisions[0],parsed=eventSchema.safeParse(revision?.facts);

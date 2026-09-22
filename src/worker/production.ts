@@ -1,4 +1,5 @@
 import {processingLanes} from './newsroom-scheduler';
+import {idleClaimMs} from './database-cadence';
 import {randomUUID} from 'node:crypto';
 import {createServer} from 'node:http';
 import {PrismaClient} from '@prisma/client';
@@ -49,7 +50,7 @@ async function main() {
   watchdog.unref();
   async function safety() {
     assertWorkerSafety();
-    assertApprovalMode((await db.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
+    assertApprovalMode((await db.appSettings.findUniqueOrThrow({where:{id:1},select:{publishingMode:true}})).publishingMode);
   }
   let failures=0;
   log('WORKER_STARTING',{provider:'gemini-3.1-flash-lite',shadowMode:true,requireApproval:true,autoPublish:false});
@@ -97,7 +98,7 @@ async function main() {
             requireLease();await safety();
             if([...processing.values()].some(start=>Date.now()-start>210000))throw new ProcessingError('WORKER_JOB_DEADLINE');
             const telegramReady=poller!.ready;
-            const processingPaused=(await db.appSettings.findUnique({where:{id:1}}))?.processingPaused??false;
+            const processingPaused=(await db.appSettings.findUnique({where:{id:1},select:{processingPaused:true}}))?.processingPaused??false;
             await renewLease(db,runId,processing.size?'BUSY':telegramReady?'IDLE':'ERROR',{
               shadowMode:true,requireApproval:true,autoPublish:false,externalPublishingEnabled:false,
               telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:!processingPaused,pollErrors,provider:'gemini-3.1-flash-lite',
@@ -147,7 +148,7 @@ async function main() {
               // Local checks and checkpoint replay never wait for AI capacity.
               // Only an actual uncached network stage obtains provider capacity.
               const job=await claimJob(db,runId,new Date(),true,[],true,costWaitRecheckBefore(processingCapacity));
-              if(!job){await pause(1000,signal);continue;}
+              if(!job){await pause(idleClaimMs,signal);continue;}
               processing.set(lane,Date.now());
               await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'Bounded two-lane processing; durable fairness and per-request cost protection'}});
               const provider=checkpointProvider(new GeminiLanguageProvider(config.geminiKey,guardedTransport(db,job.sourcePostId,async(url,init)=>{

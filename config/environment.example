@@ -1,6 +1,10 @@
 # Copy this template to .env and supply values locally. Never commit .env.
 # Use a percent-encoded PostgreSQL connection URL for your own database.
 DATABASE_URL=
+# Direct or session-pooler URL for scripts/prisma-database.mjs (Prisma migrations).
+# Supabase runtime: transaction pooler 6543 with pgbouncer=true and sslmode=require.
+# Supabase CLI: session pooler 5432, or direct 5432 where IPv6 is available.
+DIRECT_URL=
 # Neon direct URL for db:neon:migrate/status; application uses pooled DATABASE_URL.
 DATABASE_URL_UNPOOLED=
 # Written locally by Neon CLI. Neon Auth is provisioned, not wired into the dashboard.
