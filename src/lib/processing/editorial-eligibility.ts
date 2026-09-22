@@ -3,6 +3,10 @@ import {isProviderWait} from "./failure-policy";
 export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR';
 export const editorialLabels:Record<EditorialEligibility,string>={READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
 export const arabicReasons:Record<string,string>={
+ SOURCE_TEXT_REQUIRED:'المنشور بلا نص؛ يلزم محتوى مكتوب قبل إعداد خبر للنشر',
+ UNCERTAIN_SCOPE:'لم تثبت صلة جغرافية واضحة بنطاق التغطية',
+ CLASSIFICATION_ENTITY_UNSUPPORTED:'التصنيف يتضمن جهة أو نطاقاً غير مثبت في الأدلة',
+ ARABIC_RENDERING_ENTITY_UNSUPPORTED:'الصياغة العربية تضيف جهة أو دولة غير مثبتة في الدليل',
  SPEAKER_ATTRIBUTION_MISMATCH:'نسبة التصريح إلى المتحدث غير مؤكدة',
  SPEAKER_ATTRIBUTION_REQUIRED:'تعذّر تحديد صاحب التصريح بشكل موثوق',
  SPEAKER_TRANSLATION_UNVERIFIED:'تعريب هوية المتحدث غير مثبت بالأدلة',

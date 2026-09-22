@@ -4,15 +4,18 @@ import {ProcessingError} from './contracts';
 import {validateNoCountryAddition} from './classification-grounding';
 import {requireArabic} from './groq-validation';
 import {renderingChecks,renderingEntrySchema,renderingReceiptSchema,type RenderingReceipt} from './rendering-contract';
-import {persianMonths,validateMonthRendering} from './newsroom-format';
+import {persianMonths,validateMonthRendering,explicitPersianCalendarDate} from './newsroom-format';
 
 export type RenderingReference={id:string;role:string;evidence:{excerpt:string;start:number;end:number;sourcePostId?:string}};
 const sourceHash=(source:string)=>createHash('sha256').update(source).digest('hex');
 const exactIds=(actual:string[],expected:string[])=>actual.length===expected.length&&new Set(actual).size===expected.length&&expected.every(id=>actual.includes(id));
 const digits=(text:string)=>(text.replace(/[٠-٩۰-۹]/gu,c=>String('٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).match(/\d+(?:[.,]\d+)*/g)??[]).sort();
 function validateEntry(ref:RenderingReference,arabic:string){
- requireArabic(arabic);validateNoCountryAddition(arabic,[ref.evidence.excerpt]);
+ requireArabic(arabic);
+ // Calendar metadata may not introduce a factual country/entity relationship.
  validateMonthRendering(ref.evidence.excerpt,arabic);
+ const entityText=explicitPersianCalendarDate(ref.evidence.excerpt)?arabic.replace('بالتقويم الإيراني',''):arabic;
+ try{validateNoCountryAddition(entityText,[ref.evidence.excerpt]);}catch(error){if(error instanceof ProcessingError&&error.code==='CLASSIFICATION_ENTITY_UNSUPPORTED')throw new ProcessingError('ARABIC_RENDERING_ENTITY_UNSUPPORTED');throw error;}
  if(JSON.stringify(digits(arabic))!==JSON.stringify(digits(ref.evidence.excerpt)))throw new ProcessingError('ARABIC_RENDERING_NUMBER_MISMATCH');
  if(!/[«»“”"]/.test(ref.evidence.excerpt)&&/[«»“”"]/.test(arabic))throw new ProcessingError('ARABIC_RENDERING_QUOTE_ADDED');
 }
@@ -27,7 +30,7 @@ export function renderingReviewSchemaFor(refs:RenderingReference[]){
   checks:z.object(Object.fromEntries(renderingChecks.map(k=>[k,z.boolean()])) as Record<typeof renderingChecks[number],z.ZodBoolean>).strict(),issues:z.array(z.string().min(1).max(20000))}).strict()).length(ids.length)}).strict();
 }
 export const renderingInstructions='Render the grounded meaning of each immutable source reference in concise, natural professional Modern Standard Arabic; avoid mechanical source syntax. Return only id and arabic. Preserve the exact factual scope, subject, predicate, negation, modality, quantities, names, titles, attribution, pronouns, possessives and unresolved relationships. Keep every number as digits with the same value. Do not omit material meaning, combine references, add geography, nationality, identity, role, affiliation, ownership, motives, background facts or quotation marks. IDs and evidence are immutable. Every supplied ID must appear exactly once. Persian month names use these client labels: '+JSON.stringify(persianMonths)+'. This naming convention is NOT a Gregorian date conversion. Preserve numeric dates in their original calendar and explicitly label them بالتقويم الإيراني; never invent Gregorian dates.';
-export const renderingReviewInstructions='Independently compare each Arabic rendering only with its matching immutable source excerpt. Return every ID exactly once. SUPPORTED requires all checks true and no issues: identical factual scope; no added entity or relationship; names/titles and numbers preserved; attribution, negation and modality preserved; no fabricated literal quote. Use UNSUPPORTED for a contradiction/addition/omission and UNCERTAIN whenever semantic equivalence cannot be established. Do not repair text, translate, use external facts or infer from the source account.';
+export const renderingReviewInstructions='Independently compare each Arabic rendering only with its matching immutable source excerpt. Return every ID exactly once. SUPPORTED requires all checks true and no issues: identical factual scope; no added entity or relationship; names/titles and numbers preserved; attribution, negation and modality preserved; no fabricated literal quote. Use UNSUPPORTED for a contradiction/addition/omission and UNCERTAIN whenever semantic equivalence cannot be established. Do not repair text, translate, use external facts or infer from the source account. Apply the supplied editorial Persian-month naming convention: '+JSON.stringify(persianMonths)+'. The optional Persian suffix ماه means month. A numeric date keeps its original numeric values and must include بالتقويم الإيراني. This is a month-label convention, never a Gregorian date conversion or factual country claim; reject changed numbers, missing calendar qualifiers, or claimed Gregorian equivalence.';
 
 export function renderingInput(refs:RenderingReference[]){return {references:refs.map(r=>({id:r.id,role:r.role,source:r.evidence.excerpt}))};}
 export function renderingReviewInput(refs:RenderingReference[],rendered:unknown){return {...renderingInput(refs),rendered};}

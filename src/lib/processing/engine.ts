@@ -1,3 +1,4 @@
+import {completeEventStructure} from './impersonal-event';
 import {availableDraft,type AvailableDraft,reviewPrefill} from './available-draft';
 import {editoriallyFiltered,selectionBlocksDraft} from './direct-policy';
 import {IRAN_NOW_STYLE_PROFILE_V1} from './iran-now-style';
@@ -165,7 +166,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const source=await client.source.findUniqueOrThrow({where:{id:post.sourceId}});
       if (source.platform !== "TELEGRAM" || !source.enabled || source.deletedAt) throw new ProcessingError("LIVE_SOURCE_DISABLED");
     }
-    if(processingMode==='DIRECT'&&!post.originalContent.trim())throw new ProcessingError('SOURCE_TEXT_REQUIRED');
+    if(!post.originalContent.trim())throw new ProcessingError('SOURCE_TEXT_REQUIRED');
     if(processingMode==='DIRECT') {
       const duplicate=await exactDirectDuplicate(client,job,processingMode);
       if(duplicate)return {postId:post.id,filtered:false};
@@ -200,7 +201,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     const snapshot=filter?null:await eventSnapshot(client);
     const preparedMatch=snapshot?await matchEvent(u.event,post.sourcePublishedAt,snapshot.candidates,provider,signal,{source:post.originalContent,understanding:u}):null;
     if(snapshot?.legacy&&preparedMatch?.classification==='NEW_EVENT'){preparedMatch.classification='UNCERTAIN_MATCH';preparedMatch.rationale='توجد أحداث قديمة بلا استخراج منظم؛ يلزم فحصها قبل إنشاء حدث جديد';preparedMatch.evidence={legacyEvents:snapshot.legacy};}
-    const skipDraft=provider.draftOnlyAccepted&&(selectionBlocksDraft(u,processingMode)||!u.event.action||!u.event.actors.length||!u.event.facts.length||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
+    const skipDraft=provider.draftOnlyAccepted&&(selectionBlocksDraft(u,processingMode)||!completeEventStructure(u,post.originalContent,processingMode)||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
     const preparedDraft=!filter&&!skipDraft?await provider.draft({...processingMode==='DIRECT'?{processingMode:'DIRECT' as const}:{},content:post.originalContent,understanding:u,rules:ruleSet},signal):null;
     proposal=availableDraft(preparedDraft,'REVIEW_REQUIRED');
     signal.throwIfAborted();
@@ -229,11 +230,11 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
         if(!snapshot||!preparedMatch||(await eventSnapshot(tx)).key!==snapshot.key)throw new ProcessingError('MATCH_SNAPSHOT_CHANGED',true,undefined,1000);
         const match=preparedMatch;
         // Groq's larger model is reserved for accepted new/material stories, never duplicate or unresolved events.
-        if (provider.draftOnlyAccepted && (selectionBlocksDraft(u,processingMode) || !u.event.action || !u.event.actors.length || !u.event.facts.length || !["NEW_EVENT","MATERIAL_UPDATE"].includes(match.classification))) {
+        if (provider.draftOnlyAccepted && (selectionBlocksDraft(u,processingMode) || !completeEventStructure(u,post.originalContent,processingMode) || !["NEW_EVENT","MATERIAL_UPDATE"].includes(match.classification))) {
           const status = match.classification === "DUPLICATE" ? "DUPLICATE" : "NEEDS_REVIEW";
           const review = initialReview(u,sourceProfile,post.originalContent);
           if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
-          if (!u.event.action || !u.event.actors.length || !u.event.facts.length) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
+          if (!completeEventStructure(u,post.originalContent,processingMode)) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
           const links = match.classification === "UNCERTAIN_MATCH" ? match.candidates.map(c=>c.revisionId) : match.candidate ? [match.candidate.revisionId] : [];
           for (const revisionId of links) await tx.eventMatch.upsert({where:{sourcePostId_eventRevisionId:{sourcePostId:post.id,eventRevisionId:revisionId}},update:{},create:{sourcePostId:post.id,eventRevisionId:revisionId,classification:match.classification,rationale:match.rationale,evidence:json(match.evidence),matcherVersion:"layered-v1"}});
           if (status === "DUPLICATE" && match.candidate) {
@@ -249,7 +250,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
         const rawDraft=preparedDraft;
         const draft=provider.constrainedRewrite?finalizeConstrainedDraft(rawDraft,post.originalContent,u,sourceProfile):editDraft(rawDraft,post.originalContent,u,sourceProfile);
         const review=draft!.review.filter(r=>processingMode!=='DIRECT'||r.code!=='ARCHIVE_ONLY');
-        if (!u.event.action || !u.event.actors.length || !u.event.facts.length) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
+        if (!completeEventStructure(u,post.originalContent,processingMode)) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
         if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
         if (match.candidates.some(c=>Array.isArray((c.evidence.semantic as {conflictingFactIds?:string[]})?.conflictingFactIds) && ((c.evidence.semantic as {conflictingFactIds:string[]}).conflictingFactIds.length>0))) review.push(reason("FIGURE_CONFLICT"));
         let revisionId=match.candidate?.revisionId;

@@ -1,0 +1,209 @@
+[
+  {
+    "source": "📸 شب صدای سینمای ایران\n\n🔹شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد.\n\n🔹اصغر فرهادی کارگردان نیز در این مراسم حضور داشت.\n\n#گزارش_تصویری را اینجا ببینید.\n\n@isnamediaa",
+    "mode": "NORMAL",
+    "language": "fa",
+    "error": "CLASSIFICATION_ENTITY_UNSUPPORTED",
+    "availableDraft": {
+      "body": "كما حضر المخرج أصغر فرهادي هذه المراسم.",
+      "title": "أقيمت أمسية مهندسي الصوت ومصممي الصوت في 30 أيلول بالتقويم الإيراني بحضور مجموعة من السينمائيين والفنانين في بيت السينما.",
+      "origin": "MODEL_PROPOSAL",
+      "reason": "CLASSIFICATION_ENTITY_UNSUPPORTED",
+      "version": "available-draft-v1",
+      "validated": false
+    },
+    "responses": [
+      {
+        "relevance": "POLITICAL_NEWS",
+        "actors": [
+          {
+            "excerpt": "اصغر فرهادی",
+            "context": "🔹اصغر فرهادی کارگردان نیز در این مراسم حضور داشت."
+          }
+        ],
+        "action": {
+          "excerpt": "برگزار شد",
+          "context": "🔹شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد."
+        },
+        "object": {
+          "excerpt": "شب صدابرداران و صداگذاران",
+          "context": "🔹شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد."
+        },
+        "location": {
+          "excerpt": "خانه سینما",
+          "context": "🔹شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد."
+        },
+        "event_time": {
+          "excerpt": "۳۰ شهریورماه",
+          "context": "🔹شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد."
+        },
+        "statements": [
+          {
+            "evidence": {
+              "excerpt": "شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد.",
+              "context": "🔹شب صدابرداران و صداگذاران ۳۰ شهریورماه با حضور جمعی از سینماگران و هنرمندان در خانه سینما برگزار شد."
+            },
+            "speaker": null
+          },
+          {
+            "evidence": {
+              "excerpt": "اصغر فرهادی کارگردان نیز در این مراسم حضور داشت.",
+              "context": "🔹اصغر فرهادی کارگردان نیز در این مراسم حضور داشت."
+            },
+            "speaker": null
+          }
+        ]
+      },
+      {
+        "entries": [
+          {
+            "id": "actor:1",
+            "arabic": "أصغر فرهادي"
+          },
+          {
+            "id": "action",
+            "arabic": "أقيمت"
+          },
+          {
+            "id": "object",
+            "arabic": "أمسية مهندسي الصوت ومصممي الصوت"
+          },
+          {
+            "id": "location",
+            "arabic": "بيت السينما"
+          },
+          {
+            "id": "f1",
+            "arabic": "أقيمت أمسية مهندسي الصوت ومصممي الصوت في 30 أيلول بالتقويم الإيراني بحضور مجموعة من السينمائيين والفنانين في بيت السينما."
+          },
+          {
+            "id": "f2",
+            "arabic": "كما حضر المخرج أصغر فرهادي هذه المراسم."
+          }
+        ]
+      },
+      {
+        "review": [
+          {
+            "id": "actor:1",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          },
+          {
+            "id": "action",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          },
+          {
+            "id": "object",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          },
+          {
+            "id": "location",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          },
+          {
+            "id": "f1",
+            "verdict": "UNSUPPORTED",
+            "checks": {
+              "scope": false,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": false,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": [
+              "FORMAT_REVIEW"
+            ]
+          },
+          {
+            "id": "f2",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "source": "🔴 عاجل\n\n⭕️ سماع دوي انفجارات شرق مدينة غزة\n\n🆔 @alalamarabic",
+    "mode": "NORMAL",
+    "language": "ar",
+    "error": "INCOMPLETE_EXTRACTION",
+    "availableDraft": null,
+    "responses": [
+      {
+        "relevance": "POLITICAL_NEWS",
+        "actors": [],
+        "action": {
+          "excerpt": "سماع دوي انفجارات",
+          "context": "⭕️ سماع دوي انفجارات شرق مدينة غزة"
+        },
+        "object": null,
+        "location": {
+          "excerpt": "شرق مدينة غزة",
+          "context": "⭕️ سماع دوي انفجارات شرق مدينة غزة"
+        },
+        "event_time": null,
+        "statements": [
+          {
+            "evidence": {
+              "excerpt": "سماع دوي انفجارات شرق مدينة غزة",
+              "context": "⭕️ سماع دوي انفجارات شرق مدينة غزة"
+            },
+            "speaker": null
+          }
+        ]
+      }
+    ]
+  }
+]

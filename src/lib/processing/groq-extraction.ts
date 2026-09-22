@@ -1,3 +1,4 @@
+import {completeImpersonalReport} from './impersonal-event';
 import { z } from 'zod';
 import {validateSpeakerEvidence} from './speaker-evidence';
 import { checkEvidence, evidenceSchema, ProcessingError, understandingSchema, validateUnderstanding, type Understanding } from './contracts';
@@ -41,8 +42,8 @@ export function validateMinimalExtraction(raw:unknown,source:string){
   }
 }
 export type GroundedExtraction=ReturnType<typeof validateMinimalExtraction>;
-export function requireCompleteExtraction(x:GroundedExtraction){
-  if(x.relevance!=='IRRELEVANT' && (x.relevance==='UNCERTAIN'||!x.actors.length||!x.action||!x.statements.length))throw new ProcessingError('INCOMPLETE_EXTRACTION');
+export function requireCompleteExtraction(x:GroundedExtraction,source?:string){
+  if(x.relevance!=='IRRELEVANT' && (x.relevance==='UNCERTAIN'||(!x.actors.length&&!completeImpersonalReport(source,x))||!x.action||!x.statements.length))throw new ProcessingError('INCOMPLETE_EXTRACTION');
 }
 // Semantic keys and Arabic translations are downstream classification, not evidence.
 const label=z.object({key:text,arabic:text,nameKind:z.enum(['person','place','institution']).nullable()}).strict();
@@ -68,7 +69,7 @@ export function classificationSchemaFor(x:GroundedExtraction){
   });
 }
 export function validateGroundedExtraction(x:GroundedExtraction,source:string){
-  requireCompleteExtraction(x);
+  requireCompleteExtraction(x,source);
   for(const e of [...x.actors,x.action,x.object,x.location,x.event_time,...x.statements.map(s=>s.evidence),...x.statements.map(s=>s.speaker)])if(e)checkEvidence(source,e);
   for(const s of x.statements)if(s.speaker)validateSpeakerEvidence(source,s.evidence,s.speaker);
 }
