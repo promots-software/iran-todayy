@@ -145,6 +145,11 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   await tx.publicationAttempt.create({data:{publicationId:id,attempt:1}});
   await tx.auditLog.create({data:{action:'PUBLICATION_SEND_STARTED',actor:manual?.actor,entityType:'Publication',entityId:id,message:'Durable single-send claim recorded'}});
   return p;
+ },{timeout:30000}).catch((error:unknown)=>{
+  // Never log raw database errors: they may contain connection or content data.
+  const code=error&&typeof error==='object'&&'code' in error?error.code:undefined;
+  console.error(JSON.stringify({event:'PUBLICATION_CLAIM_FAILED',publicationId:id,phase:'BEFORE_TRANSPORT',code:typeof code==='string'&&/^P\d{4}$/.test(code)?code:'CLAIM_REJECTED'}));
+  throw error;
  });
  if(!intent)return {status:'NOT_SENT_ALREADY_CLAIMED'};
  const outcome=await sendTelegramOnce(config,intent.contentSnapshot,transport,intent.telegramFormatSnapshot);
