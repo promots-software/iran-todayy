@@ -38,3 +38,11 @@ test('DB control is audited, role-fenced, idempotent and preserves scope; OFF re
   assert.equal(await db.publication.count(),0);
  }finally{await db.$disconnect();}
 });
+
+ test('saved ACTIVE policy remains pending until publisher acknowledges, then OFF similarly settles',()=>{
+ const old={...heartbeat(),metadata:{...metadata,policyState:'CLOSED'}};
+ const pending=automaticControlState(policy,false,old);assert.equal(pending.enabled,false);assert.equal(pending.reason,'AWAITING_PUBLISHER');
+ assert.equal(automaticControlState(policy,false,heartbeat()).enabled,true);
+ const closed={...policy,state:'CLOSED',reason:'OPERATOR_DISABLED'};assert.equal(automaticControlState(closed,false,heartbeat()).reason,'AWAITING_PUBLISHER');
+ const settled=automaticControlState(closed,false,old);assert.equal(settled.enabled,false);assert.equal(settled.observed,true);assert.equal(settled.reason,'DISABLED');
+ });
