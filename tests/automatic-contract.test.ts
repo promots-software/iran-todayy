@@ -1,3 +1,5 @@
+import {reconcileSourceAuthorization} from '../src/lib/telegram/source-authorization';
+import {changeSource} from '../src/lib/source-service';
 import test,{beforeEach,after} from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -32,6 +34,8 @@ async function make(mode:'NORMAL'|'DIRECT',options:{initialMode?:'NORMAL'|'DIREC
  if(options.city){for(const a of [f.understanding.event.object!,f.understanding.event.location!,f.understanding.names[1]]){a.arabic=city;if('key' in a)a.key='city:'+city;}f.understanding.event.facts[0].key='visit:'+city;}
  const raw={actors:[e('عباس عراقجي')],action:e('يزور'),object:null,location:e(city),event_time:null,statements:[{evidence:e(text),speaker:null,kind:'FACT',material:false}],safety:{filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false},coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text,factIds:['f1']},body:[]}};
  const provider=mode==='DIRECT'?new GeminiLanguageProvider('offline',async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(options.failure?{...raw,action:e('اختلق معلومة')}:raw)}]}}]})):{id:'fixture',live:false,understand:async(input:{processingMode?:string})=>{assert.equal(input.processingMode,undefined);if(options.failure)throw new ProcessingError('INVALID_EVIDENCE');return f.understanding;},draft:async()=>f.draft,compare:async()=>({relation:'DIFFERENT' as const,rationale:'حدث مختلف',newFactIds:[],conflictingFactIds:[]})};
+ // Distinct-city fixture requires the comparison contract, not another extraction response.
+ if(mode==='DIRECT'&&options.city)provider.compare=async()=>({relation:'DIFFERENT' as const,rationale:'حدث مختلف',newFactIds:[],conflictingFactIds:[]});
  await processJob(db,job,provider,new AbortController().signal);
  const item=await db.newsItem.findFirst({where:{evidence:{some:{sourcePostId:post.id}}},include});
  const stored=await db.sourcePost.findUniqueOrThrow({where:{id:post.id}});if(!item&&!options.failure&&stored.status!=='DUPLICATE')throw Error('FIXTURE_PROCESSING_FAILED: '+stored.status+' '+stored.error+' '+JSON.stringify(stored.processingResult));
@@ -64,3 +68,20 @@ test('editorial readiness never depends on other process delivery flags',()=>{fo
 for(const mode of ['NORMAL','DIRECT'] as const)test(mode+' AUTO OFF duplicate does not create publication',async()=>{const a=await make(mode);await make(mode,{sourceId:a.source.id});await automaticDeliveryCycle(db,{...env,AUTO_PUBLISH:'false'},transport);assert.equal(await db.sourcePost.count({where:{status:'DUPLICATE'}}),1);assert.equal(await db.publication.count(),0);assert.equal(sends,0);});
 test('simultaneous distinct eligible stories each get one durable delivery',async()=>{const a=await make('NORMAL'),b=await make('NORMAL',{city:'شيراز'});assert(a.item);assert(b.item);assert.notEqual(a.item.eventRevisionId,b.item.eventRevisionId);await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...a.policy,sourceIds:[a.source.id,b.source.id]}}});await Promise.allSettled([automaticDeliveryCycle(db,env,transport),automaticDeliveryCycle(db,env,transport)]);await automaticDeliveryCycle(db,env,transport);await sent(a.item.id);await sent(b.item.id);assert.equal(sends,2);});
 test('a factual failure introduced after freeze is blocked at send claim',async()=>{const a=await make('NORMAL');assert(a.item);const p=await db.$transaction(async tx=>{const pub=await freezeValidatedPublication(tx,{newsItemId:a.item!.id,digest:approvalDigest(a.item!),resolutions:[]},'offline',env,'TELEGRAM',true);return tx.publication.update({where:{id:pub.id},data:{automaticPolicyId:a.policy.id}});});await db.sourcePost.update({where:{id:a.post.id},data:{error:'INVALID_EVIDENCE'}});await assert.rejects(publishOne(db,p.id,env,transport),/AUTOMATIC_AUTHORIZATION_CHANGED/);assert.equal(sends,0);assert.equal(await db.publicationAttempt.count(),0);});
+
+for(const mode of ['NORMAL','DIRECT'] as const)test(mode+' prospective activation blocks historical READY, permits new facts, and rejects backfilled source timestamps',async()=>{
+ const a=await make(mode);assert(a.item);
+ const boundary=new Date(Date.now()+1).toISOString();
+ const policy=reconcileSourceAuthorization({...a.policy,sourceIds:[]},[a.source.id],boundary);
+ await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:policy}});
+ await automaticDeliveryCycle(db,env,transport);assert.equal(sends,0);assert.equal(await db.publication.count(),0);
+ const newItem=structuredClone(a.item);newItem.createdAt=new Date(boundary);for(const e of newItem.evidence){e.sourcePost.ingestedAt=new Date(boundary);e.sourcePost.sourcePublishedAt=new Date(boundary);}
+ assert.equal(eligibleAutomatic(newItem,policy),true);
+ newItem.evidence[0].sourcePost.sourcePublishedAt=new Date(new Date(boundary).getTime()-1);assert.equal(eligibleAutomatic(newItem,policy),false);
+ const fresh=await make(mode,{sourceId:a.source.id,city:'شيراز'});assert(fresh.item);await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:policy}});await automaticDeliveryCycle(db,env,transport);assert.equal(sends,1);await sent(fresh.item.id);assert.equal((await db.newsItem.findUniqueOrThrow({where:{id:a.item.id}})).status,'PENDING_APPROVAL');
+});
+test('source disabled after freeze cannot claim; re-enable cannot send its historical pending revision',async()=>{
+ const a=await make('DIRECT');assert(a.item);const p=await db.$transaction(async tx=>{const p=await freezeValidatedPublication(tx,{newsItemId:a.item!.id,digest:approvalDigest(a.item!),resolutions:[]},'offline',env,'TELEGRAM',true);return tx.publication.update({where:{id:p.id},data:{automaticPolicyId:a.policy.id}});});
+ await changeSource(db,a.source.id,'disable','offline');await assert.rejects(publishOne(db,p.id,env,transport),/AUTOMATIC_AUTHORIZATION_CHANGED/);
+ await changeSource(db,a.source.id,'enable','offline');await automaticDeliveryCycle(db,env,transport);assert.equal(sends,0);assert.equal(await db.publicationAttempt.count(),0);
+});

@@ -42,5 +42,5 @@ export function publicationReady(item:PublicationCandidate,frozen=false){
 export function eligibleAutomatic(item:PublicationCandidate,policy:AutoPolicy,frozen=false){
  if(!publicationReady(item,frozen))return false;
  const since=new Date(policy.notBefore);
- return policy.state!=='CLOSED'&&item.createdAt>=since&&(policy.state!=='CANARY'||policy.canaryCandidateId===item.id)&&publicationContributors(item).every(p=>policy.sourceIds.includes(p.sourceId)&&p.ingestedAt>=since&&p.sourcePublishedAt>=since);
+ return policy.state!=='CLOSED'&&item.createdAt>=since&&(policy.state!=='CANARY'||policy.canaryCandidateId===item.id)&&publicationContributors(item).every(p=>{const activation=policy.sourceNotBefore?.[p.sourceId];if(policy.sourceNotBefore&&!activation)return false;const boundary=new Date(Math.max(since.getTime(),activation?new Date(activation).getTime():0));return policy.sourceIds.includes(p.sourceId)&&p.ingestedAt>=boundary&&p.sourcePublishedAt>=boundary;});
 }

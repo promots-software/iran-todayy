@@ -1,6 +1,6 @@
 import {z} from 'zod';
 import {ProcessingError} from '../processing/contracts';
-export const autoPolicySchema=z.object({version:z.literal('telegram-auto-v1'),id:z.uuid(),state:z.enum(['CANARY','ACTIVE','CLOSED']),destination:z.string().regex(/^-[1-9]\d*$/),notBefore:z.iso.datetime(),sourceIds:z.array(z.string().min(1)).min(1),canaryCandidateId:z.string().nullable(),authorizedBy:z.string().min(1),reason:z.string().optional()}).strict();
+export const autoPolicySchema=z.object({version:z.literal('telegram-auto-v1'),id:z.uuid(),state:z.enum(['CANARY','ACTIVE','CLOSED']),destination:z.string().regex(/^-[1-9]\d*$/),notBefore:z.iso.datetime(),sourceIds:z.array(z.string().min(1)),sourceNotBefore:z.record(z.string(),z.iso.datetime()).optional(),canaryCandidateId:z.string().nullable(),authorizedBy:z.string().min(1),reason:z.string().optional()}).strict();
 export type AutoPolicy=z.infer<typeof autoPolicySchema>;
 export function requireAutoPolicy(raw:unknown,env:Record<string,string|undefined>){
  const p=autoPolicySchema.safeParse(raw);

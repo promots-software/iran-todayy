@@ -4,6 +4,7 @@ import type {PrismaClient,Prisma} from '@prisma/client';
 import {assertSuperAdmin} from './dashboard-permissions';
 import {lockEditorialPublication} from './human-editorial-contract';
 import {ProcessingError} from './processing/contracts';
+import {syncAutomaticSources} from './telegram/source-authorization';
 import {automaticControlState} from './telegram/auto-control';
 export const operationSchema=z.object({requestId:z.uuid(),kind:z.enum(['AUTO_PUBLISH','PUBLISHING_HOLD','PROCESSING_HOLD','SOURCE_ENABLED','SOURCE_MODE','SOURCE_PROCESSING_HOLD','RETRY']),target:z.string().max(100),value:z.string().max(30),expected:z.string().max(100),confirmed:z.literal(true)}).strict();
 export const safeRetryCodes=['SOURCE_DISABLED','LIVE_SOURCE_DISABLED','LEASE_EXHAUSTED','PROCESSING_FAILED'] as const;
@@ -47,6 +48,7 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
    if(String(before)!==input.expected)throw new Error('STALE_CONTROL');
    if(key==='processingMode'){const processingMode=z.enum(['NORMAL','DIRECT']).parse(input.value);await tx.source.update({where:{id:source.id},data:{processingMode}});}
    else{if(!['true','false'].includes(input.value))throw new Error('INVALID_CONTROL');await tx.source.update({where:{id:source.id},data:{[key]:input.value==='true'}});}
+   if(input.kind==='SOURCE_ENABLED')await syncAutomaticSources(tx,`user:${userId}`);
   }else{
    await tx.$queryRaw`SELECT id FROM "ProcessingJob" WHERE id=${input.target} FOR UPDATE`;
    const job=await tx.processingJob.findUniqueOrThrow({where:{id:input.target},include:{sourcePost:{include:{source:true,humanDraft:true,evidence:true}}}});
