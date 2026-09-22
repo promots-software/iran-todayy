@@ -1,4 +1,5 @@
 import {requireAutoPolicy} from './auto-policy';
+import {eligibleAutomatic,publicationCandidateInclude} from './publication-policy';
 import {recordDeliveryReceipt,reconcileDelivery,retryPersistence} from './delivery-receipt';
 import {assertPublishingActive} from '../operations-controls';
 import {formatTelegram,readTelegramSnapshot} from './format';
@@ -8,7 +9,7 @@ import {isDeepStrictEqual} from 'node:util';
 import {Prisma,type PrismaClient,type NewsItem} from '@prisma/client';
 import {z} from 'zod';
 import {assertApprovalMode} from '../processing/shadow';
-import {checkEvidence,eventSchema,sourceProfileSchema,ProcessingError} from '../processing/contracts';
+import {checkEvidence,eventSchema,ProcessingError} from '../processing/contracts';
 import {renderPublicationText} from '../publication-text';
 
 import {matchesHumanPublication,humanText,lockEditorialPublication} from '../human-editorial-contract';
@@ -46,10 +47,15 @@ export async function approvePublication(db:PrismaClient,input:ApprovalInput,act
  return db.$transaction(tx=>freezeValidatedPublication(tx,input,actor,env,target));
 }
 /** Shares the exact existing evidence/provenance freeze checks with a bounded automatic permit. */
-export async function freezeValidatedPublication(tx:Prisma.TransactionClient,input:ApprovalInput,actor:string,env:Record<string,string|undefined>,target:'TELEGRAM'|'WEB'='TELEGRAM',automatic:boolean|'DIRECT'=false){
+export async function freezeValidatedPublication(tx:Prisma.TransactionClient,input:ApprovalInput,actor:string,env:Record<string,string|undefined>,target:'TELEGRAM'|'WEB'='TELEGRAM',automatic=false){
  if(!actor.trim())throw new ProcessingError('AUTHENTICATION_REQUIRED');
  const chatId=target==='WEB'?'WEB':readPublisherEnv(env).chatId; // Approving never calls Telegram and never arms sending.
   await lockEditorialPublication(tx);
+  if(automatic){
+   const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}}),policy=requireAutoPolicy(settings.telegramAutoPolicy,env);
+   const candidate=await tx.newsItem.findUniqueOrThrow({where:{id:input.newsItemId},include:publicationCandidateInclude});
+   if(target!=='TELEGRAM'||settings.publishingPaused||!eligibleAutomatic(candidate,policy))throw new ProcessingError('AUTOMATIC_AUTHORIZATION_CHANGED');
+  }
   if(await tx.humanEditorialDraft.findUnique({where:{newsItemId:input.newsItemId}}))throw new ProcessingError('HUMAN_DRAFT_REQUIRES_HUMAN_APPROVAL');
   await tx.$queryRaw`SELECT id FROM "NewsItem" WHERE id=${input.newsItemId} FOR UPDATE`;
   assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
@@ -79,7 +85,7 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   const telegramFormatSnapshot=target==='TELEGRAM'?formatTelegram(item.title,item.arabicContent!):null;
   const publication=await tx.publication.create({data:{newsItemId:item.id,idempotencyKey:transportApprovalDigest(digest,chatId,telegramFormatSnapshot),contentSnapshot:content,destination:chatId,...(telegramFormatSnapshot?{telegramFormatSnapshot:json(telegramFormatSnapshot)}:{})}});
   await tx.newsItem.update({where:{id:item.id},data:{status:'APPROVED',approvedAt:new Date(),approvedBy:actor}});
-  await tx.auditLog.create({data:{action:automatic==='DIRECT'?'DIRECT_AUTO_PUBLICATION_APPROVED':automatic?'CONTROLLED_AUTO_PUBLICATION_APPROVED':'MANUAL_PUBLICATION_APPROVED',actor,entityType:'Publication',entityId:publication.id,message:automatic?'Clean validated READY content frozen under one-shot authorization; no message sent':'Explicit review and approval of frozen content; no message sent',metadata:json({digest,publicationDigest:publication.idempotencyKey,telegramFormatVersion:telegramFormatSnapshot?.version??null,resolutions:input.resolutions,review:validation.review})}});
+  await tx.auditLog.create({data:{action:automatic?'CONTROLLED_AUTO_PUBLICATION_APPROVED':'MANUAL_PUBLICATION_APPROVED',actor,entityType:'Publication',entityId:publication.id,message:automatic?'Clean validated READY content frozen under current automatic delivery policy; no message sent':'Explicit review and approval of frozen content; no message sent',metadata:json({digest,publicationDigest:publication.idempotencyKey,telegramFormatVersion:telegramFormatSnapshot?.version??null,resolutions:input.resolutions,review:validation.review})}});
   return publication;
 }
 export type SendResult={status:'SENT';messageId:string;chatId:string}|{status:'FAILED'|'UNKNOWN';error:string};
@@ -119,9 +125,10 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   if(p.automaticPolicyId){
    const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}}),policy=requireAutoPolicy(settings.telegramAutoPolicy,env);
    if(policy.id!==p.automaticPolicyId||policy.destination!==p.destination||!p.newsItemId||(policy.state==='CANARY'&&policy.canaryCandidateId!==p.newsItemId))throw new ProcessingError('AUTOMATIC_AUTHORIZATION_CHANGED');
-   const item=await tx.newsItem.findUniqueOrThrow({where:{id:p.newsItemId},include:{humanDraft:true,evidence:{include:{sourcePost:{include:{source:true,humanDraft:true}}}}}});
-   const mode=(item.validationResult as {processingMode?:string}|null)?.processingMode;
-   if(item.humanDraft||!item.evidence.length||item.evidence.some(e=>e.sourcePost.humanDraft||!policy.sourceIds.includes(e.sourcePost.sourceId)||!e.sourcePost.source.enabled||e.sourcePost.source.deletedAt||e.sourcePost.source.processingMode!==mode||!sourceProfileSchema.safeParse(e.sourcePost.source.editorialProfile).success||!sourceProfileSchema.parse(e.sourcePost.source.editorialProfile).verified||sourceProfileSchema.parse(e.sourcePost.source.editorialProfile).flagged))throw new ProcessingError('AUTOMATIC_AUTHORIZATION_CHANGED');
+   const item=await tx.newsItem.findUniqueOrThrow({where:{id:p.newsItemId},include:publicationCandidateInclude});
+   for(const sourceId of [...new Set(item.evidence.map(e=>e.sourcePost.sourceId))].sort())await tx.$queryRaw`SELECT id FROM "Source" WHERE id=${sourceId} FOR SHARE`;
+   const current=await tx.newsItem.findUniqueOrThrow({where:{id:p.newsItemId},include:publicationCandidateInclude});
+   if(!eligibleAutomatic(current,policy,true))throw new ProcessingError('AUTOMATIC_AUTHORIZATION_CHANGED');
   }
   if(p.humanDraft&&!manual)throw new ProcessingError('HUMAN_PUBLICATION_MANUAL_ONLY');
   if(manual&&(p.idempotencyKey!==manual.digest||p.destination!==manual.destination))throw new ProcessingError('PUBLICATION_PREVIEW_CHANGED');

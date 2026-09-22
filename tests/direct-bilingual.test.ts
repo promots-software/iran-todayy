@@ -89,6 +89,7 @@ test('bilingual candidate cannot auto-deliver without full coverage; valid recei
  const f=bilingualFixture(),p=prepareDirectBilingual(f.raw,f.source),post=await ingest(db,src.id,{externalId:'1',url:src.url+'/1',content:f.source,publishedAt:new Date()});const job=await claimJob(db,'bilingual');assert.ok(job);
  let calls=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(calls===1?f.raw:passingReview(f.source,p)));}),signal());assert.equal(calls,2);
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:post.id}}}});assert.equal(item.validationStatus,'PASSED');
+ await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{version:'telegram-auto-v1',id:'11111111-1111-4111-8111-111111111111',state:'ACTIVE',destination:env.TELEGRAM_CHAT_ID,notBefore:new Date(Date.now()-60000).toISOString(),sourceIds:[src.id],canaryCandidateId:null,authorizedBy:'offline-owner'}}});
  let sends=0;const transport:typeof fetch=async()=>{sends++;return Response.json({ok:true,result:{message_id:88,chat:{id:-100123}}});};
  await assert.rejects(publishReadyDirect(db,item.id,{...env,AUTO_PUBLISH:'false'},transport),/DIRECT_AUTO_DISABLED/);
  const original=(await db.sourcePost.findUniqueOrThrow({where:{id:post.id}})).processingResult!;

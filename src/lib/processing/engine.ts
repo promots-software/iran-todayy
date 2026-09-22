@@ -14,7 +14,7 @@ import { retryDelay } from "../domain";
 import { assertShadowMode, assertApprovalMode } from "./shadow";
 import {finalizeConstrainedDraft} from './local-finalization';
 import {sourceLanguage,detectSourceLanguage} from './source-language';
-import {editorialDecision} from './editorial-eligibility';
+import {editorialDecision,blockingEditorialReasons} from './editorial-eligibility';
 import {editorialScope} from './editorial-scope';
 import {failurePolicy,isProviderWait,requiresProviderRecovery} from './failure-policy';
 import {nextClaimSlot,oldestSlot} from '../../worker/newsroom-scheduler';
@@ -249,7 +249,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
         if(!preparedDraft)throw new ProcessingError('DRAFT_PREPARATION_REQUIRED');
         const rawDraft=preparedDraft;
         const draft=provider.constrainedRewrite?finalizeConstrainedDraft(rawDraft,post.originalContent,u,sourceProfile):editDraft(rawDraft,post.originalContent,u,sourceProfile);
-        const review=draft!.review.filter(r=>processingMode!=='DIRECT'||r.code!=='ARCHIVE_ONLY');
+        const review=blockingEditorialReasons(draft!.review.filter(r=>processingMode!=='DIRECT'||r.code!=='ARCHIVE_ONLY'));
         if (!completeEventStructure(u,post.originalContent,processingMode)) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
         if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
         if (match.candidates.some(c=>Array.isArray((c.evidence.semantic as {conflictingFactIds?:string[]})?.conflictingFactIds) && ((c.evidence.semantic as {conflictingFactIds:string[]}).conflictingFactIds.length>0))) review.push(reason("FIGURE_CONFLICT"));

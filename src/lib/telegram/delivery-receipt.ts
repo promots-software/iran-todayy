@@ -38,6 +38,13 @@ export async function reconcileDelivery(db:PrismaClient,id:string,actor='telegra
   }
   const r=parsed.data,o=r.outcome;
   if(p.attemptCount!==1||r.digest!==p.idempotencyKey||(o.status==='SENT'&&o.chatId!==p.destination))throw new ProcessingError('DELIVERY_RECEIPT_CONFLICT');
+  // UNKNOWN is terminal for transport but remains in the recovery scan. Its
+  // already reconciled receipt must be a no-op, including the durable audit.
+  const prior=await tx.auditLog.findUnique({where:{id:`delivery-final:${id}`}});
+  if(prior){
+   if(p.status!==o.status||!isDeepStrictEqual(p.telegramResult,o)||!isDeepStrictEqual(prior.metadata,o))throw new ProcessingError('DELIVERY_RECEIPT_CONFLICT');
+   return {...o,changed:false};
+  }
   await tx.publication.update({where:{id},data:{status:o.status,telegramMessageId:o.status==='SENT'?o.messageId:null,telegramResult:json(o),error:o.status==='SENT'?null:o.error,sentAt:o.status==='SENT'?new Date(r.receivedAt):null}});
   if(p.newsItemId)await tx.newsItem.update({where:{id:p.newsItemId},data:{status:o.status==='SENT'?'PUBLISHED':'APPROVED'}});
   if(p.humanDraftId&&o.status==='SENT')await tx.humanEditorialDraft.update({where:{id:p.humanDraftId},data:{status:'PUBLISHED'}});

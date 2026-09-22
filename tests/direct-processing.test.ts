@@ -96,6 +96,7 @@ test('DIRECT full local pipeline bypasses selection-only P4/filter labels, guard
  assert.equal(eligibleDirectPublication({...eligible,validationResult:{...Object(eligible.validationResult),review:[{code:'UNSUPPORTED_OUTPUT'}]}}),false);
  assert.equal(eligibleDirectPublication({...eligible,error:'INVALID_EVIDENCE'}),false);
  const normal=structuredClone(eligible);normal.evidence[0].sourcePost.source.processingMode='NORMAL';assert.equal(eligibleDirectPublication(normal),false);
+ await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{version:'telegram-auto-v1',id:'11111111-1111-4111-8111-111111111111',state:'ACTIVE',destination:env.TELEGRAM_CHAT_ID,notBefore:new Date(Date.now()-60000).toISOString(),sourceIds:[src.id],canaryCandidateId:null,authorizedBy:'offline-owner'}}});
  let sends=0;const transport:typeof fetch=async(_url,init)=>{sends++;const outgoing=JSON.parse(String(init?.body));assert.equal(outgoing.parse_mode,'HTML');assert.ok(outgoing.text.startsWith('<b>إيران الآن | '));return Response.json({ok:true,result:{message_id:99,chat:{id:-100123}}});};
  await assert.rejects(publishReadyDirect(db,item.id,{...env,AUTO_PUBLISH:'false'},transport),/DIRECT_AUTO_DISABLED/);assert.equal(sends,0);
  await assert.rejects(publishReadyDirect(db,item.id,{...env,SHADOW_MODE:'true'},transport),/PUBLISH_DISABLED/);assert.equal(sends,0);
@@ -103,7 +104,7 @@ test('DIRECT full local pipeline bypasses selection-only P4/filter labels, guard
  assert.equal(results.filter(r=>r.status==='SENT').length,1);assert.equal(sends,1);
  const pub=await db.publication.findUniqueOrThrow({where:{newsItemId:item.id}});assert.equal(pub.telegramMessageId,'99');assert.equal(pub.status,'SENT');assert.equal(pub.attemptCount,1);assert.ok(pub.contentSnapshot.includes(item.title));
  assert.equal((await publishReadyDirect(db,item.id,env,transport)).status,'NOT_ELIGIBLE');assert.equal(sends,1);
- assert.equal(await db.auditLog.count({where:{entityId:pub.id,action:'DIRECT_AUTO_PUBLICATION_APPROVED'}}),1);
+ assert.equal(await db.auditLog.count({where:{entityId:pub.id,action:'CONTROLLED_AUTO_PUBLICATION_APPROVED'}}),1);
  const d=await ingest(db,src.id,{externalId:'b',url:src.url+'/b',content:source,publishedAt:new Date()});
  const dupJob=await claimJob(db,'duplicate',new Date(),false,other.map(j=>j.sourcePostId));assert.ok(dupJob);
  await processJob(db,dupJob,new GeminiLanguageProvider('offline',async()=>{throw Error('EXACT_DUPLICATE_MUST_NOT_CALL');}),signal());assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:d.id}})).status,'DUPLICATE');assert.equal(await db.newsItem.count({where:{evidence:{some:{sourcePostId:d.id}}}}),0);

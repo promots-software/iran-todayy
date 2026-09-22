@@ -39,6 +39,7 @@ export function isTechnicalFailure(code:string){
  return /(?:SCHEMA|INVALID_JSON|INVALID_RESPONSE|INVALID_ID_CLASSIFICATION|TRANSPORT|HTTP_|UNAVAILABLE|REQUEST_LIMIT|INPUT_LIMIT|RATE_LIMIT|INTERRUPTED|TIMEOUT|LEASE_|STALE_CLAIM|AUTH_FAILED|API_KEY|PROCESSING_FAILED|REQUEST_REJECTED|REQUEST_TOO_LARGE|REFUSAL|^(?:GEMINI|GROQ|OPENAI)_INCOMPLETE$)/u.test(code);
 }
 export type ReasonInput={code:string;detail?:string};
+export function blockingEditorialReasons<T extends ReasonInput>(review:T[]){return review.filter(r=>!operational.has(r.code));}
 export function reviewMessages(reasons:ReasonInput[]){
  const priority=(code:string)=>/UNSUPPORTED|NUMBER|DATE|QUOTE|FACT_OMISSION/u.test(code)?0:/SPEAKER|ATTRIBUTION|IDENTITY/u.test(code)?1:2;
  const messages=reasons.filter(r=>!operational.has(r.code)).sort((a,b)=>priority(a.code)-priority(b.code)).map(r=>{
@@ -51,9 +52,12 @@ export function reviewMessages(reasons:ReasonInput[]){
  return [...new Set(messages)];
 }
 export function editorialDecision(input:{filtered?:boolean;error?:string|null;validated?:boolean;review?:ReasonInput[];humanOverride?:boolean},delivery:{autoPublish:boolean;shadowMode:boolean;requireApproval:boolean}){
- const review=(input.review??[]).filter(r=>!operational.has(r.code));
+ const review=blockingEditorialReasons(input.review??[]);
  const editorialEligibility:EditorialEligibility=input.error?(isTechnicalFailure(input.error)?'PROCESSING_ERROR':'NEEDS_REVIEW'):input.filtered?'FILTERED':input.validated&&!review.length&&!input.humanOverride?'READY_TO_PUBLISH':'NEEDS_REVIEW';
- const deliveryDecision=editorialEligibility==='READY_TO_PUBLISH'&&delivery.autoPublish&&!delivery.shadowMode&&!delivery.requireApproval&&!input.humanOverride?'SEND':'HOLD';
+ // Processing never grants transport authority, including when its caller has
+ // delivery flags. The dedicated publisher evaluates CURRENT runtime policy.
+ void delivery;
+ const deliveryDecision='HOLD' as const;
  return {editorialEligibility,deliveryDecision,review} as const;
 }
 export function readEditorialState(value:unknown,status:string,error?:string|null){
