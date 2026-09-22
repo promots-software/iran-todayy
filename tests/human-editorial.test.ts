@@ -56,10 +56,12 @@ test('failed news keeps AI text and validation; edit/send race locks the claimed
   const post=await db.sourcePost.create({data:{sourceId:sid,sourcePostId:'1',sourceUrl:'https://t.me/offline/1',originalContent:'أعلن المتحدث انتهاء الاجتماع.',sourcePublishedAt:new Date(),status:'NEEDS_REVIEW'}});pid=post.id;
   const e=await db.canonicalEvent.create({data:{title:'AI original',summary:'failed AI',facts:{},revisions:{create:{facts:{}}}},include:{revisions:true}});eid=e.id;
   const item=await db.newsItem.create({data:{eventRevisionId:e.revisions[0].id,title:'Original failed AI title',arabicContent:'Original failed output',status:'NEEDS_REVIEW',validationStatus:'FAILED',validationResult:{review:[{code:'UNSUPPORTED_OUTPUT'}]},error:'UNSUPPORTED_OUTPUT',evidence:{create:{sourcePostId:pid}}}});nid=item.id;
-  const d=await saveHumanDraft(db,{kind:'news',id:nid,revision:0,title:'انتهاء الاجتماع',body:'أعلن المتحدث انتهاء الاجتماع.'},'editor');did=d.id;
+  const d=await saveHumanDraft(db,{kind:'news',id:nid,revision:0,title:'انتهاء الاجتماع',body:'أعلن المتحدث انتهاء الاجتماع'},'editor');did=d.id;
+  assert.equal(d.body,'أعلن المتحدث انتهاء الاجتماع.','manual save uses the same final punctuation as automatic editorial finalization');
   const {approvePublication,approvalDigest}=await import('../src/lib/telegram/publisher');
   await assert.rejects(approvePublication(db,{newsItemId:nid,digest:approvalDigest(item),resolutions:[]},'editor',env),/HUMAN_DRAFT_REQUIRES_HUMAN_APPROVAL/);
   const p=await approveHumanDraft(db,{id:d.id,digest:humanDigest(d),confirmed:true,note:'Reviewed evidence and replaced failed AI wording with human text.'},'editor',env);
+  assert.equal(p.contentSnapshot,'انتهاء الاجتماع\n\nأعلن المتحدث انتهاء الاجتماع.');
   let release!:()=>void,entered!:()=>void;const waiting=new Promise<void>(r=>{release=r});const started=new Promise<void>(r=>{entered=r});
   const sending=publishApprovedManually(db,{publicationId:p.id,digest:p.idempotencyKey,destination:p.destination,confirmed:true},'editor',env,async()=>{entered();await waiting;return Response.json({ok:true,result:{message_id:882,chat:{id:-100123}}});});
   await started;

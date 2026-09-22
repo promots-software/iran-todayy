@@ -1,4 +1,5 @@
-import {attributionLead} from './attribution-rendering';
+import {attributionLead,normalizeAttributionAgreement} from './attribution-rendering';
+import {finalizeBodyPunctuation} from '../publication-finalization';
 import {guidelineFindings} from './guideline-checks';
 import { checkEvidence, draftSchema, type Draft, type SourceProfile, type Understanding, ProcessingError } from "./contracts";
 import { names, reviewReasons, terminology, type ReviewCode } from "./rules";
@@ -84,6 +85,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   let title = draft.title, body = draft.body;
   const sentenceEvidence=draft.sentences.map(s=>({...s,factIds:[...s.factIds]}));
   const transform = (fn: (s:string)=>string) => { title=outsideProtected(title,protectedTexts,fn); body=outsideProtected(body,protectedTexts,fn); sentenceEvidence.forEach(s=>{s.text=outsideProtected(s.text,protectedTexts,fn);}); };
+  for(const fact of u.event.facts)if(fact.speaker)transform(s=>normalizeAttributionAgreement(s,fact.speaker!.arabic));
   // Owner convention is typography, not a geographical/political substitution.
   transform(s=>s.replace(boundary('إسرائيل'),'"إسرائيل"'));
   for (const rule of terminology.filter(r=>r.mode === "automatic")) {
@@ -131,6 +133,17 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
     sentenceEvidence.push({...entry,text:title,factIds:[...entry.factIds]});
     if(!body.includes(entry.text))sentenceEvidence.splice(sentenceEvidence.indexOf(entry),1);
   }
+  const finalBody=finalizeBodyPunctuation(body);
+  if(finalBody!==body&&finalBody){
+    const old=body.trimEnd();
+    const entry=[...sentenceEvidence].sort((a,b)=>b.text.length-a.text.length).find(s=>old.endsWith(s.text));
+    if(!entry)throw new ProcessingError('INCOMPLETE_DRAFT_PROVENANCE');
+    const finalSentence=finalizeBodyPunctuation(entry.text);
+    sentenceEvidence.push({...entry,text:finalSentence,factIds:[...entry.factIds]});
+    body=finalBody;
+    if(!(title+'\n'+body).includes(entry.text))sentenceEvidence.splice(sentenceEvidence.indexOf(entry),1);
+  }
+  if(!finalBody)body='';
   for(const detail of guidelineFindings(title,body,draft.protectedSpans.filter(s=>s.kind==='QUOTE').map(s=>s.text)))review.push(reason('FORMAT_REVIEW',detail));
   const unique = [...new Map(review.map(r=>[r.code+":"+(r.detail??""),r])).values()];
   if(!sentenceEvidence.some(s=>s.text===title)||sentenceEvidence.some(s=>!(title+'\n'+body).includes(s.text)))throw new ProcessingError("INVALID_FINAL_PROVENANCE");

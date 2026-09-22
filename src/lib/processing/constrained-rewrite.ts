@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {ProcessingError,validateUnderstanding,type Understanding,type Draft} from './contracts';
 import {chooseNewsroomFormat,newsroomPrefix} from './newsroom-format';
-import {attributionLead,hasExplicitArabicAttribution} from './attribution-rendering';
+import {attributionLead,hasExplicitArabicAttribution,normalizeAttributionAgreement} from './attribution-rendering';
 import {validateEditorialGrounding} from './editorial-grounding';
 
 export const selectionSchema=z.object({titleAtomId:z.string().min(1),bodyAtomIds:z.array(z.string().min(1)).min(1)}).strict();
@@ -19,7 +19,7 @@ export function buildAtoms(content:string,u:Understanding){
   // require new semantic inference. A report frame retains first-person deixis.
   const attribution=f.speaker?attributionLead(f.speaker.arabic):null;
   return {id:f.id,factIds:[f.id],text:f.arabic,attribution,
-   renderedText:attribution&&f.speaker&&!hasExplicitArabicAttribution(f.arabic,f.speaker.arabic)?`${attribution} ${f.arabic}`:f.arabic,
+   renderedText:attribution&&f.speaker&&!hasExplicitArabicAttribution(f.arabic,f.speaker.arabic)?`${attribution} ${f.arabic}`:f.speaker?normalizeAttributionAgreement(f.arabic,f.speaker.arabic):f.arabic,
    evidence:f.evidence,speakerEvidence:f.speaker?.evidence??null};
  })};
 }

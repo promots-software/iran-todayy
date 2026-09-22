@@ -7,6 +7,7 @@ import {assertApprovalMode} from './processing/shadow';
 import {humanDigest,humanText,lockEditorialPublication,humanPublicationDigest,matchesHumanPublication} from './human-editorial-contract';
 import {readPublisherEnv} from './telegram/publisher';
 import {publicationParts} from './publication-text';
+import {finalizeBodyPunctuation} from './publication-finalization';
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
 const targetSchema=z.object({kind:z.enum(['post','news']),id:z.string().min(1).max(100)});
 export type EditorialTarget=z.infer<typeof targetSchema>;
@@ -27,6 +28,7 @@ export async function saveHumanDraft(db:PrismaClient,input:EditorialTarget & {re
  const target=targetSchema.parse(input);z.number().int().min(0).parse(input.revision);
  const raw={title:z.string().min(1).max(4096).parse(input.title),body:z.string().max(4096).parse(input.body)};humanText(raw);
  const text=publicationParts(raw.title,raw.body);
+ text.body=finalizeBodyPunctuation(text.body);humanText(text);
  return db.$transaction(async tx=>{
   await lockEditorialPublication(tx);assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
   const source=await origin(tx,target);
