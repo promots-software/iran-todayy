@@ -62,6 +62,11 @@ export class GroqLanguageProvider implements LanguageProvider {
   readonly draftOnlyAccepted = true;
   readonly constrainedRewrite = true;
   private requests = 0;
+  private repaired = false;
+  private async repairOnce<T>(initial:()=>Promise<T>,repair:(code:string)=>Promise<T>):Promise<T>{
+    if(this.repaired)return initial();
+    return withOneRepair(initial,code=>{this.repaired=true;return repair(code);});
+  }
   constructor(private readonly apiKey: string, private readonly transport: typeof fetch = fetch,
     private readonly logUsage: (event: StageUsage) => void | Promise<void> = event => console.log(JSON.stringify({ event: "AI_STAGE_USAGE", ...event })),
     private readonly extractionModel: "openai/gpt-oss-20b" | "openai/gpt-oss-120b" = GROQ_MODELS.understand) {
@@ -69,7 +74,7 @@ export class GroqLanguageProvider implements LanguageProvider {
   }
   async understand(input: Parameters<LanguageProvider["understand"]>[0], signal: AbortSignal) {
     const selection:{relevance?:'POLITICAL_NEWS'|'IRRELEVANT'|'UNCERTAIN'}={};
-    return withOneRepair(()=>this.understandOnce(input,signal,selection),code=>this.understandOnce(input,signal,selection,code));
+    return this.repairOnce(()=>this.understandOnce(input,signal,selection),code=>this.understandOnce(input,signal,selection,code));
   }
   private async understandOnce(input: Parameters<LanguageProvider["understand"]>[0], signal: AbortSignal, selection:{relevance?:'POLITICAL_NEWS'|'IRRELEVANT'|'UNCERTAIN'}, repairCode?:string):Promise<Understanding> {
     // Publication time stays in engine metadata for temporal matching, never textual evidence.
@@ -139,8 +144,12 @@ export class GroqLanguageProvider implements LanguageProvider {
     signal.throwIfAborted();
     if (selectionBlocksDraft(input.understanding,input.processingMode??'NORMAL')) throw new ProcessingError("GROQ_DRAFT_NOT_ACCEPTED");
     if(input.understanding.publicationProposal)return publicationDraft(input.content,input.understanding);
+    return this.repairOnce(()=>this.draftOnce(input,signal),code=>this.draftOnce(input,signal,code));
+  }
+  private async draftOnce(input:Parameters<LanguageProvider['draft']>[0],signal:AbortSignal,repairCode?:string){
     const raw=publicationSchema.parse(await this.request('draft',{
       originalSource:input.content,sourceUnits:publicationUnits(input.content),
+      ...(repairCode?{repair:{code:repairCode,instructions:repairInstructions}}:{}),
       validatedFacts:input.understanding.event,validatedRendering:input.understanding.rendering??null,
     },input.rules,signal));
     try {

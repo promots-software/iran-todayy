@@ -27,8 +27,15 @@ export function validateSourceCoverage(source:string,u:Understanding,raw:unknown
   // Context is NOT coverage: only exact fact/speaker evidence covers characters.
   // Uncovered speech connectors may be layout; negation, dates, conditions and
   // any other lexical material remain unexplained and fail closed.
-  const gaps=unit.text.split('').map((c,i)=>mask[i]?'\0':c).join('').split(/\0+/u);
-  for(const gap of gaps){const rest=gap.replace(punctuation,' ').trim();if(rest&&!/^(?:(?:و?قالت?|و?أعلنت?|و?أضافت?|و?أكدت?|و?أوضحت?|إن|أن|مؤكداً|موضحةً)\s*)+$/u.test(rest))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');}
+  const gaps=unit.text.split('').map((c,i)=>mask[i]?'\0':c).join('').matchAll(/[^\0]+/gu);
+  for(const match of gaps){
+   const gap=match[0],rest=gap.replace(punctuation,' ').trim(),index=match.index;
+   // A conjunction between two grounded clauses carries no omitted assertion.
+   // Do not treat a leading/trailing token, negation, or factual word as layout.
+   const joiningConjunction=rest==='و'&&/[،,؛;]|و\s+$/u.test(gap)&&index>0&&mask.slice(0,index).some(Boolean)&&mask.slice(index+gap.length).some(Boolean);
+   if(joiningConjunction)continue;
+   if(rest&&!/^(?:(?:و?قالت?|و?أعلنت?|و?أضافت?|و?أكدت?|و?أوضحت?|إن|أن|مؤكداً|موضحةً)\s*)+$/u.test(rest))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
+  }
  }
  return rows;
 }

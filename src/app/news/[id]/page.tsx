@@ -1,3 +1,4 @@
+import {IngestionSource} from '@/components/ingestion-source';
 import Link from 'next/link';
 import {newsroomView} from '@/lib/newsroom-view';
 import {requireUser} from '@/lib/session';
@@ -23,7 +24,7 @@ export default async function NewsDetailPage({params,searchParams}:{params:Promi
  const editable=!item.publication&&['NEEDS_REVIEW','PENDING_APPROVAL','FAILED','REJECTED'].includes(item.status);
  const stalePreview=!!item.publication&&item.publication.contentSnapshot!==renderPublicationText(item.title,item.arabicContent??'');
  return <><PageTitle title={ready&&!showEditor?'معاينة الخبر':'تحرير الخبر'} description={ready&&!showEditor?'راجع النص واعتمده؛ التعديل اختياري.':'راجع المصدر، حرّر النص، ثم احفظ واعتمد الخبر.'}/>
- <section className="panel"><h2>الخبر الأصلي</h2>{item.evidence.map(({sourcePost:p})=><article key={p.id}><h3>{p.source.name}</h3>{sourceHasMedia(p.metadata)&&<p className="notice">وسائط المصدر متاحة في المنشور الأصلي.</p>}<p className="original" dir="auto">{p.originalContent}</p><SourceLink url={p.sourceUrl}/></article>)}</section>
+ <section className="panel"><h2>الخبر الأصلي</h2>{item.evidence.map(({sourcePost:p})=><article key={p.id}><IngestionSource posts={[p]}/>{sourceHasMedia(p.metadata)&&<p className="notice">وسائط المصدر متاحة في المنشور الأصلي.</p>}<p className="original" dir="auto">{p.originalContent}</p><SourceLink url={p.sourceUrl}/></article>)}</section>
  <ReviewNotes reasons={[...review,...(item.error?[{code:item.error}]:[])]}/>
  {showTechnical&&<details className="panel"><summary>تفاصيل تقنية</summary><Badge value={item.status}/><h3>{item.title}</h3><p className="original">{item.arabicContent}</p><JsonView value={{error:item.error,validation:item.validationResult,facts:item.factualEvidence,quotes:item.protectedQuotes}}/></details>}
  {ready&&!showEditor&&<section className="panel"><h2>معاينة الخبر الجاهز</h2><p className="original">{renderPublicationText(item.title,item.arabicContent??'')}</p><Link href={`/news/${id}?edit=1`}>تعديل اختياري</Link></section>}

@@ -1,5 +1,6 @@
+import {IngestionSource} from '@/components/ingestion-source';
 import {workflowState} from '@/lib/workflow-state';
-import {SourceLink} from './ui';
+
 import {reviewMessages} from '@/lib/processing/editorial-eligibility';
 import {publicationParts} from '@/lib/publication-text';
 import {RejectStory} from './reject-story';
@@ -13,5 +14,5 @@ import {Pagination} from './pagination';
 export async function NewsFeed({mode='readonly',params={},path='/'}:{mode?:'readonly'|'review'|'approval';params?:PageParams;path?:string}){
  const result=await readDatabase(()=>newsPage(db,mode,pageNumber(params.newsPage)));
  if(!result.available)return <DatabaseNotice/>;if(!result.data.items.length)return <EmptyState/>;
- return <div>{result.data.items.map(item=><NewsCard key={item.id} title={item.title} body={publicationParts(item.title,item.arabicContent??'').body} reason={mode==='review'?reviewMessages((item.validationResult as {review?:{code:string;detail?:string}[]})?.review??[]).join(' · '):undefined} status={workflowState(item)} time={item.createdAt} source={[...new Set(item.evidence.map(e=>e.sourcePost.source.name))].join(' · ')} actions={mode!=='readonly'?<div className="controls">{item.evidence.map(e=><SourceLink key={e.sourcePostId} url={e.sourcePost.sourceUrl}/>)}<Link className="text-link" href={`/news/${item.id}`}>{mode==='review'?'تعديل':'معاينة واعتماد'}</Link>{mode==='review'&&<RejectStory kind="news" id={item.id}/>}</div>:undefined}/>)}<Pagination {...result.data} path={path} params={params} pageKey="newsPage" label="الأخبار"/></div>;
+ return <div>{result.data.items.map(item=><NewsCard key={item.id} title={item.title} body={publicationParts(item.title,item.arabicContent??'').body} reason={mode==='review'?reviewMessages((item.validationResult as {review?:{code:string;detail?:string}[]})?.review??[]).join(' · '):undefined} status={workflowState(item)} time={item.createdAt} source={<IngestionSource posts={item.evidence.map(e=>e.sourcePost)}/>} actions={mode!=='readonly'?<div className="controls"><Link className="text-link" href={`/news/${item.id}`}>{mode==='review'?'تعديل':'معاينة واعتماد'}</Link>{mode==='review'&&<RejectStory kind="news" id={item.id}/>}</div>:undefined}/>)}<Pagination {...result.data} path={path} params={params} pageKey="newsPage" label="الأخبار"/></div>;
 }

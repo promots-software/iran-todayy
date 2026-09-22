@@ -9,9 +9,9 @@ import {editorialDecision} from '../src/lib/processing/editorial-eligibility';
 const source='افتتح المجلس مدرسة جديدة في العاصمة.';
 const e=(excerpt:string)=>({excerpt,context:source});
 const u=()=>adaptDirectExtraction(validateDirectExtraction({actors:[e('المجلس')],action:e('افتتح'),object:e('مدرسة جديدة'),location:e('العاصمة'),event_time:null,statements:[{evidence:e(source),speaker:null,kind:'FACT',material:false}],safety:{filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false}},source),source);
-test('DIRECT ignores editorial selection labels; NORMAL preserves every existing gate',()=>{
+test('DIRECT ignores editorial selection labels; NORMAL selects only once on Iran relevance',()=>{
  for(const filterReason of ['UNRELATED','ADVERTISING','SATIRE','RUMOUR','OPINION','INCITEMENT'] as const){
-  const value={...u(),filterReason};assert.equal(editoriallyFiltered(value,false,'DIRECT'),false);assert.equal(editoriallyFiltered(value,false,'NORMAL'),true);
+  const value={...u(),filterReason};assert.equal(editoriallyFiltered(value,false,'DIRECT'),false);assert.equal(editoriallyFiltered(value,false,'NORMAL'),false);
  }
  const value={...u(),relevance:'IRRELEVANT' as const,priority:'P4' as const};
  assert.equal(selectionBlocksDraft(value,'DIRECT'),false);assert.equal(selectionBlocksDraft(value,'NORMAL'),true);

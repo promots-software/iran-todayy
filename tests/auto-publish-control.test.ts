@@ -26,15 +26,16 @@ test('DB control is audited, role-fenced, idempotent and preserves scope; OFF re
  try{
   const actor=await db.dashboardUser.create({data:{username:'control-test',displayName:'offline',passwordHash:'not-a-credential',role:'SUPER_ADMIN'}});
   await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:policy}});
-  const action=(value:string,state:string)=>({requestId:randomUUID(),kind:'AUTO_PUBLISH',target:'1',value,expected:`${policy.id}:${state}`,confirmed:true});
+  let currentId:string=policy.id;
+  const action=(value:string,state:string)=>({requestId:randomUUID(),kind:'AUTO_PUBLISH',target:'1',value,expected:`${currentId}:${state}`,confirmed:true});
   const off=action('false','ACTIVE');await operate(db,actor.id,off);assert.equal((await operate(db,actor.id,off)).changed,false);
-  const closed=await db.appSettings.findUniqueOrThrow({where:{id:1}});assert.deepEqual(closed.telegramAutoPolicy,{...policy,state:'CLOSED',reason:'OPERATOR_DISABLED'});assert.equal(closed.publishingPaused,false);
+  const closed=await db.appSettings.findUniqueOrThrow({where:{id:1}});currentId=(closed.telegramAutoPolicy as {id:string}).id;assert.notEqual(currentId,policy.id);assert.deepEqual(closed.telegramAutoPolicy,{...policy,id:currentId,authorizedBy:`user:${actor.id}`,state:'CLOSED',reason:'OPERATOR_DISABLED'});assert.equal(closed.publishingPaused,false);
   await assert.rejects(operate(db,actor.id,action('true','CLOSED')),/AUTOMATIC_ENABLE_BLOCKED/);
   await db.workerHeartbeat.create({data:{id:'telegram-publisher-worker',state:'IDLE',phase:'PUBLISHING',startedAt:new Date(),lastSeenAt:new Date(),metadata:{...metadata,policyState:'CLOSED'}}});
   await assert.rejects(operate(db,actor.id,action('true','ACTIVE')),/STALE_CONTROL/);
-  await operate(db,actor.id,action('true','CLOSED'));assert.deepEqual((await db.appSettings.findUniqueOrThrow({where:{id:1}})).telegramAutoPolicy,policy);
+  await operate(db,actor.id,action('true','CLOSED'));const active=(await db.appSettings.findUniqueOrThrow({where:{id:1}})).telegramAutoPolicy as typeof policy;assert.equal(active.state,'ACTIVE');assert.notEqual(active.id,currentId);assert(new Date(active.notBefore)>new Date(policy.notBefore));currentId=active.id;
   assert.equal(await db.auditLog.count({where:{action:'OPERATIONS_AUTO_PUBLISH',actor:`user:${actor.id}`}}),2);
-  await db.dashboardUser.update({where:{id:actor.id},data:{role:'ADMIN'}});await assert.rejects(operate(db,actor.id,action('false','ACTIVE')),/FORBIDDEN/);
+  await db.dashboardUser.update({where:{id:actor.id},data:{enabled:false}});await assert.rejects(operate(db,actor.id,action('false','ACTIVE')),/FORBIDDEN/);
   assert.equal(await db.publication.count(),0);
  }finally{await db.$disconnect();}
 });

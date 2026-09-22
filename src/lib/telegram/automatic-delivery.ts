@@ -13,13 +13,16 @@ export async function closeAutomaticPolicy(db:PrismaClient,id:string,reason:stri
  await tx.auditLog.create({data:{actor:'automatic-telegram-worker',action:'AUTOMATIC_DELIVERY_STOPPED',entityType:'AppSettings',entityId:'1',message:reason,metadata:{policyId:id}}});
 });}
 /** One bounded pass; only this policy's new publications may ever be resumed. */
-export async function automaticDeliveryCycle(db:PrismaClient,env:Record<string,string|undefined>,transport:typeof fetch=fetch,candidateId?:string){
+export async function automaticDeliveryCycle(db:PrismaClient,env:Record<string,string|undefined>,transport:typeof fetch=fetch,candidateId?:string,acknowledgedPolicy?:string){
  // Reconciliation is DB-only and must continue even when delivery is disarmed.
  const recovery=await db.publication.findMany({where:{status:{in:['SENDING','UNKNOWN']}},select:{id:true,automaticPolicyId:true},take:100});
- for(const row of recovery){const recovered=await reconcileDelivery(db,row.id);if(recovered.status==='UNKNOWN'&&row.automaticPolicyId)await closeAutomaticPolicy(db,row.automaticPolicyId,'DELIVERY_RECONCILIATION_REQUIRED');}
+ let unresolvedAutomatic=false;
+ for(const row of recovery){const recovered=await reconcileDelivery(db,row.id);if(recovered.status==='UNKNOWN'&&row.automaticPolicyId){unresolvedAutomatic=true;await closeAutomaticPolicy(db,row.automaticPolicyId,'DELIVERY_RECONCILIATION_REQUIRED');}}
  const settings=await db.appSettings.findUniqueOrThrow({where:{id:1}});
  if(settings.publishingPaused)return {status:'PAUSED'};
  let policy:AutoPolicy;try{policy=requireAutoPolicy(settings.telegramAutoPolicy,env);}catch{return {status:'DISABLED'};}
+ if(unresolvedAutomatic){await closeAutomaticPolicy(db,policy.id,'DELIVERY_RECONCILIATION_REQUIRED');return {status:'STOPPED_UNCERTAIN'};}
+ if(acknowledgedPolicy!==undefined&&acknowledgedPolicy!==`${policy.id}:${policy.state}`)return {status:'AWAITING_POLICY_ACKNOWLEDGEMENT'};
  const unresolved=await db.publication.findMany({where:{automaticPolicyId:policy.id,status:{in:['SENDING','UNKNOWN']}},select:{id:true}});
  for(const p of unresolved){const r=await reconcileDelivery(db,p.id);if(r.status==='SENDING')return {status:'IN_FLIGHT'};if(r.status!=='SENT'){await closeAutomaticPolicy(db,policy.id,'DELIVERY_RECONCILIATION_REQUIRED');return {status:'STOPPED_UNCERTAIN'};}}
  const publication=await db.$transaction(async tx=>{

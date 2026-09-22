@@ -1,3 +1,4 @@
+import {publicationDraft} from './direct-publication';
 import {EDITORIAL_CONTRACT_SHA256,isGroundedTerminologyQuote} from './editorial-contract';
 import {attributionLead,normalizeAttributionAgreement} from './attribution-rendering';
 import {finalizeBodyPunctuation} from '../publication-finalization';
@@ -51,6 +52,14 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   if (!parsed.success) throw new ProcessingError("INVALID_DRAFT_SCHEMA");
   const draft: Draft = parsed.data;
   const canonicalWriting=u.publicationProposal?.editorialContractHash===EDITORIAL_CONTRACT_SHA256;
+  // A canonical independent review proves attribution of the exact proposed
+  // title/body, including grammatical forms such as a speaker-colon headline.
+  // Historical/unreviewed prose still requires the legacy explicit check.
+  let reviewedAttribution=false;
+  if(canonicalWriting&&u.publicationProposal?.method==='INDEPENDENT'){
+    const checked=publicationDraft(content,u);
+    reviewedAttribution=checked.title===draft.title&&checked.body===draft.body;
+  }
   const review = initialReview(u, profile,content);
   const sourceQuotes = literalQuotes(content);
   const outputText = draft.title + "\n" + draft.body;
@@ -110,7 +119,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
     if (rule.from.some(f=>boundary(f).test(visible)) && !applied.some(a=>a.ruleId === rule.id)) review.push(reason("CONTEXT_REQUIRED", rule.id));
   }
   // Attribution is validated rather than adding an unverified speaker or upgrading a claim.
-  if (["WESTERN","HEBREW"].includes(profile.classification) || u.seriousClaim) {
+  if (!reviewedAttribution&&(["WESTERN","HEBREW"].includes(profile.classification) || u.seriousClaim)) {
     const scopedStatement=draft.format==='STATEMENT'&&hasEditorialGrounding(u,content)&&u.event.facts.every(f=>f.speaker&&title===newsroomPrefix+attributionLead(f.speaker.arabic))&&draft.sentences.filter(s=>s.text!==draft.title).every(s=>s.factIds.length===1&&s.text===`- ${u.event.facts.find(f=>f.id===s.factIds[0])?.arabic}`);
     if (!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(title) || (body.trim()&&!scopedStatement&&!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(body))) review.push(reason("UNSUPPORTED_OUTPUT", "النسب الصريح مطلوب في العنوان والمتن"));
   }

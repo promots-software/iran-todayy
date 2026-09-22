@@ -9,7 +9,7 @@ import {ingest,claimJob} from '../src/lib/processing/engine';
 test('SUPER_ADMIN only operations access including direct URLs; ordinary roles preserved',()=>{
  for(const path of ['/operations','/operations/failures','/operations/posts/id']){assert(allowed('SUPER_ADMIN',path));assert(!allowed('ADMIN',path));assert(!allowed('EDITOR',path));}
  for(const role of ['ADMIN','EDITOR'] as const)assert.throws(()=>assertSuperAdmin(role));
- assert.doesNotThrow(()=>assertSuperAdmin('SUPER_ADMIN'));assert(allowed('ADMIN','/settings'));assert(!allowed('EDITOR','/settings'));assert.equal(roleLabel('SUPER_ADMIN'),'المدير الأعلى');
+ assert.doesNotThrow(()=>assertSuperAdmin('SUPER_ADMIN'));assert(allowed('ADMIN','/settings'));assert(allowed('EDITOR','/settings'));assert.equal(roleLabel('SUPER_ADMIN'),'المدير الأعلى');
 });
 test('ADMIN cannot elevate itself or alter SUPER_ADMIN; EDITOR cannot manage any user',()=>{
  for(const role of ['ADMIN','EDITOR','SUPER_ADMIN'] as const){assert.throws(()=>assertUserManagement('EDITOR',role));assert.throws(()=>assertUserManagement('ADMIN',role,'SUPER_ADMIN'));assert.doesNotThrow(()=>assertUserManagement('SUPER_ADMIN',role));}

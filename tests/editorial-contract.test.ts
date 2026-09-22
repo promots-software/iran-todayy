@@ -92,3 +92,40 @@ test('worker image and Vercel tracing package the exact artifact',()=>{
  assert.ok(readFileSync('next.config.ts','utf8').includes('./config/editorial/iran-now-contract.txt'));
  assert.ok(readFileSync('.gitattributes','utf8').includes('config/editorial/iran-now-contract.txt -text'));
 });
+
+test('final article repair is bounded, uses the complete contract and never changes evidence',async()=>{
+ process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';
+ for(const resolves of [true,false]){
+ const u=adaptDirectExtraction(validateDirectExtraction(raw,source),source),before=JSON.stringify(u.event);let calls=0;
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{inspect(init);calls++;return Response.json(geminiEnvelope({coverage,publication:{title:{text:resolves&&calls===2?source:source.replace('12','13'),factIds:['f1']},body:[]}}));});
+ const task=provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'NORMAL'},signal());
+ if(resolves){const d=await task;assert(d.title.includes('12'));}else await assert.rejects(task,/NUMBER_MISMATCH/);
+ assert.equal(calls,2);assert.equal(JSON.stringify(u.event),before);
+ }
+});
+
+test('independently checked speaker-colon headline satisfies attribution; unchecked or failed review does not',()=>{
+ const content='المتحدث باسم الوزارة: قد يبدأ المشروع غداً.';
+ const ev=(excerpt:string)=>({excerpt,context:content});
+ const x={actors:[ev('المتحدث باسم الوزارة')],action:ev('قد يبدأ'),object:ev('المشروع'),location:null,event_time:null,statements:[{evidence:ev('قد يبدأ المشروع غداً.'),speaker:ev('المتحدث باسم الوزارة'),kind:'CLAIM',material:true}],safety:{...raw.safety,seriousClaim:true}};
+ const u=adaptDirectExtraction(validateDirectExtraction(x,content),content);
+ const publication={title:{text:'المتحدث باسم الوزارة: قد يبدأ المشروع غداً',factIds:['f1']},body:[{text:'قال المتحدث باسم الوزارة إن المشروع قد يبدأ غداً.',factIds:['f1']}]};
+ const p=preparePublication(content,u,publication,coverage);
+ const review={review:['title','body:1'].map(id=>({id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[]};
+ assert.throws(()=>acceptPublication(content,u,p));
+ const bad=structuredClone(review);bad.review[0].checks.attribution=false;assert.throws(()=>acceptPublication(content,u,p,bad));
+ u.publicationProposal=acceptPublication(content,u,p,review);
+ const d=publicationDraft(content,u),f=finalizeConstrainedDraft(d,content,u,unknownProfile);
+ assert(!f.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
+ assert(f.title.includes('قد يبدأ'));
+});
+
+test('independent factual review rejects certainty, planned/completed, identity and relationship corruption',()=>{
+ const u=adaptDirectExtraction(validateDirectExtraction(raw,source),source);
+ const publication={title:{text:'افتتاح 12 مدرسة جديدة في العاصمة',factIds:['f1']},body:[{text:source,factIds:['f1']}]};
+ const p=preparePublication(source,u,publication,coverage);assert.equal(p.local,false);
+ for(const check of renderingChecks){
+  const review={review:['title','body:1'].map(id=>({id,verdict:'SUPPORTED',checks:{...Object.fromEntries(renderingChecks.map(k=>[k,true])),[check]:false},issues:['material contradiction']})),fullSourceCovered:true,publicationQuality:true,issues:[]};
+  assert.throws(()=>acceptPublication(source,u,p,review),/DIRECT_PUBLICATION_REVIEW_FAILED/,check);
+ }
+});
