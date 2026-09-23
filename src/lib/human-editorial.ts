@@ -67,7 +67,9 @@ export async function approveHumanDraft(db:PrismaClient,input:{id:string;digest:
   const original=await origin(tx,{kind:d.newsItemId?'news':'post',id:d.newsItemId??d.sourcePostId!});
   const snapshot=original.snapshot;
   const hasMedia='metadata' in snapshot?sourceHasMedia(snapshot.metadata):snapshot.evidence.some(e=>sourceHasMedia(e.sourcePost.metadata));
-  if(hasMedia&&!d.mediaDecisionAt)throw new ProcessingError('SOURCE_MEDIA_DECISION_REQUIRED');
+  // Telegram publishes only frozen text. Source attachments are never copied
+  // into that publication and require no media-delivery decision.
+  if(target!=='TELEGRAM'&&hasMedia&&!d.mediaDecisionAt)throw new ProcessingError('SOURCE_MEDIA_DECISION_REQUIRED');
   const telegramFormatSnapshot=target==='TELEGRAM'?formatTelegram(d.title,d.body):null;
   const p=await tx.publication.create({data:{...(telegramFormatSnapshot?{telegramFormatSnapshot:json(telegramFormatSnapshot)}:{}),humanDraftId:d.id,idempotencyKey:humanPublicationDigest(d,chatId,telegramFormatSnapshot),destination:chatId,publicationImageId:d.publicationImageId,contentSnapshot:humanText(d)}});
   await tx.humanEditorialDraft.update({where:{id:d.id},data:{status:'APPROVED',approvedBy:actor,approvedAt:new Date(),approvalNote:note}});
