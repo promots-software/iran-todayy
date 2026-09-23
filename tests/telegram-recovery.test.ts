@@ -32,7 +32,9 @@ function database() {
       const before=new Map(posts),beforeJobs=new Set(jobs);
       try {
         const result=await callback({
-          source:{findUniqueOrThrow:async({where}:{where:{id:string}})=>sources.find(s=>s.id===where.id)!},
+          $queryRaw:async()=>[],
+          auditLog:{create:async()=>({})},
+          source:{findUniqueOrThrow:async({where}:{where:{id:string}})=>sources.find(s=>s.id===where.id)!,update:mock.source.update},
           appSettings:settings,
           sourcePost:{upsert:async({create}:{create:Record<string,unknown>})=>{
             if(controls.delayMs)await sleep(controls.delayMs);
@@ -223,8 +225,8 @@ test('arrivals during pagination and newly enabled sources are collected in foll
  await pollSources(state.db,{TELEGRAM:worker},signal);assert.equal(state.posts.size,132);assert.equal(state.jobs.size,132);assert.equal(state.sources[1].cursor.lastId,12);await worker.close();
 });
 
-test('no checkpoint never means skip history; media-only and service messages remain traceable',async()=>{
- const state=database();Object.assign(state.sources[0],{cursor:null});state.sources[1].enabled=false;
+test('initialized zero checkpoint keeps media-only and service messages traceable',async()=>{
+ const state=database();Object.assign(state.sources[0],{cursor:cursor(0)});state.sources[1].enabled=false;
  const messages:ReadMessage[]=[{...message(1),text:'',hasMedia:true,hasPhoto:true},{...message(4),text:'',service:true},{...message(9),text:'  '},message(20)];
  const monitor=new TelegramMonitor({channel:async()=> '123',messages:async(_h,after)=>messages.filter(m=>m.id>(after??0)).slice(0,2)});
  await pollSources(state.db,{TELEGRAM:monitor},signal);assert.equal(state.posts.size,4);assert.equal(state.jobs.size,4);assert.equal(state.sources[0].cursor.lastId,20);

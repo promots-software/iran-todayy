@@ -1,6 +1,7 @@
 import {lockEditorialPublication} from './human-editorial-contract';
+import {activationCursor} from './telegram/monitor';
 import {syncAutomaticSources} from './telegram/source-authorization';
-import { PrismaClient } from "@prisma/client";
+import { Prisma, PrismaClient } from "@prisma/client";
 import { sourceSchema, sourceProcessingModeSchema, sourceUrl } from "./domain";
 
 
@@ -12,7 +13,7 @@ export async function saveSource(client: PrismaClient, input: unknown, actor: st
     if (existing && !existing.deletedAt) throw new Error("SOURCE_EXISTS");
     const data = { ...source, url: sourceUrl(source.platform, source.handle), enabled: true, deletedAt: null };
     const saved = existing
-      ? await tx.source.update({ where: { id: existing.id }, data })
+      ? await tx.source.update({ where: { id: existing.id }, data:{...data,...(source.platform==='TELEGRAM'?{cursor:activationCursor(existing.cursor)??Prisma.DbNull}:{})} })
       : await tx.source.create({ data });
     await tx.auditLog.create({ data: { actor, action: existing ? "SOURCE_RESTORED" : "SOURCE_CREATED", entityType: "Source", entityId: saved.id, message: `إضافة المصدر ${source.name}`, metadata: { platform: source.platform, handle: source.handle, previousMode: existing?.processingMode ?? null, processingMode: saved.processingMode } } });
     await syncAutomaticSources(tx,actor);
@@ -23,7 +24,10 @@ export async function saveSource(client: PrismaClient, input: unknown, actor: st
 export async function changeSource(client: PrismaClient, id: string, operation: "enable" | "disable" | "remove", actor: string) {
   return client.$transaction(async tx => {
     await lockEditorialPublication(tx);
-    const changed = await tx.source.updateMany({ where: { id, deletedAt: null }, data: operation === "remove" ? { deletedAt: new Date(), enabled: false } : { enabled: operation === "enable" } });
+    await tx.$queryRaw`SELECT id FROM "Source" WHERE id=${id} FOR UPDATE`;
+    const previous=await tx.source.findUnique({where:{id}});
+    const activation=previous?.platform==='TELEGRAM'&&!previous.enabled&&operation==='enable'?{cursor:activationCursor(previous.cursor)??Prisma.DbNull}:{};
+    const changed = await tx.source.updateMany({ where: { id, deletedAt: null }, data: operation === "remove" ? { deletedAt: new Date(), enabled: false } : { enabled: operation === "enable",...activation } });
     if (!changed.count) throw new Error("SOURCE_NOT_FOUND");
     await syncAutomaticSources(tx,actor);
     await tx.auditLog.create({ data: { actor, action: `SOURCE_${operation.toUpperCase()}`, entityType: "Source", entityId: id, message: operation === "remove" ? "إزالة المصدر مع الاحتفاظ بالسجل" : operation === "enable" ? "تفعيل المصدر" : "تعطيل المصدر" } });

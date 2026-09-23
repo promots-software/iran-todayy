@@ -62,6 +62,7 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   await tx.$queryRaw`SELECT id FROM "NewsItem" WHERE id=${input.newsItemId} FOR UPDATE`;
   assertApprovalMode((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingMode);
   const item=await tx.newsItem.findUniqueOrThrow({where:{id:input.newsItemId},include:{publication:true,eventRevision:true,evidence:{include:{sourcePost:true}}}});
+  if(item.rejectionReason==='HISTORICAL_INGESTION_RETIRED'||item.evidence.some(e=>e.sourcePost.rejectionReason==='HISTORICAL_INGESTION_RETIRED'))throw new ProcessingError('HISTORICAL_INGESTION_RETIRED');
   const digest=approvalDigest(item);
   if(digest!==input.digest)throw new ProcessingError('DRAFT_CHANGED_REVIEW_AGAIN');
   if(item.publication){if(item.publication.destination!==chatId)throw new ProcessingError('PUBLICATION_DESTINATION_LOCKED');if(item.publication.idempotencyKey===transportApprovalDigest(digest,chatId,item.publication.telegramFormatSnapshot))return item.publication;throw new ProcessingError('PUBLICATION_ALREADY_EXISTS');}

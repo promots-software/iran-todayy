@@ -1,4 +1,6 @@
 import {directGenerationSchema} from './direct-generation-contract';
+import {isDeepStrictEqual} from 'node:util';
+import {cursorSchema} from '../telegram/monitor';
 import {completeEventStructure} from './impersonal-event';
 import {availableDraft,type AvailableDraft,reviewPrefill} from './available-draft';
 import {editoriallyFiltered,selectionBlocksDraft} from './direct-policy';
@@ -33,8 +35,14 @@ export async function ingest(client: PrismaClient, sourceId: string, raw: unknow
   if (live) assertShadowMode();
   const p=incomingSchema.parse(raw);
   return client.$transaction(async tx=>{
+    await tx.$queryRaw`SELECT id FROM "Source" WHERE id=${sourceId} FOR SHARE`;
     const source=await tx.source.findUniqueOrThrow({where:{id:sourceId}});
     if (!source.enabled || source.deletedAt) throw new ProcessingError("SOURCE_DISABLED");
+    if(source.platform==='TELEGRAM'&&p.metadata.transport==='telegram-shadow-v1'){
+      const cursor=cursorSchema.safeParse(source.cursor);
+      if(!cursor.success||cursor.data.baselinePending)throw new ProcessingError('TELEGRAM_BASELINE_REQUIRED');
+      if(!/^\d+$/.test(p.externalId)||Number(p.externalId)<=(cursor.data.baselineId??0))throw new ProcessingError('TELEGRAM_BEFORE_BASELINE');
+    }
     if(!p.content.trim()&&!(source.platform==='TELEGRAM'&&p.metadata.transport==='telegram-shadow-v1'&&['MEDIA_ONLY','SERVICE','EMPTY'].includes(String(p.metadata.messageKind))))throw new ProcessingError('SOURCE_TEXT_REQUIRED');
     const mode=(await tx.appSettings.findUnique({where:{id:1}}))?.publishingMode ?? "REQUIRE_APPROVAL";
     if (live) {
@@ -335,7 +343,21 @@ export async function pollSources(client: PrismaClient, monitors: Partial<Record
       }
       // Cursor advances only after all posts commit. Replay is safe after interruption.
       signal.throwIfAborted();options.requireActive?.();
-      await client.source.update({where:{id:source.id},data:{cursor:batch.cursor == null?Prisma.DbNull:json(batch.cursor),lastPollAt:new Date(),lastError:null}});
+      await client.$transaction(async tx=>{
+        await tx.$queryRaw`SELECT id FROM "Source" WHERE id=${source.id} FOR UPDATE`;
+        const current=await tx.source.findUniqueOrThrow({where:{id:source.id}});
+        if(!current.enabled||current.deletedAt)throw new ProcessingError('SOURCE_DISABLED');
+        if(!isDeepStrictEqual(current.cursor,source.cursor))throw new ProcessingError('SOURCE_CURSOR_CHANGED',true);
+        if(source.platform==='TELEGRAM'&&adapter.id==='telegram-shadow-v1'){
+          const next=cursorSchema.parse(batch.cursor),previous=cursorSchema.safeParse(current.cursor);
+          if(previous.success&&next.lastId<previous.data.lastId)throw new ProcessingError('TELEGRAM_CURSOR_REGRESSION');
+          if(!previous.success||previous.data.baselinePending){
+            if(batch.posts.length||next.baselineId!==next.lastId||!next.initializedAt)throw new ProcessingError('TELEGRAM_BASELINE_REQUIRED');
+            await tx.auditLog.create({data:{actor:'telegram-ingestion',action:'SOURCE_BASELINE_INITIALIZED',entityType:'Source',entityId:source.id,message:'Latest Telegram message checkpoint established without historical ingestion',metadata:json({previousCursor:current.cursor,cursor:next})}});
+          }
+        }
+        await tx.source.update({where:{id:source.id},data:{cursor:batch.cursor == null?Prisma.DbNull:json(batch.cursor),lastPollAt:new Date(),lastError:null}});
+      });
       phase='COMPLETE';progress(null,batch.cursor);
       record(source.id,posts,null);
       // A perpetually busy source must not prevent periodic rechecks of a

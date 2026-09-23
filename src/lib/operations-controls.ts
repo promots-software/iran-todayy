@@ -1,7 +1,8 @@
 import {randomUUID} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
 import {z} from 'zod';
-import type {PrismaClient,Prisma} from '@prisma/client';
+import {Prisma,type PrismaClient} from '@prisma/client';
+import {activationCursor} from './telegram/monitor';
 import {assertSuperAdmin} from './dashboard-permissions';
 import {lockEditorialPublication} from './human-editorial-contract';
 import {ProcessingError} from './processing/contracts';
@@ -66,7 +67,7 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
    const key=input.kind==='SOURCE_MODE'?'processingMode':input.kind==='SOURCE_ENABLED'?'enabled':'processingPaused';before=source[key];
    if(String(before)!==input.expected)throw new Error('STALE_CONTROL');
    if(key==='processingMode'){const processingMode=z.enum(['NORMAL','DIRECT']).parse(input.value);await tx.source.update({where:{id:source.id},data:{processingMode}});}
-   else{if(!['true','false'].includes(input.value))throw new Error('INVALID_CONTROL');await tx.source.update({where:{id:source.id},data:{[key]:input.value==='true'}});}
+   else{if(!['true','false'].includes(input.value))throw new Error('INVALID_CONTROL');await tx.source.update({where:{id:source.id},data:{[key]:input.value==='true',...(key==='enabled'&&!source.enabled&&input.value==='true'&&source.platform==='TELEGRAM'?{cursor:activationCursor(source.cursor)??Prisma.DbNull}:{})}});}
    if(input.kind==='SOURCE_ENABLED')await syncAutomaticSources(tx,`user:${userId}`);
   }else{
    await tx.$queryRaw`SELECT id FROM "ProcessingJob" WHERE id=${input.target} FOR UPDATE`;

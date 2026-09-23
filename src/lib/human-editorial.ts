@@ -14,11 +14,13 @@ export type EditorialTarget=z.infer<typeof targetSchema>;
 async function origin(tx:Prisma.TransactionClient,target:EditorialTarget){
  if(target.kind==='news'){
   const item=await tx.newsItem.findUniqueOrThrow({where:{id:target.id},include:{publication:true,evidence:{include:{sourcePost:true}}}});
+  if(item.rejectionReason==='HISTORICAL_INGESTION_RETIRED'||item.evidence.some(e=>e.sourcePost.rejectionReason==='HISTORICAL_INGESTION_RETIRED'))throw new ProcessingError('HISTORICAL_INGESTION_RETIRED');
   if(item.publication)throw new ProcessingError('EXISTING_AI_PUBLICATION_REQUIRES_RECONCILIATION');
   if(!['NEEDS_REVIEW','PENDING_APPROVAL','FAILED','REJECTED'].includes(item.status)||!item.evidence.length)throw new ProcessingError('ITEM_NOT_REVIEWABLE');
   return {where:{newsItemId:item.id},snapshot:item};
  }
  const post=await tx.sourcePost.findUniqueOrThrow({where:{id:target.id},include:{evidence:true,jobs:true}});
+ if(post.rejectionReason==='HISTORICAL_INGESTION_RETIRED')throw new ProcessingError('HISTORICAL_INGESTION_RETIRED');
  if(post.evidence.length)throw new ProcessingError('EDIT_LINKED_NEWS_ITEM');
  if(!['NEEDS_REVIEW','FAILED','REJECTED'].includes(post.status))throw new ProcessingError('ITEM_NOT_REVIEWABLE');
  return {where:{sourcePostId:post.id},snapshot:post};
