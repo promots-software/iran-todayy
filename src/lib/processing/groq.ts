@@ -97,7 +97,7 @@ export class GroqLanguageProvider implements LanguageProvider {
       firstContentType??=result.contentType;
       selection.relevance??=result.extraction.relevance==='IRRELEVANT'?'IRRELEVANT':'POLITICAL_NEWS';
       result.contentType=firstContentType;result.extraction.relevance=selection.relevance;
-      if(firstContentType!=='PURE_PROMO'&&selection.relevance!=='IRRELEVANT'){const extracted=validateMinimalExtraction(result.extraction,input.content);requireCompleteExtraction(extracted,input.content);validateNormalExtractionCoverage(input.content,extracted);}
+      if(firstContentType!=='PURE_PROMO'&&selection.relevance!=='IRRELEVANT'){const extracted=validateMinimalExtraction(result.extraction,input.content);requireCompleteExtraction(extracted,input.content);validateNormalExtractionCoverage(input.content,extracted,result.extraction);}
       return result;
     });
     const parsed=selected.extraction;

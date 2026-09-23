@@ -17,6 +17,16 @@ function titlePrefix(prefix:string){
  const role=/^(?:أمين|رئيس|وزير|مدير|نائب|محافظ|اللواء|الفريق|العميد|المتحدث)$/u;
  return words.length>0&&words.length<=12&&role.test(words[0])&&words.every(w=>role.test(w)||/^(?:ال|لل|للأ)[\p{L}\p{M}]+$/u.test(w))&&!speech.test(prefix);
 }
+/** Explicit speech verb + official title + comma + extracted name. This is
+ * attribution inside a full assertion, not an inferred role or a new speaker.
+ * Only noun/adjective title syntax is admitted; another verb/person fails. */
+function titledIntroduction(before:string){
+ const m=/^(?:[وف])?(?:قالت?|أعلنت?|أكدت?|أوضحت?|ذكرت?|صرحت?|أضافت?)\s+(.+)[،,]\s*$/u.exec(before);
+ if(!m)return false;
+ const words=m[1].trim().split(/\s+/u);
+ if(!/^(?:مساعد|نائب|وزير|رئيس|مدير|محافظ)$/u.test(words[0])||words.length>14)return false;
+ return words.every(w=>/^(?:مساعد|نائب|وزير|رئيس|مدير|محافظ)$/u.test(w)||/^(?:ال|لل|للأ)[\p{L}\p{M}]+$/u.test(w)||/^وال[\p{L}\p{M}]+ية$/u.test(w));
+}
 /** A speaker heading may govern a contiguous bullet quotation block. Blank
  * lines are layout, but a new heading/narrative or attributed voice ends scope. */
 export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evidence){
@@ -27,6 +37,7 @@ export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evid
  if(fact.start<=speaker.start&&speaker.end<fact.end){
   const before=source.slice(fact.start,speaker.start).replace(decoration,'').trim();
   const after=source.slice(speaker.end,fact.end);
+  if(titledIntroduction(before)&&/^[،,]\s*\S/u.test(after))return;
   // A source-stated locative qualifier between the leading speaker and colon
   // does not change who owns the explicit heading. Never cross another voice.
   const qualifiedHeading=/^\s+في\s+[\p{L}\p{M} ‌-]{1,80}[:：]\s*\S/u.exec(after);

@@ -9,9 +9,17 @@ export const normalExtractionSchema=minimalExtractionSchema.extend({
  contentTypeEvidence:z.object({excerpt:z.string().min(1).max(20000),context:z.string().min(1).max(20000)}).strict(),
 }).strict();
 export const newsworthinessInstructions='Extraction is the only stage allowed to choose source evidence; later rendering cannot extend immutable excerpts. Cover all source prose with complete contiguous verbatim assertions, including prefixes, qualifiers, endings and labels. Do not silently discard text as boilerplate; only standalone URLs/handles are locally exempt. Include surrounding prose in the exact assertion span when necessary; never fabricate a fallback fact. An explicit speaker excerpt must be the actual governing source span, not a later mention, inferred pronoun expansion or invented replacement. If speaker identity is unresolved, preserve the complete original attributed assertion as verbatim narration rather than inventing an identity. For colon headings preserve the full explicit speaker including source-stated qualifiers. NORMAL content selection: distinguish independent substantive news (events, decisions, actual statements, material developments) from PURE_PROMO (only an upcoming guest/program/interview announcement, broadcast schedule, watch invitation or teaser without substantive new information). A statement actually made in an interview is NEWS, never PURE_PROMO merely because television or an interview is mentioned. An announcement that someone WILL speak is not the substance they have actually said. Use full contextual understanding, not keywords. Return UNCERTAIN rather than guess. contentTypeEvidence must be verbatim source context supporting the decision. Preserve the separate existing Iran relevance decision. Source language/style quality is not a selection reason. Still extract all safe factual assertions verbatim.';
-export function validateNormalExtractionCoverage(source:string,x:GroundedExtraction){
+export function validateNormalExtractionCoverage(source:string,x:GroundedExtraction,raw?:z.infer<typeof minimalExtractionSchema>){
  const facts=x.statements.map(f=>({...f,speaker:f.speaker?{evidence:f.speaker}:null}));
- return validateSourceCoverage(source,{event:{facts}},sourceCoverage(source,facts));
+ try{return validateSourceCoverage(source,{event:{facts}},sourceCoverage(source,facts));}
+ catch(error){
+  if(raw&&error instanceof ProcessingError&&error.diagnostic&&'issues'in error.diagnostic){
+   // Coverage runs after exact evidence validation but its candidate is still
+   // untrusted. Retain it for the SAME bounded repair, including precise gaps.
+   throw new ProcessingError(error.code,error.retryable,{...error.diagnostic,output:minimalExtractionSchema.parse(raw)});
+  }
+  throw error;
+ }
 }
 export function normalSelection(raw:unknown,source:string){
  const p=normalExtractionSchema.safeParse(raw);if(!p.success)throw new ProcessingError('AI_INVALID_SCHEMA');
