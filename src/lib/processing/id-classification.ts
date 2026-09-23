@@ -2,7 +2,7 @@ import {z} from 'zod';
 import {ProcessingError,understandingSchema,validateUnderstanding,type Understanding,type SourceProfile} from './contracts';
 import {validateGroundedExtraction,type GroundedExtraction} from './groq-extraction';
 import {requireArabic,sourceLanguage,validateExtractionLanguageAndSpeakers} from './groq-validation';
-import {supportedClassificationTopics,validateTopicGrounding,validateRationaleGrounding,normalizeInstitutionIdentity} from './classification-grounding';
+
 import {names} from './rules';
 import {resolveRendering,type RenderingReference} from './evidence-rendering';
 import type {RenderingReceipt} from './rendering-contract';
@@ -27,20 +27,17 @@ export function idClassificationSchema(x:GroundedExtraction){
   anchorIds:array(refs.requiredAnchorIds),
   factLabels:z.array(factLabels.length>1?z.union(factLabels):factLabels[0]??z.object({id:z.string(),kind:z.literal('FACT'),material:z.boolean()}).strict()).length(x.statements.length),
   filterReason:z.enum(['NONE','UNRELATED','ADVERTISING','SATIRE','RUMOUR','OPINION','INCITEMENT']),
-  topic:z.enum(supportedClassificationTopics(understandingSchema.shape.topic.options,refs.entries.map(e=>e.evidence.excerpt))),
+  topic:understandingSchema.shape.topic,
   topicEvidenceId:ids.length?z.enum(ids).nullable():z.null(),
   priority:understandingSchema.shape.priority,
   sensitiveActor:z.boolean(),leaderDeath:z.boolean(),seriousClaim:z.boolean(),rankUnverified:z.boolean(),
   rationaleIds:z.array(ids.length?z.enum(ids):z.string()).min(ids.length?1:0).max(ids.length),
  }).strict();
 }
-export const idClassificationInstructions='Classify only the supplied immutable references. Return IDs and classification labels only; never return factual text, translations, entities, names, speakers, roles, relationships, evidence, semantic keys or prose rationale. Include every required factId exactly once in factLabels and every required anchorId exactly once in anchorIds. Select rationaleIds supporting the labels, including topicEvidenceId when non-null; the Arabic rationale is rendered locally. Relevance is already validated and cannot be changed. Select UNKNOWN when a specific topic is not established. A generic regional expression never establishes a named region. topicEvidenceId must identify supplied evidence explicitly supporting the chosen entity/geography-specific topic; otherwise use null. Do not infer nationality, country, institution identity, speaker, ownership, affiliation or relationships from a name, source, catalogue or project identity. Facts and their speaker structure are copied locally, never reclassified as attributed speech without a validated speaker. Ordinary factual narration is FACT, not STATEMENT. Classify serious claims and sensitive actors accurately; labels alone are not editorial failures. A faithfully copied sourced title is not an inferred title. Flag rankUnverified only for unresolved rank identity, not merely absence of external verification. Do not attest editorial correctness.';
+export const idClassificationInstructions='Classify only the supplied immutable references. Return IDs and classification labels only; never return factual text, translations, entities, names, speakers, roles, relationships, evidence, semantic keys or prose rationale. Include every required factId exactly once in factLabels and every required anchorId exactly once in anchorIds. Select rationaleIds supporting the labels, including topicEvidenceId when non-null; the Arabic rationale is rendered locally. Relevance is already validated and cannot be changed. Select UNKNOWN when a specific topic is not established. A generic regional expression never establishes a named region. Every non-UNKNOWN topic requires topicEvidenceId identifying supplied evidence explicitly supporting that topic (including non-geographical topics). UNKNOWN may use null. Do not infer nationality, country, institution identity, speaker, ownership, affiliation or relationships from a name, source, catalogue or project identity. Facts and their speaker structure are copied locally, never reclassified as attributed speech without a validated speaker. Ordinary factual narration is FACT, not STATEMENT. Classify serious claims and sensitive actors accurately; labels alone are not editorial failures. A faithfully copied sourced title is not an inferred title. Flag rankUnverified only for unresolved rank identity, not merely absence of external verification. Do not attest editorial correctness.';
 export function idClassificationInput(x:GroundedExtraction,profile:SourceProfile){
  const refs=classificationReferences(x);
  return {classificationReferences:{...refs,relevance:x.relevance,
-  topicSupport:Object.fromEntries(understandingSchema.shape.topic.options.map(topic=>[topic,refs.entries.filter(e=>{
-   try{validateTopicGrounding(topic,e.evidence.excerpt,[e.evidence.excerpt]);return true;}catch{return false;}
-  }).map(e=>e.id)])),
   // Trust status controls review, never factual identity.
   sourceReview:{verified:profile.verified,flagged:profile.flagged,approvedAnalyst:profile.approvedAnalyst}}};
 }
@@ -48,7 +45,7 @@ export function idClassificationInput(x:GroundedExtraction,profile:SourceProfile
 function copy(id:string,e:Evidence|null,translations:Map<string,string>|null){
  if(!e)return null;
  const arabic=translations?.get(id)??e.excerpt;requireArabic(arabic);
- const label=normalizeInstitutionIdentity(e.excerpt,{key:e.excerpt.normalize('NFKC').toLowerCase().trim(),arabic,nameKind:null});
+ const label={key:e.excerpt.normalize('NFKC').toLowerCase().trim(),arabic};
  return {key:label.key,arabic,evidence:{...e}};
 }
 function renderingReferences(x:GroundedExtraction):RenderingReference[]{return classificationReferences(x).entries.filter(e=>e.role!=='event_time');}
@@ -69,11 +66,11 @@ export function adaptIdClassification(x:GroundedExtraction,raw:unknown,source:st
  if(new Set(c.rationaleIds).size!==c.rationaleIds.length)throw new ProcessingError('INVALID_CLASSIFICATION_RATIONALE_IDS');
  if(c.topicEvidenceId&&!c.rationaleIds.includes(c.topicEvidenceId))throw new ProcessingError('INVALID_CLASSIFICATION_RATIONALE_IDS');
  const selected=refs.entries.find(e=>e.id===c.topicEvidenceId);
- validateTopicGrounding(c.topic,selected?.evidence.excerpt??null,refs.entries.map(e=>e.evidence.excerpt));
+ if(c.topic!=='UNKNOWN'&&!selected)throw new ProcessingError('CLASSIFICATION_TOPIC_EVIDENCE_INVALID');
  const rationale=c.topic==='UNKNOWN'
   ?`لم يثبت موضوع محدد من الأدلة المعتمدة؛ المراجع: ${c.rationaleIds.join('، ')}`
   :`التصنيف مستند إلى الأدلة المعتمدة في المراجع: ${c.rationaleIds.join('، ')}`;
- requireArabic(rationale);validateRationaleGrounding(rationale,refs.entries.map(e=>e.evidence.excerpt));
+ requireArabic(rationale);
  const knownNames:Understanding['names']=[],uncoveredTerms:string[]=[];
  for(const e of [...x.actors,...x.statements.flatMap(f=>f.speaker?[f.speaker]:[])]){
   const kind=names.people.includes(e.excerpt)?'person':names.places.includes(e.excerpt)?'place':names.institutions.includes(e.excerpt)?'institution':null;

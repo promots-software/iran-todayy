@@ -1,3 +1,4 @@
+import {publicationUnits} from '../src/lib/processing/direct-publication';
 import {duplicatePage,outcomePage} from '../src/lib/processing-visibility';
 import {checkpointProvider,type CheckpointStore} from '../src/worker/checkpoints';
 import {matchEvent,type Candidate} from '../src/lib/processing/matcher';
@@ -19,7 +20,7 @@ import {editorialDecision} from '../src/lib/processing/editorial-eligibility';
 const signal=()=>new AbortController().signal;
 const safety={filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false};
 const sources={ar:'افتتح المجلس مدرسة جديدة.',fa:'شورای شهر مدرسه جدیدی افتتاح کرد.',en:'The council opened a new school.'};
-function extraction(source:string){return {actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null,kind:'FACT',material:false}],safety};}
+function extraction(source:string){return {coverage:publicationUnits(source).map(u=>({unitId:u.id,nonFactual:false,factIds:['f1']})),actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null,kind:'FACT',material:false}],safety};}
 const article={title:'إيران الآن | افتتاح مدرسة جديدة',body:'افتتح المجلس مدرسة جديدة.',diagnostics:[] as string[]};
 const envelope=(raw:unknown)=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(raw)}]}}],usageMetadata:{promptTokenCount:1,candidatesTokenCount:1,thoughtsTokenCount:0}});
 function provider(source:string,diagnostics:string[]=[],calls:string[]=[]){return new GeminiLanguageProvider('offline',async(_url,init)=>{

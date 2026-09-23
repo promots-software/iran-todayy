@@ -4,6 +4,7 @@ import {buildAtoms,renderSelection,atomSelectionSchema} from '../src/lib/process
 import {fixture,official} from './fixtures/processing';
 import {editDraft} from '../src/lib/processing/editorial';
 import {GroqLanguageProvider} from '../src/lib/processing/groq';
+import {editorialContract} from '../src/lib/processing/editorial-contract';
 import {ruleSet} from '../src/lib/processing/rules';
 const setup=()=>{
  const f=fixture('atom','قال متحدث: منشآتنا تضررت ولم يبلغ أعضاء الفريق.','ar','منشآتنا تضررت ولم يبلغ أعضاء الفريق.');
@@ -41,14 +42,14 @@ test('valid IDs do not license semantic overreach or arbitrary body text',()=>{
  assert.deepEqual(d.protectedSpans,[]);
  assert.deepEqual(d.decisions,[]);
 });
-test('shared transport receives atoms only and returns locally rendered draft offline',async()=>{
- const {f,input,selection}=setup();let calls=0;
+test('current transport requires complete canonical writing rather than legacy atom selection',async()=>{
+ const {f}=setup();let calls=0;let inspected=false;
  const provider=new GroqLanguageProvider('offline',async(_url,init)=>{
   calls++;const request=JSON.parse(String(init?.body));
-  assert.deepEqual(JSON.parse(request.messages[1].content),input);
-  assert.deepEqual(Object.keys(request.response_format.json_schema.schema.properties),['titleAtomId','bodyAtomIds']);
-  return Response.json({choices:[{finish_reason:'stop',message:{content:JSON.stringify(selection)}}]});
+  assert(request.messages[0].content.includes(editorialContract));
+  assert(request.response_format.json_schema.schema.properties.publication);
+  assert.equal(request.response_format.json_schema.schema.properties.titleAtomId,undefined);
+  inspected=true;throw new Error('OFFLINE_STOP_AFTER_CONTRACT_INSPECTION');
  },()=>{});
- const d=await provider.draft({content:f.content,understanding:f.understanding,rules:ruleSet},new AbortController().signal);
- assert.deepEqual(d,renderSelection(selection,input));assert.equal(calls,1);
+ await assert.rejects(provider.draft({content:f.content,understanding:f.understanding,rules:ruleSet},new AbortController().signal),/GROQ_TRANSPORT_FAILED/);assert.equal(calls,1);assert.equal(inspected,true);
 });

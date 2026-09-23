@@ -28,7 +28,7 @@ test('120B override uses strict minimal extraction then classification without p
   assert.ok(!('publishedAt' in data));
   if(!calls){assert.ok(!JSON.stringify(request.response_format.json_schema.schema).includes('"start"'));assert.ok(!JSON.stringify(request.response_format.json_schema.schema).includes('summary'));}
   else {assert.deepEqual(data,idClassificationInput(grounded,official));assert.equal(data.classificationReferences.entries.find((e:{id:string})=>e.id==='f1')!.evidence.start,0);}
-  return response(calls++===0?{...extraction,contentType:'NEWS',contentTypeEvidence:{excerpt:input.content,context:input.content}}:classification);
+  return response(calls++===0?{...extraction,coverage:[{unitId:'u1',nonFactual:false,factIds:['f1']}],contentType:'NEWS',contentTypeEvidence:{excerpt:input.content,context:input.content}}:classification);
  },()=>{},'openai/gpt-oss-120b');
  const u=await provider.understand(input,new AbortController().signal);
  assert.equal(u.event.summary,null);assert.equal(u.event.eventTime,null);assert.equal(u.event.facts[0].id,'f1');assert.equal(u.event.facts[0].verified,false);assert.equal(calls,2);

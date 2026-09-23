@@ -1,4 +1,4 @@
-import {preparePublication,publicationUnits} from './direct-publication';
+import {validateObjectiveArticle} from './direct-publication';
 import {createHash} from 'node:crypto';
 import {directArticleSchema,directGenerationSchema} from './direct-generation-contract';
 import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
@@ -24,7 +24,7 @@ export function directMatchingUnderstanding(raw:unknown,source:string):Understan
  }
  const e=x.extraction,c=x.classification;
  const copy=(v:typeof e.action)=>v?{key:v.excerpt.normalize('NFKC').toLowerCase().trim(),arabic:v.excerpt,evidence:{...v}}:null;
- return validateUnderstanding({language:sourceLanguage(source),relevance:'POLITICAL_NEWS',filterReason:'NONE',topic:'UNKNOWN',priority:c.priority,rationale:'المصدر معتمد للمعالجة المباشرة؛ النص الأصلي أساس المطابقة',sensitiveActor:c.sensitiveActor,leaderDeath:c.leaderDeath,seriousClaim:c.seriousClaim,rankUnverified:c.rankUnverified,names:[],uncoveredTerms:[],
+ return validateUnderstanding({semanticCoverage:x.coverage,language:sourceLanguage(source),relevance:'POLITICAL_NEWS',filterReason:'NONE',topic:'UNKNOWN',priority:c.priority,rationale:'المصدر معتمد للمعالجة المباشرة؛ النص الأصلي أساس المطابقة',sensitiveActor:c.sensitiveActor,leaderDeath:c.leaderDeath,seriousClaim:c.seriousClaim,rankUnverified:c.rankUnverified,names:[],uncoveredTerms:[],
   event:{actors:e.actors.map(v=>copy(v)!),action:copy(e.action),object:copy(e.object),location:copy(e.location),eventTime:null,summary:null,facts:e.statements.map((s,i)=>({id:s.id,key:s.evidence.excerpt.normalize('NFKC').toLowerCase().trim(),arabic:s.evidence.excerpt,evidence:{...s.evidence},speaker:copy(s.speaker),kind:c.factLabels[i].kind,material:c.factLabels[i].material,verified:false}))}},source);
 }
 
@@ -51,13 +51,9 @@ export function completeDirectGeneration(raw:unknown,source:string,u:Understandi
  if(!source.trim())throw new ProcessingError('SOURCE_TEXT_REQUIRED');
  const article=usableArticle(raw);
  const localDiagnostics:string[]=[];
- // Preserve local factual/coverage diagnostics without turning them into a
- // semantic attestation or an editorial routing requirement for DIRECT.
- try{
-  const ids=u.event.facts.map(f=>f.id);
-  const coverage=publicationUnits(source).map(unit=>({unitId:unit.id,nonFactual:false,factIds:ids}));
-  preparePublication(source,u,{title:{text:article.title,factIds:ids},body:article.body?[{text:article.body,factIds:ids}]:[]},coverage);
- }catch(error){if(error instanceof ProcessingError)localDiagnostics.push(error.code);else throw error;}
+ // Semantic diagnostics never attest correctness. Objective defects fail closed
+ // without adding an independent DIRECT review or relevance request.
+ validateObjectiveArticle(source,article.title,article.body);
  u.directGeneration={version:'direct-generation-v2',sourceHash:hash(source),articleHash:hash(article),eventHash:eventHash(u),editorialContractHash:EDITORIAL_CONTRACT_SHA256,article,localDiagnostics,semanticVerification:'DIAGNOSTIC_ONLY'};
  return directFinalArticle(source,u);
 }
@@ -68,6 +64,7 @@ export function directFinalArticle(source:string,u:Understanding){
  if(r.sourceHash!==hash(source)||r.articleHash!==hash(r.article)||r.eventHash!==eventHash(u)||r.editorialContractHash!==EDITORIAL_CONTRACT_SHA256||!directSourceGrounded(u,source))throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
  const article=usableArticle(r.article);
  if(JSON.stringify(article)!==JSON.stringify(r.article))throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
+ validateObjectiveArticle(source,article.title,article.body);
  const factIds=u.event.facts.map(f=>f.id);
  return {generationReceipt:r,title:article.title,body:article.body,format:article.body?'STANDARD_STORY' as const:'FLASH' as const,hashtags:[],protectedQuotes:literalQuotes(source),protectedSpans:[],applied:[],review:[...new Set([...article.diagnostics,...r.localDiagnostics])].map(d=>reason('FORMAT_REVIEW',d)),sentences:[{text:article.title,factIds},...(article.body?[{text:article.body,factIds}]:[])],sentenceEvidence:[{text:article.title,factIds},...(article.body?[{text:article.body,factIds}]:[])],provenanceKind:'SOURCE_LINK_NOT_SEMANTIC_ATTESTATION' as const};
 }

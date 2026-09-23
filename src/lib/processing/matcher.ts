@@ -47,13 +47,13 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     const sourceGrounded=!!grounding&&JSON.stringify(grounding.understanding.event)===JSON.stringify(incoming)&&(grounding.processingMode==='DIRECT'?directSourceGrounded(grounding.understanding,grounding.source):hasEditorialGrounding(grounding.understanding,grounding.source));
     const material = fresh.filter(f => f.material && sourceGrounded && ["FIGURE", "DECISION", "OUTCOME", "STATEMENT"].includes(f.kind) && semantic.newFactIds.includes(f.id));
     const anchors = actors.length > 0 && action && (object || location || (!!incoming.eventTime && !!old.eventTime && timeA === timeB));
-    const contradiction = locationConflict || objectConflict || timeConflict || semantic.conflictingFactIds.length > 0;
-    const evidence = { actors, action, object, location, elapsedHours, insideDuplicateWindow: elapsedHours <= ruleSet.duplicateWindowHours, locationConflict, objectConflict, timeConflict, factsOverlap, newFacts: fresh.map(f=>f.id), materialFacts: material.map(f=>f.id), sourceGrounded,materialBasis:'source-grounded-not-independent-truth', semantic, matcherVersion: "layered-v1" };
+    const contradiction = timeConflict || semantic.conflictingFactIds.length > 0;
+    const evidence = { actors, action, object, location, anchors, elapsedHours, insideDuplicateWindow: elapsedHours <= ruleSet.duplicateWindowHours, locationConflict, objectConflict, timeConflict, factsOverlap, newFacts: fresh.map(f=>f.id), materialFacts: material.map(f=>f.id), sourceGrounded,materialBasis:'source-grounded-not-independent-truth', semantic, matcherVersion: "layered-v1" };
     if (semantic.relation === "DIFFERENT") continue;
     let classification: MatchDecision["classification"] = "UNCERTAIN_MATCH";
     // Historical relationship remains visible, but the 24h rule is never silently extended.
-    if (semantic.relation === "SAME" && anchors && !contradiction && elapsedHours <= ruleSet.duplicateWindowHours) {
-      classification = material.length ? "MATERIAL_UPDATE" : fresh.length ? "UNCERTAIN_MATCH" : "DUPLICATE";
+    if (semantic.relation === "SAME" && !contradiction && elapsedHours <= ruleSet.duplicateWindowHours) {
+      classification = material.length ? "MATERIAL_UPDATE" : semantic.newFactIds.length ? "UNCERTAIN_MATCH" : "DUPLICATE";
     }
     results.push({ classification, candidate: c, rationale: semantic.rationale, newFactIds: material.map(f=>f.id), evidence, candidates: [] });
   }

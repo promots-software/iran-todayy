@@ -37,7 +37,7 @@ test('byte-exact canonical artifact has all 40 sections, final check and intact 
 });
 test('DIRECT matching is separate; final article receives the complete contract',async()=>{
  process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';let calls=0;
- const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;if(calls===1)return Response.json(geminiEnvelope(raw));inspect(init);return Response.json(geminiEnvelope({title:'إيران الآن | '+source,body:'',diagnostics:[]}));});
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;if(calls===1)return Response.json(geminiEnvelope({...raw,coverage}));inspect(init);return Response.json(geminiEnvelope({title:'إيران الآن | '+source,body:'',diagnostics:[]}));});
  const u=await provider.understand({content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,processingMode:'DIRECT'},signal());
  const d=await provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'DIRECT'},signal());
  assert.equal(calls,2);assert.equal(d.title,'إيران الآن | '+source);assert.equal(u.directGeneration?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
@@ -131,6 +131,6 @@ test('independent factual review rejects certainty, planned/completed, identity 
  const p=preparePublication(source,u,publication,coverage);assert.equal(p.local,false);
  for(const check of renderingChecks){
   const review={review:['title','body:1'].map(id=>({id,verdict:'SUPPORTED',checks:{...Object.fromEntries(renderingChecks.map(k=>[k,true])),[check]:false},issues:['material contradiction']})),fullSourceCovered:true,publicationQuality:true,issues:[]};
-  assert.throws(()=>acceptPublication(source,u,p,review),/DIRECT_PUBLICATION_REVIEW_FAILED/,check);
+  assert.throws(()=>acceptPublication(source,u,p,review),/DIRECT_PUBLICATION_UNSUPPORTED/,check);
  }
 });

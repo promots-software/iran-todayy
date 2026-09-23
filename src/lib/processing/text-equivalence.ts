@@ -21,7 +21,7 @@ export function dateTokens(text:string){
  const normalized=orthography(digits(text));
  const calendar=/بالتقويم (?:الايراني|الفارسي)|هجري شمسي/u.test(normalized)?'solar-hijri':/هجري/u.test(normalized)?'hijri':'source-calendar';
  const monthTokens=[...normalized.matchAll(monthPattern)].map(m=>`${calendar}:month:${months.get(m[1])}`);
- const temporal=normalized.match(/الاثنين|الثلاثاء|الاربعاء|الخميس|الجمعة|السبت|الاحد|غدا|امس|اليوم/gu)??[];
+ const temporal=normalized.match(/(?<![\p{L}\p{M}])(?:الاثنين|الثلاثاء|الاربعاء|الخميس|الجمعة|السبت|الاحد|غدا|امس|اليوم)(?![\p{L}\p{M}])/gu)??[];
  return [...monthTokens,...temporal];
 }
 /** Layout normalization with an exact source-position map; lexical text is untouched. */

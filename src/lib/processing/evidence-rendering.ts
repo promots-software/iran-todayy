@@ -2,10 +2,9 @@ import {factualReviewPassed,factualReviewInstructions} from './rendering-contrac
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {ProcessingError} from './contracts';
-import {validateNoCountryAddition} from './classification-grounding';
 import {requireArabic} from './groq-validation';
 import {renderingChecks,renderingEntrySchema,renderingReceiptSchema,type RenderingReceipt} from './rendering-contract';
-import {persianMonths,validateMonthRendering,explicitPersianCalendarDate} from './newsroom-format';
+import {persianMonths,validateMonthRendering} from './newsroom-format';
 
 export type RenderingReference={id:string;role:string;evidence:{excerpt:string;start:number;end:number;sourcePostId?:string}};
 const sourceHash=(source:string)=>createHash('sha256').update(source).digest('hex');
@@ -15,8 +14,6 @@ function validateEntry(ref:RenderingReference,arabic:string){
  requireArabic(arabic);
  // Calendar metadata may not introduce a factual country/entity relationship.
  validateMonthRendering(ref.evidence.excerpt,arabic);
- const entityText=explicitPersianCalendarDate(ref.evidence.excerpt)?arabic.replace('بالتقويم الإيراني',''):arabic;
- try{validateNoCountryAddition(entityText,[ref.evidence.excerpt]);}catch(error){if(error instanceof ProcessingError&&error.code==='CLASSIFICATION_ENTITY_UNSUPPORTED')throw new ProcessingError('ARABIC_RENDERING_ENTITY_UNSUPPORTED');throw error;}
  if(JSON.stringify(digits(arabic))!==JSON.stringify(digits(ref.evidence.excerpt)))throw new ProcessingError('ARABIC_RENDERING_NUMBER_MISMATCH');
  if(!/[«»“”"]/.test(ref.evidence.excerpt)&&/[«»“”"]/.test(arabic))throw new ProcessingError('ARABIC_RENDERING_QUOTE_ADDED');
 }
@@ -45,8 +42,6 @@ export function validateRenderingProposal(refs:RenderingReference[],raw:unknown)
  for(const entry of rendered.data.entries){
   validateEntry(byId.get(entry.id)!,entry.arabic);
  }
- const translationsBySpan=new Map<string,string>();
- for(const entry of rendered.data.entries){const ref=byId.get(entry.id)!,span=`${ref.evidence.start}:${ref.evidence.end}`,prior=translationsBySpan.get(span);if(prior&&prior!==entry.arabic)throw new ProcessingError('ARABIC_RENDERING_INCONSISTENT');translationsBySpan.set(span,entry.arabic);}
  return parsed.data;
 }
 export function validateRendering(source:string,refs:RenderingReference[],rawRendered:unknown,rawReview:unknown):RenderingReceipt{

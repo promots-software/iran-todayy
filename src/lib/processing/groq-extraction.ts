@@ -6,8 +6,8 @@ import { resolveContextEvidence, requireArabic, validateExtractionLanguageAndSpe
 import {validateTopicGrounding,validateInstitutionGrounding,validateNoCountryAddition,validateRationaleGrounding,normalizeInstitutionIdentity,supportedClassificationTopics} from './classification-grounding';
 
 const text=z.string().min(1).max(20000);
-const evidence=z.object({excerpt:text,context:text}).strict();
-// Model output contains only source spans; no generated facts, summary, IDs or offsets.
+const evidence=z.object({excerpt:text,context:text,startOffset:z.number().int().nonnegative().nullable().optional(),endOffset:z.number().int().positive().nullable().optional()}).strict();
+// Model output contains source spans with optional untrusted UTF-16 positions; no generated facts, summary or IDs.
 export const minimalExtractionSchema=z.object({
   relevance:understandingSchema.shape.relevance,
   actors:z.array(evidence).max(30),action:evidence.nullable(),object:evidence.nullable(),

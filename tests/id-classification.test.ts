@@ -55,13 +55,13 @@ test('explicit speaker is copied exactly and serious-claim review and attributio
  assert.ok(result.title.startsWith('إيران الآن | قال متحدث'));assert.ok(result.title.includes('منشآتنا'));
  assert.ok(!result.review.some(r=>r.code==='SERIOUS_CLAIM'));assert.ok(!result.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
 });
-test('unknown geography stays UNKNOWN; supported topic still requires the correct evidence ID',()=>{
- const {x,c}=sample();assert.throws(()=>adaptIdClassification(x,{...c,topic:'REGION',topicEvidenceId:'f1'},content),/INVALID_ID_CLASSIFICATION/);
+test('semantic topic is selected by the model; non-UNKNOWN still requires a valid evidence ID',()=>{
+ const {x,c}=sample();assert.throws(()=>adaptIdClassification(x,{...c,topic:'REGION',topicEvidenceId:null},content),/CLASSIFICATION_TOPIC_EVIDENCE_INVALID/);
  assert.equal(adaptIdClassification(x,c,content).topic,'UNKNOWN');
  const source=content+' وتناول الاجتماع أخبار غرب آسيا.';const explicit=sample(source);
  const good={...explicit.c,topic:'REGION',topicEvidenceId:'f1'};
  assert.equal(adaptIdClassification(explicit.x,good,source).topic,'REGION');
- assert.throws(()=>adaptIdClassification(explicit.x,{...good,topicEvidenceId:'object',rationaleIds:['object']},source),/CLASSIFICATION_ENTITY_UNSUPPORTED/);
+ assert.throws(()=>adaptIdClassification(explicit.x,{...good,topicEvidenceId:'missing',rationaleIds:['missing']},source),/INVALID_ID_CLASSIFICATION/);
 });
 test('classification preserves all facts regardless of returned label order',()=>{
  const {x,c}=sample();x.statements.push({id:'f2',evidence:x.action!,speaker:null});

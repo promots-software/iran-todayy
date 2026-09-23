@@ -97,7 +97,7 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   let title = draft.title, body = draft.body;
   const sentenceEvidence=draft.sentences.map(s=>({...s,factIds:[...s.factIds]}));
   const transform = (fn: (s:string)=>string) => { title=outsideProtected(title,protectedTexts,fn); body=outsideProtected(body,protectedTexts,fn); sentenceEvidence.forEach(s=>{s.text=outsideProtected(s.text,protectedTexts,fn);}); };
-  for(const fact of u.event.facts)if(fact.speaker)transform(s=>normalizeAttributionAgreement(s,fact.speaker!.arabic));
+  if(!canonicalWriting)for(const fact of u.event.facts)if(fact.speaker)transform(s=>normalizeAttributionAgreement(s,fact.speaker!.arabic));
   // Owner convention is typography, not a geographical/political substitution.
   transform(s=>s.replace(boundary('إسرائيل'),'"إسرائيل"'));
   for (const rule of terminology.filter(r=>r.mode === "automatic")) {
@@ -115,17 +115,17 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
     transform(s=>s.replace(boundary(decision.from),()=>{applied.push({ruleId:rule.id,from:decision.from,to:decision.to,reference:rule.reference,context:decision.context});return decision.to;}));
   }
   const visible = unprotectedText(title+"\n"+body, protectedTexts);
-  for (const rule of terminology) {
+  if(!canonicalWriting)for (const rule of terminology) {
     if (rule.from.some(f=>boundary(f).test(visible)) && !applied.some(a=>a.ruleId === rule.id)) review.push(reason("CONTEXT_REQUIRED", rule.id));
   }
   // Attribution is validated rather than adding an unverified speaker or upgrading a claim.
-  if (!reviewedAttribution&&(["WESTERN","HEBREW"].includes(profile.classification) || u.seriousClaim)) {
+  if (!canonicalWriting&&!reviewedAttribution&&(["WESTERN","HEBREW"].includes(profile.classification) || u.seriousClaim)) {
     const scopedStatement=draft.format==='STATEMENT'&&hasEditorialGrounding(u,content)&&u.event.facts.every(f=>f.speaker&&title===newsroomPrefix+attributionLead(f.speaker.arabic))&&draft.sentences.filter(s=>s.text!==draft.title).every(s=>s.factIds.length===1&&s.text===`- ${u.event.facts.find(f=>f.id===s.factIds[0])?.arabic}`);
     if (!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(title) || (body.trim()&&!scopedStatement&&!/(?:حسب|ذكرت|نقلت|قال|زعم|ادّعى|ادعى)/u.test(body))) review.push(reason("UNSUPPORTED_OUTPUT", "النسب الصريح مطلوب في العنوان والمتن"));
   }
   if ((joined.match(/زعم|ادّعى|ادعى/gu)?.length ?? 0)>1) review.push(reason("FORMAT_REVIEW", "الإفراط في أفعال التشكيك"));
   if(!canonicalWriting)for (const [from,to] of Object.entries(names.aliases)) transform(s=>s.replace(boundary(from),to));
-  for (const [from,to] of Object.entries(spelling)) transform(s=>s.replace(boundary(from),to));
+  if(!canonicalWriting)for (const [from,to] of Object.entries(spelling)) transform(s=>s.replace(boundary(from),to));
   transform(s=>s.replace(/[٠-٩۰-۹]/gu,c=>String("٠١٢٣٤٥٦٧٨٩".includes(c)?"٠١٢٣٤٥٦٧٨٩".indexOf(c):"۰۱۲۳۴۵۶۷۸۹".indexOf(c))).replace(/(?<!\d),|,(?!\d)/g,"،").replace(/;/g,"؛").replace(/\?/g,"؟").replace(/\s+([،؛؟!:.])/gu,"$1").replace(/([!؟])\1+/gu,"$1"));
   const beforeTitle=title;
   title=outsideProtected(title,protectedTexts,s=>s.replace(/غزّة/gu,"غزة")).replace(/\.$/u,"");

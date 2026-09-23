@@ -8,7 +8,7 @@ test('repeated excerpt requires unique verbatim context; no first-occurrence fal
  const e={excerpt:'CBS',context:'Later CBS said.',start:0,end:3};
  resolveContextEvidence(e,source);assert.equal(e.start,20);checkEvidence(source,e);
  assert.throws(()=>resolveContextEvidence({excerpt:'CBS',context:'CBS',start:0,end:3},source),/AMBIGUOUS/);
- assert.throws(()=>resolveContextEvidence({excerpt:'invented',context:source,start:0,end:3},source),/AMBIGUOUS/);
+ assert.throws(()=>resolveContextEvidence({excerpt:'invented',context:source,start:0,end:3},source),/INVALID_EVIDENCE/);
 });
 test('Persian is independently identified and rejected as Arabic prose',()=>{
  assert.equal(sourceLanguage('یکی از نظامیان به سی‌بی‌اس نیوز گفته که آسیب وارد شده'),'fa');

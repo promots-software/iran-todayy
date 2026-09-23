@@ -23,7 +23,7 @@ const response=(value:unknown)=>Response.json({candidates:[{finishReason:'STOP',
 const input=(content=source,processingMode:'NORMAL'|'DIRECT'='DIRECT')=>({content,processingMode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet});
 const held={autoPublish:false,shadowMode:true,requireApproval:true};
 test('exact live context error is repaired from unique source evidence, preserving disclaimer',async()=>{
- let calls=0;const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const {coverage,publication,...matching}=raw();void coverage;return response(JSON.parse(String(init?.body)).generationConfig.responseJsonSchema.properties.statements?matching:{title:publication.title.text,body:'',diagnostics:[]});});
+ let calls=0;const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const {publication,...matching}=raw();return response(JSON.parse(String(init?.body)).generationConfig.responseJsonSchema.properties.statements?matching:{title:publication.title.text,body:'',diagnostics:[]});});
  const u=validateUnderstanding(await p.understand(input(),signal()),source);
  const d=await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
  void d;const final=directFinalArticle(source,u);
@@ -36,14 +36,14 @@ test('context repair never guesses repeated evidence or invents a speaker',()=>{
  assert.throws(()=>validateMinimalExtraction({actors:x.actors,action:x.action,object:x.object,location:x.location,event_time:x.event_time,relevance:'POLITICAL_NEWS',statements:x.statements.map(({evidence,speaker})=>({evidence,speaker}))},source));
 });
 test('DIRECT coverage diagnostics no longer create a semantic-review receipt',async()=>{
- const {coverage,publication,...matching}=raw();void coverage;let calls=0;
+ const {publication,...matching}=raw();let calls=0;
  const p=new GeminiLanguageProvider('offline',async()=>response(++calls===1?matching:{title:publication.title.text,body:'',diagnostics:['DIRECT_MATERIAL_COVERAGE_FAILED']}));
  const u=validateUnderstanding(await p.understand(input(),signal()),source);
  await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
  assert.equal(calls,2);assert.equal(directFinalArticle(source,u).review[0].detail,'DIRECT_MATERIAL_COVERAGE_FAILED');assert.equal(u.directGeneration?.semanticVerification,'DIAGNOSTIC_ONLY');
 });
-test('NORMAL relevance runs once; accepted uncertain Iran story survives priority and opinion labels',async()=>{
- const text='قال الوفد إن التعاون مع إيران سيستمر.';const u=newsroom(text,[text],'الوفد');u.relevance='UNCERTAIN';u.priority='P4';u.filterReason='OPINION';const parts=minimalParts(u);let calls=0;
+test('NORMAL relevance runs once; accepted Iran story survives priority and opinion labels',async()=>{
+ const text='قال الوفد إن التعاون مع إيران سيستمر.';const u=newsroom(text,[text],'الوفد');u.relevance='POLITICAL_NEWS';u.priority='P4';u.filterReason='OPINION';const parts=minimalParts(u);Object.assign(parts[0],{contentType:'NEWS',contentTypeEvidence:{excerpt:text,context:text},coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}]});let calls=0;
  const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response(calls<=2?parts[calls-1]:{coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:'إيران الآن | '+text.replace(/\.$/u,''),factIds:['f1']},body:[]}});});
  const result=validateUnderstanding(await p.understand(input(text,'NORMAL'),signal()),text);
  assert.equal(result.relevance,'POLITICAL_NEWS');assert.equal(editoriallyFiltered(result,false,'NORMAL'),false);assert.equal(selectionBlocksDraft(result,'NORMAL'),false);
@@ -72,7 +72,7 @@ test('deterministic draft repair reconstructs source facts and revalidates; inve
 
 test('clearly unrelated NORMAL source is excluded after one decision, without classification or rendering',async()=>{
  const text='أعلنت البلدية افتتاح مدرسة محلية في باريس.';let calls=0;
- const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response({relevance:'IRRELEVANT',actors:[],action:null,object:null,location:null,event_time:null,statements:[]});});
+ const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response({contentType:'NEWS',contentTypeEvidence:{excerpt:text,context:text},coverage:[{unitId:'u1',factIds:[],nonFactual:true}],relevance:'IRRELEVANT',actors:[],action:null,object:null,location:null,event_time:null,statements:[]});});
  const u=validateUnderstanding(await p.understand(input(text,'NORMAL'),signal()),text);
  assert.equal(u.relevance,'IRRELEVANT');assert.equal(editoriallyFiltered(u,false,'NORMAL'),true);assert.equal(calls,1);
 });

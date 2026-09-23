@@ -1,6 +1,6 @@
 import { z } from "zod";
 import type { ruleSet } from "./rules";
-import {directPublicationReceiptSchema} from './direct-publication-contract';
+import {directCoverageSchema,directPublicationReceiptSchema} from './direct-publication-contract';
 import {renderingReceiptSchema} from './rendering-contract';
 import {directGenerationSchema} from './direct-generation-contract';
 const text = z.string().min(1).max(20000);
@@ -34,7 +34,10 @@ export const eventSchema = z.object({
   summary: text.nullable(),
 }).strict();
 export type EventData = z.infer<typeof eventSchema>;
+export const validationHistorySchema=z.array(z.object({stage:z.string(),initialCode:z.string(),initialIssues:z.array(z.object({code:z.string(),path:z.array(z.union([z.string(),z.number()]))})),repairCode:z.string().nullable()}).strict()).max(16);
 export const understandingSchema = z.object({
+  validationHistory:validationHistorySchema.optional(),
+  semanticCoverage:directCoverageSchema.optional(),
   normalContentType:z.enum(["NEWS","PURE_PROMO","UNCERTAIN"]).optional(),
   language: z.string().min(2).max(35), relevance: z.enum(["POLITICAL_NEWS", "IRRELEVANT", "UNCERTAIN"]),
   filterReason: z.enum(["NONE", "UNRELATED", "NON_NEWS_PROMO", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
@@ -79,10 +82,10 @@ export interface Monitor {
 }
 export class ProcessingError extends Error {
   availableDraft?: import('./available-draft').AvailableDraft;
-  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[];causeCode?:string;output?:unknown}, public readonly retryAfterMs=0) { super(code); }
+  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[];causeCode?:string;output?:unknown;initialFailure?:{code:string;issues:{code:string;path:(string|number)[]}[]};repairFailure?:{code:string;issues:{code:string;path:(string|number)[]}[]}}, public readonly retryAfterMs=0) { super(code); }
 }
 export function checkEvidence(content: string, evidence: z.infer<typeof evidenceSchema>) {
-  if (content.slice(evidence.start, evidence.end) !== evidence.excerpt) throw new ProcessingError("INVALID_EVIDENCE");
+  if (!Number.isInteger(evidence.start)||!Number.isInteger(evidence.end)||evidence.start<0||evidence.end<=evidence.start||evidence.end>content.length||content.slice(evidence.start, evidence.end) !== evidence.excerpt) throw new ProcessingError("INVALID_EVIDENCE");
 }
 export function validateUnderstanding(raw: unknown, content: string): Understanding {
   const parsed = understandingSchema.safeParse(raw);

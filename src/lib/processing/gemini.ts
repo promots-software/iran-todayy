@@ -6,7 +6,7 @@ export {readLocalGeminiKey} from './gemini-key';
 export type GeminiUsage={stage:string;attempt:number;httpStatus:number|null;inputTokens:number|null;outputTokens:number|null;thinkingTokens:number|null;estimatedCostUsd:number|null;replayed?:boolean;durationMs?:number};
 /** Native Gemini transport, shared extraction/classification/atom validators. No fallback provider. */
 export class GeminiLanguageProvider implements LanguageProvider{
- readonly id='gemini:gemini-3.1-flash-lite:constrained-scope-v2';readonly live=true;readonly draftOnlyAccepted=true;readonly constrainedRewrite=true;
+ readonly id='gemini:gemini-3.1-flash-lite:semantic-integrity-v1';readonly live=true;readonly draftOnlyAccepted=true;readonly constrainedRewrite=true;
  private delegate:GroqLanguageProvider;
  constructor(key:string,transport:typeof fetch=fetch,log:(u:GeminiUsage)=>void|Promise<void>=()=>{}){
   if(!key)throw new ProcessingError('GEMINI_API_KEY_REQUIRED');
