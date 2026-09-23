@@ -17,12 +17,12 @@ import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
 import {outcomePage} from '../src/lib/processing-visibility';
 const signal=()=>new AbortController().signal;
 const envelope=(output:unknown)=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:1,candidatesTokenCount:1}});
-function mock(source:string,options:{promo?:boolean;bad?:'rationale'|'emptyFacts'|'unknownFact'|'number'|'unsupported';always?:boolean;body?:string;flash?:boolean}={}){
+function mock(source:string,options:{promo?:boolean;unrelated?:boolean;uncovered?:boolean;bad?:'rationale'|'emptyFacts'|'unknownFact'|'number'|'unsupported';always?:boolean;body?:string;flash?:boolean}={}){
  const calls:string[]=[];let failures=0;
  const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
   const request=JSON.parse(String(init?.body));const props=request.generationConfig.responseJsonSchema.properties;const data=JSON.parse(request.contents[0].parts[0].text);
   const stage=props.contentType?'extract':props.anchorIds?'classify':props.publication?'draft':props.entries?'render':data.references?'review_rendering':'review';calls.push(stage);
-  if(stage==='extract')return envelope({relevance:'POLITICAL_NEWS',contentType:options.promo?'PURE_PROMO':'NEWS',contentTypeEvidence:{excerpt:source,context:source},actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null}]});
+  if(stage==='extract'){if(data.repair&&options.uncovered){assert.equal(data.repair.stage,'extract');assert(data.repair.issues.some((i:{code:string})=>i.code==='UNCOVERED_SOURCE_SPAN'));}const excerpt=options.uncovered&&(options.always||calls.filter(s=>s==='extract').length===1)?source.split('— ')[1]:source;return envelope({relevance:options.unrelated?'IRRELEVANT':'POLITICAL_NEWS',contentType:options.promo?'PURE_PROMO':'NEWS',contentTypeEvidence:{excerpt:source,context:source},actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt,context:source},speaker:null}]});}
   if(stage==='render'||stage==='review_rendering'){
    assert.equal(request.systemInstruction.parts[0].text.split(editorialContract).length,2);
    if(stage==='render')return envelope({entries:data.references.map((r:{id:string})=>({id:r.id,arabic:options.body??'افتتح المجلس مدرسة جديدة.'}))});
@@ -95,3 +95,20 @@ test('NORMAL canonical FLASH finishes punctuation with exact title provenance',a
 for(const source of ['شورای شهر مدرسه جدیدی افتتاح کرد.','The council has opened a new school.'])test('NORMAL foreign source retains independent translation review and complete final renderer: '+source,async()=>{
  const p=mock(source,{body:'افتتح المجلس مدرسة جديدة.'});const u=await p.provider.understand(input(source),signal());assert(u.rendering);const draft=await p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());const final=finalizeConstrainedDraft(draft,source,u,official);assert.deepEqual(p.calls,['extract','render','review_rendering','classify','draft','review']);assert.equal(blockingEditorialReasons(final.review).length,0);assert(final.body.includes('افتتح المجلس'));
 });
+
+// Structural replay of the live failure: evidence omitted a leading source label.
+// The renderer cannot repair immutable evidence; repair belongs to extraction.
+for(const [source,body] of [
+ ['تنبيه تجريبي — افتتح المجلس مدرسة جديدة.','تنبيه تجريبي — افتتح المجلس مدرسة جديدة.'],
+ ['برچسب آزمایشی — شورا مدرسه جدیدی افتتاح کرد.','وسم تجريبي — افتتح المجلس مدرسة جديدة.'],
+ ['Experimental label — The council has opened a new school.','وسم تجريبي — افتتح المجلس مدرسة جديدة.'],
+ ['تنبيه تجريبي — المجلس قام بافتتاح مدرسة جديدة وذلك اليوم.','تنبيه تجريبي — افتتح المجلس مدرسة جديدة اليوم.'],
+ ['تنبيه تجريبي — قال المجلس إنه افتتح مدرسة جديدة. وأضاف أنه سيعلن التفاصيل لاحقاً.','تنبيه تجريبي — قال المجلس إنه افتتح مدرسة جديدة. وأضاف أنه سيعلن التفاصيل لاحقاً.'],
+ ['تنبيه تجريبي — افتتح المجلس 3 مدارس اليوم بعد 4 ساعات من المراجعة.','تنبيه تجريبي — افتتح المجلس 3 مدارس اليوم بعد 4 ساعات من المراجعة.'],
+])test('full-source gap repairs extraction before immutable classification/rendering: '+source,async()=>{
+ const p=mock(source,{uncovered:true,body});const u=await p.provider.understand(input(source),signal());const draft=await p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());
+ assert.equal(p.calls.filter(s=>s==='extract').length,2);assert.equal(p.calls.filter(s=>s==='classify').length,1);assert.equal(p.calls.filter(s=>s==='draft').length,1);assert.equal(u.event.facts[0].evidence.excerpt,source);assert('normalGeneration' in draft);assert.equal(u.publicationProposal?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
+});
+test('unrepaired source gap fails closed before paid downstream stages',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{uncovered:true,always:true});await assert.rejects(p.provider.understand(input(source),signal()),(e:unknown)=>{assert(e instanceof ProcessingError);assert.equal(e.code,'AI_SCHEMA_REPAIR_FAILED');assert.equal(e.diagnostic?.stage,'extract');return true;});assert.deepEqual(p.calls,['extract','extract']);});
+
+test('UNRELATED bypasses coverage repair and rendering without changing selection',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{unrelated:true,uncovered:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'UNRELATED');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});

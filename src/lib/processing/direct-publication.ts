@@ -14,7 +14,11 @@ const canonical=(s:string)=>s.trim().replace(/[.。]$/u,'').replace(/\s+/gu,' ')
 export function publicationUnits(source:string){let start=0;return source.split('\n').flatMap((text,i)=>{const unit={id:`u${i+1}`,start,end:start+text.length,text};start+=text.length+1;return text.trim()?[unit]:[];});}
 /** Only standalone URLs/handles are provably non-factual. Prose is never dismissed by model assertion. */
 const boilerplate=(text:string)=>/^(?:https?:\/\/\S+|@[A-Za-z0-9_]+)$/u.test(text.trim());
-export function validateSourceCoverage(source:string,u:Understanding,raw:unknown){
+type CoverageFact={id:string;evidence:Understanding['event']['facts'][number]['evidence'];speaker?:{evidence:Understanding['event']['facts'][number]['evidence']}|null};
+export function sourceCoverage(source:string,facts:CoverageFact[]){
+ return publicationUnits(source).map(unit=>({unitId:unit.id,nonFactual:boilerplate(unit.text),factIds:boilerplate(unit.text)?[]:facts.filter(f=>[f.evidence,f.speaker?.evidence].some(e=>e&&e.start<unit.end&&e.end>unit.start)).map(f=>f.id)}));
+}
+export function validateSourceCoverage(source:string,u:{event:{facts:CoverageFact[]}},raw:unknown){
  const parsed=directCoverageSchema.safeParse(raw);if(!parsed.success)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
  const rows=parsed.data,units=publicationUnits(source),facts=u.event.facts;
  if(rows.length!==units.length||new Set(rows.map(r=>r.unitId)).size!==units.length)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
@@ -34,7 +38,7 @@ export function validateSourceCoverage(source:string,u:Understanding,raw:unknown
    // Do not treat a leading/trailing token, negation, or factual word as layout.
    const joiningConjunction=rest==='و'&&/[،,؛;]|و\s+$/u.test(gap)&&index>0&&mask.slice(0,index).some(Boolean)&&mask.slice(index+gap.length).some(Boolean);
    if(joiningConjunction)continue;
-   if(rest&&!/^(?:(?:و?قالت?|و?أعلنت?|و?أضافت?|و?أكدت?|و?أوضحت?|إن|أن|مؤكداً|موضحةً)\s*)+$/u.test(rest))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
+   if(rest&&!/^(?:(?:و?قالت?|و?أعلنت?|و?أضافت?|و?أكدت?|و?أوضحت?|إن|أن|مؤكداً|موضحةً)\s*)+$/u.test(rest))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED',false,{stage:'coverage',issues:[{code:'UNCOVERED_SOURCE_SPAN',path:['sourceUnits',unit.id,'start',unit.start+index,'end',unit.start+index+gap.length]}]});
   }
  }
  return rows;

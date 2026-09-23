@@ -1,4 +1,4 @@
-import {normalExtractionSchema,normalSelection,newsworthinessInstructions,normalStage,type StageRepair} from './normal-v2';
+import {normalExtractionSchema,validateNormalExtractionCoverage,normalSelection,newsworthinessInstructions,normalStage,type StageRepair} from './normal-v2';
 import {directMatchingUnderstanding,completeDirectGeneration,directArticleInstructions} from './direct-generation';
 import {directArticleSchema} from './direct-generation-contract';
 import {withEditorialContract} from './editorial-contract';
@@ -97,7 +97,7 @@ export class GroqLanguageProvider implements LanguageProvider {
       firstContentType??=result.contentType;
       selection.relevance??=result.extraction.relevance==='IRRELEVANT'?'IRRELEVANT':'POLITICAL_NEWS';
       result.contentType=firstContentType;result.extraction.relevance=selection.relevance;
-      if(firstContentType!=='PURE_PROMO'&&selection.relevance!=='IRRELEVANT')requireCompleteExtraction(validateMinimalExtraction(result.extraction,input.content),input.content);
+      if(firstContentType!=='PURE_PROMO'&&selection.relevance!=='IRRELEVANT'){const extracted=validateMinimalExtraction(result.extraction,input.content);requireCompleteExtraction(extracted,input.content);validateNormalExtractionCoverage(input.content,extracted);}
       return result;
     });
     const parsed=selected.extraction;
