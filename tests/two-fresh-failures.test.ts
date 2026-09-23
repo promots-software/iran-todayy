@@ -32,4 +32,3 @@ for(const kind of ['text','photo','video','document','album','empty'] as const)t
  assert.equal(result.posts[0].content,content);assert.equal(result.posts[0].externalId,'12');assert.equal(result.posts[0].metadata.hasMedia,!!media);assert.equal(result.posts[0].metadata.messageKind,kind==='empty'?'MEDIA_ONLY':'TEXT');
  // This checks caption preservation only; the current connector does NOT aggregate albums.
 });
-
