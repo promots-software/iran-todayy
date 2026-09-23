@@ -22,11 +22,13 @@ export function resolveContextEvidence(value:unknown,source:string,_locationActo
       if(!excerpt)throw new ProcessingError('INVALID_EVIDENCE');
       const explicit=o.startOffset!==undefined&&o.startOffset!==null||o.endOffset!==undefined&&o.endOffset!==null;
       let start:number,end:number;
-      if(explicit){
+      const validRange=explicit&&Number.isInteger(o.startOffset)&&Number.isInteger(o.endOffset)&&(o.startOffset as number)>=0&&(o.endOffset as number)>(o.startOffset as number)&&(o.endOffset as number)<=source.length&&source.slice(o.startOffset as number,o.endOffset as number)===excerpt;
+      if(validRange){
         start=o.startOffset as number;end=o.endOffset as number;
-        if(!Number.isInteger(start)||!Number.isInteger(end)||start<0||end<=start||end>source.length||source.slice(start,end)!==excerpt)throw new ProcessingError('INVALID_EVIDENCE');
         if(typeof context!=='string'||!context||!occurrences(source,context).some(base=>base<=start&&base+context.length>=end))throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');
       }else{
+        // Model offsets are proposals, never evidence. Recover only a locally
+        // provable unique occurrence; a bad range cannot select an ambiguous one.
         const exact=occurrences(source,excerpt);
         if(!exact.length)throw new ProcessingError('INVALID_EVIDENCE');
         if(typeof context!=='string'||!context)throw new ProcessingError('EVIDENCE_CONTEXT_REQUIRED');

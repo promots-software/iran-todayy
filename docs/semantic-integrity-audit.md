@@ -47,3 +47,21 @@ Canonical writing remains a separate actual provider stage with the complete unc
 ## Offline release gate
 
 375 focused tests across 33 files passed, zero failures and zero skips. Includes 50 semantic-integrity regressions, all ten stored production structures, NORMAL/DIRECT canonical transport, independent review rejection, material matching, mock automatic/manual delivery, frozen receipts, human edits and publisher control/recovery. No external provider/Telegram transports or production database writes were used by these tests.
+
+## Fresh-traffic offset correction
+
+After the first deployment, stored responses for five naturally arriving posts
+showed verbatim excerpts with inaccurate model character positions. For example,
+the DIRECT response selected `خام برنت` at 15–23, but its unique exact source
+position is 13–21. NORMAL responses also supplied incorrect positions despite
+identifying exact surrounding context. Repeating the model request did not fix
+that arithmetic reliably.
+
+The resolver now accepts a proposed range only after exact slice validation.
+Otherwise it computes the range locally from a unique exact context/excerpt.
+Invalid or ambiguous source evidence still fails; an invalid model range never
+chooses among repeated occurrences. No excerpt is rewritten and no first-match
+fallback is allowed. Nine stored responses from those five posts replay through
+objective extraction offline; this does not assert final semantic/editorial
+acceptance. Ten additional tests cover that replay and negative ambiguity and
+invented-evidence variants. Focused follow-up: 162 passing tests across six files.

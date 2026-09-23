@@ -12,7 +12,7 @@ import {ProcessingError} from '../src/lib/processing/contracts';
 import {editorialContract,EDITORIAL_CONTRACT_SHA256} from '../src/lib/processing/editorial-contract';
 import {adaptIdClassification,classificationReferences} from '../src/lib/processing/id-classification';
 import {publicationDraft,validatePublicationReviewProtocol} from '../src/lib/processing/direct-publication';
-import {directFinalArticle} from '../src/lib/processing/direct-generation';
+import {directFinalArticle,directMatchingUnderstanding} from '../src/lib/processing/direct-generation';
 import {repairDiagnosticSummary} from '../src/lib/processing/diagnostic-summary';
 import {dateTokens} from '../src/lib/processing/text-equivalence';
 
@@ -41,6 +41,24 @@ test('production 9: invalid review IDs and fabricated direct quotation remain de
  assert.throws(()=>validateObjectiveArticle(row.sourceText,repaired.publication.title.text,repaired.publication.body.map(p=>p.text).join('\n')),/QUOTE_MISMATCH/);
 });
 const evidence=(source:string,text:string)=>({excerpt:text,start:source.indexOf(text),end:source.indexOf(text)+text.length});
+const offsetRows=JSON.parse(readFileSync('tests/fixtures/semantic-offset-production.json','utf8')) as {telegramId:string;source:string;outputs:Record<string,unknown>[]}[];
+for(const row of offsetRows)for(const [i,output] of row.outputs.entries())test(`fresh production ${row.telegramId}/${i}: offsets computed from exact source context`,()=>{
+ if(!('relevance' in output)){
+  const u=directMatchingUnderstanding(output,row.source);
+  for(const f of u.event.facts)assert.equal(row.source.slice(f.evidence.start,f.evidence.end),f.evidence.excerpt);
+  return;
+ }
+ const raw=extraction(output);
+ const grounded=validateMinimalExtraction(raw,row.source);
+ for(const e of [...grounded.actors,grounded.action,grounded.object,grounded.location,...grounded.statements.flatMap(s=>[s.evidence,s.speaker])])if(e)assert.equal(row.source.slice(e.start,e.end),e.excerpt);
+});
+test('bad model range cannot bypass evidence identity or ambiguity',()=>{
+ for(const offsets of [{startOffset:99,endOffset:100},{startOffset:1,endOffset:3}]){
+  assert.throws(()=>resolveContextEvidence({excerpt:'غير موجود',context:'نص متكرر نص',...offsets},'نص متكرر نص'),/INVALID_EVIDENCE/);
+  assert.throws(()=>resolveContextEvidence({excerpt:'نص',context:'نص متكرر نص',...offsets},'نص متكرر نص'),/AMBIGUOUS_EVIDENCE_CONTEXT/);
+  const e={excerpt:'نص',context:'متكرر نص',...offsets};resolveContextEvidence(e,'نص متكرر نص');assert.equal(Object(e).start,9);
+ }
+});
 for(const [speaker,assertion,layout] of [
  ['أمينة رابطة مخططي الساحل ليلى صادق','أقرت الرابطة برنامجاً جديداً.','توضح'],
  ['مجمع بحوث النهر','بدأت دراسة مستقلة.','يستعرض'],
@@ -56,7 +74,7 @@ test('repeated word resolved by verified range, not first occurrence',()=>{
  const value={excerpt:'تحدث',context:source,startOffset:start,endOffset:start+4};
  resolveContextEvidence(value,source);assert.equal(Object(value).start,start);
  assert.throws(()=>resolveContextEvidence({excerpt:'تحدث',context:source},source),/AMBIGUOUS/);
- assert.throws(()=>resolveContextEvidence({...value,startOffset:1,endOffset:5,context:source},source),/INVALID_EVIDENCE/);
+ assert.throws(()=>resolveContextEvidence({...value,startOffset:1,endOffset:5,context:source},source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
 });
 test('verbatim means exact characters, including whitespace and invented ellipses',()=>{
  for(const excerpt of ['اختار ... المقر','اختار  المقر'])assert.throws(()=>resolveContextEvidence({excerpt,context:'اختار المقر'},'اختار المقر'),/INVALID_EVIDENCE/);
