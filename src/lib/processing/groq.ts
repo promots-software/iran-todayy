@@ -215,7 +215,7 @@ export class GroqLanguageProvider implements LanguageProvider {
       let output: unknown;
       try { output = JSON.parse(choice.message.content ?? ""); } catch { throw new ProcessingError("GROQ_INVALID_JSON"); }
       const validated = outputSchema.safeParse(output);
-      if (!validated.success) throw new ProcessingError("GROQ_INVALID_SCHEMA");
+      if (!validated.success) throw new ProcessingError("GROQ_INVALID_SCHEMA",false,{stage:step??stage,issues:validated.error.issues.slice(0,20).map(i=>({code:i.code,path:i.path.map(p=>typeof p==='number'?p:/^[A-Za-z_][A-Za-z0-9_]{0,60}$/.test(String(p))?String(p):'field')}))});
       event.outcome = "success";
       return validated.data;
     } catch (error) {

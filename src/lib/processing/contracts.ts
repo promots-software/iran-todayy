@@ -78,7 +78,7 @@ export interface Monitor {
 }
 export class ProcessingError extends Error {
   availableDraft?: import('./available-draft').AvailableDraft;
-  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}, public readonly retryAfterMs=0) { super(code); }
+  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[]}, public readonly retryAfterMs=0) { super(code); }
 }
 export function checkEvidence(content: string, evidence: z.infer<typeof evidenceSchema>) {
   if (content.slice(evidence.start, evidence.end) !== evidence.excerpt) throw new ProcessingError("INVALID_EVIDENCE");

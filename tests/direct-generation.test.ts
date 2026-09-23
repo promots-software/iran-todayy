@@ -1,3 +1,4 @@
+import {duplicatePage,outcomePage} from '../src/lib/processing-visibility';
 import {checkpointProvider,type CheckpointStore} from '../src/worker/checkpoints';
 import {matchEvent,type Candidate} from '../src/lib/processing/matcher';
 import {approvePublication,approvalDigest} from '../src/lib/telegram/publisher';
@@ -106,6 +107,8 @@ test('real processor + existing publisher: DIRECT diagnostics READY, manual OFF,
  await db.appSettings.update({where:{id:1},data:{publishingPaused:true}});await automaticDeliveryCycle(db,env,transport);assert.equal(sends,0);await db.appSettings.update({where:{id:1},data:{publishingPaused:false}});
  await automaticDeliveryCycle(db,env,transport);assert.equal(sends,1);await automaticDeliveryCycle(db,env,transport);assert.equal(sends,1);
  const duplicate=await ingest(db,src.id,{externalId:'2',url:src.url+'/2',content:sources.ar,publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:duplicate.id},data:{availableAt:new Date(0)}});const duplicateJob=await claimJob(db,'duplicate');assert.ok(duplicateJob);await processJob(db,duplicateJob,provider('MUST_NOT_CALL'),signal());assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:duplicate.id}})).status,'DUPLICATE');
+ const visible=await duplicatePage(db,1);const match=visible.items.find(m=>m.sourcePostId===duplicate.id);assert.ok(match);assert.equal(match.sourcePost.source.id,src.id);assert.equal(match.eventRevision.newsItem?.id,item.id);assert.equal(await db.newsItem.count({where:{evidence:{some:{sourcePostId:duplicate.id}}}}),0);assert.equal((await outcomePage(db,{post:duplicate.id,state:'review'},1)).total,0);assert.equal((await outcomePage(db,{post:duplicate.id,state:'ready'},1)).total,0);
+ const restarted=new PrismaClient({datasourceUrl:process.env.TEST_DATABASE_URL});try{assert((await duplicatePage(restarted,1)).items.some(m=>m.id===match.id));}finally{await restarted.$disconnect();}await automaticDeliveryCycle(db,env,transport);assert.equal(sends,1);
  const failed=await ingest(db,src.id,{externalId:'3',url:src.url+'/3',content:'نص مختلف',publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:failed.id},data:{availableAt:new Date(0)}});const failedJob=await claimJob(db,'failure');assert.ok(failedJob);await processJob(db,failedJob,new GeminiLanguageProvider('offline',async()=>new Response('{}',{status:503})),signal());const failure=await db.sourcePost.findUniqueOrThrow({where:{id:failed.id}});assert.equal(failure.status,'FAILED');assert.equal(Object(failure.processingResult).editorialEligibility,'PROCESSING_ERROR');assert.equal(await db.publication.count({where:{newsItemId:item.id}}),1);
  }finally{await db.$disconnect();}
 });
