@@ -90,7 +90,7 @@ test("unsupported draft sentences, changed quotation, false attestations fail cl
   // attestations still retain their independent review failures.
   s.draft.body=s.draft.title;s.draft.attestation.factsPreserved=false;
   const result=editDraft(s.draft,s.content,s.understanding,official);
-  assert.ok(result.review.some(r=>r.code === "QUOTE_REVIEW"));assert.ok(result.review.some(r=>r.code === "UNSUPPORTED_OUTPUT"));
+  assert.ok(result.review.some(r=>r.code === "UNSUPPORTED_OUTPUT" && r.detail === "QUOTE_INTEGRITY_FAILURE"));assert.ok(result.review.some(r=>r.code === "UNSUPPORTED_OUTPUT" && r.detail?.includes("factsPreserved")));
 });
 test("rule catalogue is versioned, complete, traceable; exact documented order",()=>{
   assert.equal(terminology.length,68);assert.equal(new Set(terminology.map(r=>r.id)).size,68);

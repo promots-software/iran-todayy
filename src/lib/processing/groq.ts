@@ -1,11 +1,13 @@
+import {directMatchingUnderstanding,completeDirectGeneration,directArticleInstructions} from './direct-generation';
+import {directArticleSchema} from './direct-generation-contract';
 import {withEditorialContract} from './editorial-contract';
 import {withOneRepair,repairInstructions} from './automatic-repair';
 import {availableDraft,proposalDraft} from './available-draft';
 import {selectionBlocksDraft} from './direct-policy';
 import {publicationDraft,publicationUnits,preparePublication,acceptPublication,publicationReviewInput,publicationReviewInstructions} from './direct-publication';
 import {directPublicationReviewSchema,directProposalSchema,directCoverageSchema} from './direct-publication-contract';
-import {directBilingualSchema,bilingualInstructions,prepareDirectBilingual,directReviewSchema,directReviewInstructions,directReviewInput,finalizeDirectBilingual} from './direct-bilingual';
-import {directArabicSchema,directArabicInstructions,validateDirectExtraction,adaptDirectExtraction} from './direct';
+import {directBilingualSchema,bilingualInstructions,directReviewSchema,directReviewInstructions} from './direct-bilingual';
+import {directArabicSchema,directArabicInstructions,directExtractionSchema,directInstructions} from './direct';
 import {idClassificationSchema,idClassificationInput,idClassificationInstructions,preflightIdClassification,adaptIdClassification} from './id-classification';
 import {coverageInstructions} from './editorial-scope';
 import {extractionTask,uniqueContextInstructions} from './gemini-benchmark-prompt';
@@ -35,7 +37,7 @@ export const GROQ_PRICES = {
 } as const; // USD / million tokens, https://console.groq.com/docs/models, 2026-09-16.
 
 export type StageUsage = {
-  provider: "groq"; stage: Stage | "direct_publication_review" | "direct_bilingual" | "direct_review" | "direct_extract" | "extract" | "render" | "review_rendering" | "classify"; model: string; request: number;
+  provider: "groq"; stage: Stage | "direct_article" | "direct_match" | "direct_publication_review" | "direct_bilingual" | "direct_review" | "direct_extract" | "extract" | "render" | "review_rendering" | "classify"; model: string; request: number;
   inputTokens: number | null; outputTokens: number | null; totalTokens: number | null;
   estimatedCostUsd: number | null; pricingDate: "2026-09-16";
   outcome: "success" | "error"; errorCode: string | null; durationMs: number;
@@ -73,6 +75,10 @@ export class GroqLanguageProvider implements LanguageProvider {
     if (!apiKey) throw new ProcessingError("GROQ_API_KEY_REQUIRED");
   }
   async understand(input: Parameters<LanguageProvider["understand"]>[0], signal: AbortSignal) {
+    if(input.processingMode==='DIRECT'){
+      const raw=await this.request('understand',{content:input.content},input.rules,signal,'direct_match',[],true);
+      return directMatchingUnderstanding(raw,input.content);
+    }
     const selection:{relevance?:'POLITICAL_NEWS'|'IRRELEVANT'|'UNCERTAIN'}={};
     return this.repairOnce(()=>this.understandOnce(input,signal,selection),code=>this.understandOnce(input,signal,selection,code));
   }
@@ -83,25 +89,6 @@ export class GroqLanguageProvider implements LanguageProvider {
     const detectedLanguage=sourceLanguage(input.content);
     if(detectedLanguage === "unknown") throw new ProcessingError("SOURCE_LANGUAGE_UNCERTAIN");
     const direct=input.processingMode==='DIRECT';
-    if(direct&&detectedLanguage!=='ar'){
-      const combined=await this.request('understand',{...data,detectedLanguage},rules,signal,'direct_bilingual',[],true);
-      try {
-      const prepared=prepareDirectBilingual(combined,input.content);
-      const review=await this.request('understand',directReviewInput(input.content,prepared),rules,signal,'direct_review',prepared.refs,true);
-      const receipt=finalizeDirectBilingual(input.content,prepared,review);
-      return adaptDirectExtraction(prepared.grounded,input.content,receipt);
-      } catch(error){if(error instanceof ProcessingError)error.availableDraft=proposalDraft(combined,error.code)??undefined;throw error;}
-    }
-    if(direct){
-      const raw=directArabicSchema.parse(await this.request('understand',{...data,detectedLanguage,sourceUnits:publicationUnits(input.content)},rules,signal,'direct_extract'));
-      try {
-      const {coverage,publication,...extraction}=raw;
-      const u=adaptDirectExtraction(validateDirectExtraction(extraction,input.content),input.content);
-      const prepared=preparePublication(input.content,u,publication,coverage);
-      const review=prepared.local?null:await this.request('understand',publicationReviewInput(input.content,u,prepared),rules,signal,'direct_publication_review',[],true);
-      return {...u,publicationProposal:acceptPublication(input.content,u,prepared,review)};
-      } catch(error){if(error instanceof ProcessingError)error.availableDraft=proposalDraft(raw,error.code)??undefined;throw error;}
-    }
     const raw=await this.request("understand", {...data,detectedLanguage}, rules, signal, "extract");
     const parsed=minimalExtractionSchema.parse(raw);
     // The first relevance decision survives repair; uncertainty is acceptance.
@@ -142,6 +129,10 @@ export class GroqLanguageProvider implements LanguageProvider {
   }
   async draft(input: Parameters<LanguageProvider["draft"]>[0], signal: AbortSignal) {
     signal.throwIfAborted();
+    if(input.processingMode==='DIRECT'){
+      const raw=await this.request('draft',{originalSource:input.content},input.rules,signal,'direct_article',[],true);
+      return completeDirectGeneration(raw,input.content,input.understanding);
+    }
     if (selectionBlocksDraft(input.understanding,input.processingMode??'NORMAL')) throw new ProcessingError("GROQ_DRAFT_NOT_ACCEPTED");
     if(input.understanding.publicationProposal)return publicationDraft(input.content,input.understanding);
     return this.repairOnce(()=>this.draftOnce(input,signal),code=>this.draftOnce(input,signal,code));
@@ -160,14 +151,14 @@ export class GroqLanguageProvider implements LanguageProvider {
     return publicationDraft(input.content,input.understanding);
     } catch(error){if(error instanceof ProcessingError)error.availableDraft=proposalDraft(raw,error.code)??undefined;throw error;}
   }
-  private async request(stage: Stage, data: unknown, rules: typeof ruleSet, signal: AbortSignal, step?: "direct_publication_review" | "direct_bilingual" | "direct_review" | "direct_extract" | "extract" | "render" | "review_rendering" | "classify",renderingRefs:RenderingReference[]=[],sourceApproved=false): Promise<unknown> {
+  private async request(stage: Stage, data: unknown, rules: typeof ruleSet, signal: AbortSignal, step?: "direct_article" | "direct_match" | "direct_publication_review" | "direct_bilingual" | "direct_review" | "direct_extract" | "extract" | "render" | "review_rendering" | "classify",renderingRefs:RenderingReference[]=[],sourceApproved=false): Promise<unknown> {
     assertShadowMode(); signal.throwIfAborted();
     if (this.requests >= 8) throw new ProcessingError("PROVIDER_REQUEST_LIMIT");
     const classificationData=step==='classify'?data as {extraction:GroundedExtraction;profile:Parameters<LanguageProvider['understand']>[0]['profile']}:null;
-    const outputSchema = step==='direct_publication_review' ? directPublicationReviewSchema : step==='direct_bilingual' ? directBilingualSchema : step==='direct_review' ? directReviewSchema(renderingRefs,(data as {originalSource:string}).originalSource) : stage==='draft' ? publicationSchema : step === "direct_extract" ? directArabicSchema : step === "extract" ? minimalExtractionSchema : step==='render' ? renderingSchemaFor(renderingRefs) : step==='review_rendering' ? renderingReviewSchemaFor(renderingRefs) : classificationData ? idClassificationSchema(classificationData.extraction) : schemas[stage];
+    const outputSchema = step==='direct_article' ? directArticleSchema : step==='direct_match' ? directExtractionSchema : step==='direct_publication_review' ? directPublicationReviewSchema : step==='direct_bilingual' ? directBilingualSchema : step==='direct_review' ? directReviewSchema(renderingRefs,(data as {originalSource:string}).originalSource) : stage==='draft' ? publicationSchema : step === "direct_extract" ? directArabicSchema : step === "extract" ? minimalExtractionSchema : step==='render' ? renderingSchemaFor(renderingRefs) : step==='review_rendering' ? renderingReviewSchemaFor(renderingRefs) : classificationData ? idClassificationSchema(classificationData.extraction) : schemas[stage];
     const wireSchema = groqSchema(stage, outputSchema);
 
-    const task = step==='direct_publication_review' ? publicationReviewInstructions : step==='direct_bilingual' ? bilingualInstructions : step==='direct_review' ? directReviewInstructions : step === "direct_extract" ? directArabicInstructions : step === "extract"
+    const task = step==='direct_article' ? directArticleInstructions : step==='direct_match' ? directInstructions : step==='direct_publication_review' ? publicationReviewInstructions : step==='direct_bilingual' ? bilingualInstructions : step==='direct_review' ? directReviewInstructions : step === "direct_extract" ? directArabicInstructions : step === "extract"
       ? extractionTask+" "+uniqueContextInstructions
       : step === 'render'
       ? renderingInstructions

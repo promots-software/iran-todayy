@@ -1,8 +1,9 @@
+import {directGenerationSchema} from './direct-generation-contract';
 import {completeEventStructure} from './impersonal-event';
 import {availableDraft,type AvailableDraft,reviewPrefill} from './available-draft';
 import {editoriallyFiltered,selectionBlocksDraft} from './direct-policy';
 import {IRAN_NOW_STYLE_PROFILE_V1} from './iran-now-style';
-import {assertDirectFullCoverage} from './direct-bilingual';
+import {directFinalArticle} from './direct-generation';
 import {sourceMediaReviewRequired} from '../publication-media';
 import { createHash, randomUUID } from "node:crypto";
 import { Prisma, type PrismaClient } from "@prisma/client";
@@ -61,7 +62,7 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
     for(const job of expired) {
       const exhausted=job.attemptCount>=job.maxAttempts;
       const reclaimed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy,lockedAt:job.lockedAt},data:{status:exhausted?"FAILED":"RETRY",lockedAt:null,lockedBy:null,availableAt:now,lastError:exhausted?"LEASE_EXHAUSTED":"LEASE_EXPIRED"}});
-      if(reclaimed.count && exhausted)await tx.sourcePost.update({where:{id:job.sourcePostId},data:{status:"NEEDS_REVIEW",error:"LEASE_EXHAUSTED",nextRetryAt:null}});
+      if(reclaimed.count && exhausted)await tx.sourcePost.update({where:{id:job.sourcePostId},data:{status:"FAILED",error:"LEASE_EXHAUSTED",nextRetryAt:null}});
     }
     const scope = telegramOnly ? Prisma.sql`AND EXISTS (SELECT 1 FROM "SourcePost" p JOIN "Source" s ON s."id" = p."sourceId" WHERE p."id" = "ProcessingJob"."sourcePostId" AND p."status" IN ('INGESTED','FAILED') AND s."platform" = 'TELEGRAM' AND s."enabled" = true AND s."deletedAt" IS NULL)` : Prisma.empty;
     const sourceHold=Prisma.sql`AND NOT EXISTS (SELECT 1 FROM "SourcePost" p JOIN "Source" s ON s.id=p."sourceId" WHERE p.id="ProcessingJob"."sourcePostId" AND s."processingPaused"=true)`;
@@ -174,7 +175,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     const scope={decision:processingMode==='DIRECT'?'SOURCE_ADMIN_DIRECT':'IRAN_RELEVANCE_ONCE'};
     const u=validateUnderstanding(await provider.understand({...(processingMode==='DIRECT'?{processingMode}:{}),content:post.originalContent,publishedAt:post.sourcePublishedAt,profile:sourceProfile,rules:ruleSet},signal),post.originalContent);
     if((await client.source.findUniqueOrThrow({where:{id:post.sourceId},select:{processingMode:true}})).processingMode!==processingMode)throw new ProcessingError('SOURCE_PROCESSING_MODE_CHANGED',true,undefined,1000);
-    if(processingMode==='DIRECT')assertDirectFullCoverage(post.originalContent,u);
+
     // Assign provenance ourselves; never trust a provider-supplied database identity.
     for(const value of [...u.event.actors,u.event.action,u.event.object,u.event.location,u.event.eventTime,...u.event.facts,...u.event.facts.map(f=>f.speaker),...u.names]) if(value)value.evidence.sourcePostId=post.id;
     // Verify numeric evidence at extraction, before terminology (R IX.4).
@@ -183,9 +184,9 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     // Provider work must never hold the shared event-decision lock. Prepare
     // against an immutable snapshot, then recheck under the lock before commit.
     const snapshot=filter?null:await eventSnapshot(client);
-    const preparedMatch=snapshot?await matchEvent(u.event,post.sourcePublishedAt,snapshot.candidates,provider,signal,{source:post.originalContent,understanding:u}):null;
+    const preparedMatch=snapshot?await matchEvent(u.event,post.sourcePublishedAt,snapshot.candidates,provider,signal,{source:post.originalContent,understanding:u,processingMode}):null;
     if(snapshot?.legacy&&preparedMatch?.classification==='NEW_EVENT'){preparedMatch.classification='UNCERTAIN_MATCH';preparedMatch.rationale='توجد أحداث قديمة بلا استخراج منظم؛ يلزم فحصها قبل إنشاء حدث جديد';preparedMatch.evidence={legacyEvents:snapshot.legacy};}
-    const skipDraft=provider.draftOnlyAccepted&&(selectionBlocksDraft(u,processingMode)||!completeEventStructure(u,post.originalContent,processingMode)||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
+    const skipDraft=(provider.draftOnlyAccepted||processingMode==='DIRECT')&&(selectionBlocksDraft(u,processingMode)||!completeEventStructure(u,post.originalContent,processingMode)||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
     const preparedDraft=!filter&&!skipDraft?await provider.draft({...processingMode==='DIRECT'?{processingMode:'DIRECT' as const}:{},content:post.originalContent,understanding:u,rules:ruleSet},signal):null;
     proposal=availableDraft(preparedDraft,'REVIEW_REQUIRED');
     signal.throwIfAborted();
@@ -214,8 +215,8 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
         if(!snapshot||!preparedMatch||(await eventSnapshot(tx)).key!==snapshot.key)throw new ProcessingError('MATCH_SNAPSHOT_CHANGED',true,undefined,1000);
         const match=preparedMatch;
         // Groq's larger model is reserved for accepted new/material stories, never duplicate or unresolved events.
-        if (provider.draftOnlyAccepted && (selectionBlocksDraft(u,processingMode) || !completeEventStructure(u,post.originalContent,processingMode) || !["NEW_EVENT","MATERIAL_UPDATE"].includes(match.classification))) {
-          const status = match.classification === "DUPLICATE" ? "DUPLICATE" : "NEEDS_REVIEW";
+        if ((provider.draftOnlyAccepted||processingMode==='DIRECT') && (selectionBlocksDraft(u,processingMode) || !completeEventStructure(u,post.originalContent,processingMode) || !["NEW_EVENT","MATERIAL_UPDATE"].includes(match.classification))) {
+          const status = match.classification === "DUPLICATE" ? "DUPLICATE" : processingMode==='DIRECT'?"FAILED":"NEEDS_REVIEW";
           const review = initialReview(u,sourceProfile,post.originalContent);
           if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
           if (!completeEventStructure(u,post.originalContent,processingMode)) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
@@ -225,15 +226,16 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
             const existing = await tx.newsItem.findUnique({where:{eventRevisionId:match.candidate.revisionId}});
             if (existing) await tx.newsEvidence.upsert({where:{newsItemId_sourcePostId:{newsItemId:existing.id,sourcePostId:post.id}},update:{},create:{newsItemId:existing.id,sourcePostId:post.id}});
           }
-          await tx.sourcePost.update({where:{id:post.id},data:{...base,status,processingResult:json({ruleSetVersion:ruleSet.version,provider:provider.id,classification:match.classification,extraction:u,match,draft:null,draftSkippedReason:"NOT_ACCEPTED_FOR_FINAL_REWRITE",review,externalPublishingEnabled:false})}});
+          await tx.sourcePost.update({where:{id:post.id},data:{...base,status,...(processingMode==='DIRECT'&&status!=='DUPLICATE'?{error:'DIRECT_MATCH_UNRESOLVED'}:{}),processingResult:json({ruleSetVersion:ruleSet.version,provider:provider.id,classification:match.classification,...(processingMode==='DIRECT'?{processingMode,editorialEligibility:status==='DUPLICATE'?'FILTERED':'MATCHING_HOLD',deliveryDecision:'HOLD',validated:false}:{}),extraction:u,match,draft:null,draftSkippedReason:"NOT_ACCEPTED_FOR_FINAL_REWRITE",review:processingMode==='DIRECT'?[]:review,...(processingMode==='DIRECT'?{diagnostics:review}:{}),externalPublishingEnabled:false})}});
           await audit(tx,post.id,"DRAFT_SKIPPED","حفظ الاستخراج والتطابق؛ لا حاجة لصياغة نهائية الآن",{classification:match.classification,status,provider:provider.id});
-          await tx.processingJob.update({where:{id:job.id},data:{status:"COMPLETED",lockedAt:null,lockedBy:null,lastError:null}});
+          await tx.processingJob.update({where:{id:job.id},data:{status:processingMode==='DIRECT'&&status!=='DUPLICATE'?"FAILED":"COMPLETED",lockedAt:null,lockedBy:null,lastError:processingMode==='DIRECT'&&status!=='DUPLICATE'?'DIRECT_MATCH_UNRESOLVED':null}});
           return {postId:post.id,filtered:false};
         }
         if(!preparedDraft)throw new ProcessingError('DRAFT_PREPARATION_REQUIRED');
         const rawDraft=preparedDraft;
-        const draft=finalizeWithRepair(rawDraft,post.originalContent,u,sourceProfile,!!provider.constrainedRewrite);
-        const review=blockingEditorialReasons(draft!.review.filter(r=>processingMode!=='DIRECT'||r.code!=='ARCHIVE_ONLY'));
+        if(processingMode==='DIRECT')u.directGeneration=directGenerationSchema.parse((preparedDraft as {generationReceipt?:unknown}).generationReceipt);
+        const draft=processingMode==='DIRECT'?directFinalArticle(post.originalContent,u):finalizeWithRepair(rawDraft,post.originalContent,u,sourceProfile,!!provider.constrainedRewrite);
+        const review=processingMode==='DIRECT'?[]:blockingEditorialReasons(draft!.review);
         if (!completeEventStructure(u,post.originalContent,processingMode)) review.push(reason("CONTEXT_REQUIRED","استخراج الحدث ناقص"));
         if (match.classification === "UNCERTAIN_MATCH") review.push(reason("UNCERTAIN_MATCH",match.rationale));
         if (match.candidates.some(c=>Array.isArray((c.evidence.semantic as {conflictingFactIds?:string[]})?.conflictingFactIds) && ((c.evidence.semantic as {conflictingFactIds:string[]}).conflictingFactIds.length>0))) review.push(reason("FIGURE_CONFLICT"));
@@ -245,11 +247,11 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
           revisionId=event.revisions[0].id;
         } else if (match.classification === "MATERIAL_UPDATE" && match.candidate) {
           // Revision preserves old known facts; new evidence is a separate immutable revision.
-          const merged={...u.event,facts:[...match.candidate.data.facts.filter(f=>!u.event.facts.some(n=>n.key===f.key)),...u.event.facts]};
+          const merged={...u.event,facts:[...match.candidate.data.facts.filter(f=>!u.event.facts.some(n=>n.key===f.key)).map(f=>processingMode==='DIRECT'?{...f,id:`history:${match.candidate!.revisionId}:${f.id}`} : f),...u.event.facts]};
           const revision=await tx.eventRevision.create({data:{eventId:match.candidate.id,revision:match.candidate.revision+1,facts:json(merged),materialChange:match.newFactIds.map(id=>u.event.facts.find(f=>f.id===id)!.arabic).join("؛ ")}});
           revisionId=revision.id;
         }
-        if(sourceMediaReviewRequired(post.metadata,post.originalContent))review.push(reason('EDITORIAL_ATTESTATION_REQUIRED','SOURCE_MEDIA_EVIDENCE_REVIEW_REQUIRED: النص يحيل إلى دليل مرئي يحتاج إلى مراجعة'));
+        if(processingMode!=='DIRECT'&&sourceMediaReviewRequired(post.metadata,post.originalContent))review.push(reason('EDITORIAL_ATTESTATION_REQUIRED','SOURCE_MEDIA_EVIDENCE_REVIEW_REQUIRED: النص يحيل إلى دليل مرئي يحتاج إلى مراجعة'));
         const reviewState=review.length>0 || match.classification === "UNCERTAIN_MATCH";
         // This worker is a draft-only service. Eligibility never authorizes a send.
         const decision=editorialDecision({validated:true,review,filtered:match.classification==='DUPLICATE'},{autoPublish:false,shadowMode:true,requireApproval:true});
@@ -258,14 +260,14 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
           const existing=await tx.newsItem.findUnique({where:{eventRevisionId:revisionId}});
           if (match.classification === "DUPLICATE") newsItemId=existing?.id;
           else {
-            const item=await tx.newsItem.create({data:{eventRevisionId:revisionId,title:draft!.title,arabicContent:draft!.body,status,validationStatus:reviewState?"NEEDS_REVIEW":"PASSED",protectedQuotes:json(draft!.protectedQuotes),factualEvidence:json(u.event.facts),validationResult:json({processingMode,acceptance,...decision,diagnostics:draft!.review.filter(r=>!review.includes(r)),validated:true,format:match.classification==='MATERIAL_UPDATE'?'UPDATE':draft.format,review,applied:draft!.applied,sentenceEvidence:draft!.sentenceEvidence,externalPublishingEnabled:false}),needsReviewReasons:review.map(r=>`${r.code}: ${r.explanation}${r.detail ? " — "+r.detail : ""}`),ruleSetId:rules.id,modeAtProcessing:post.modeAtProcessing,processingStartedAt:base.processingStartedAt,processingEndedAt:null}});
+            const item=await tx.newsItem.create({data:{eventRevisionId:revisionId,title:draft!.title,arabicContent:draft!.body,status,validationStatus:reviewState?"NEEDS_REVIEW":"PASSED",protectedQuotes:json(draft!.protectedQuotes),factualEvidence:json(u.event.facts),validationResult:json({processingMode,acceptance,...decision,...(processingMode==='DIRECT'?{generationContract:'direct-generation-v2',semanticVerification:'DIAGNOSTIC_ONLY',provenanceKind:'SOURCE_LINK_NOT_SEMANTIC_ATTESTATION'}:{}),diagnostics:draft!.review.filter(r=>!review.includes(r)),validated:true,format:match.classification==='MATERIAL_UPDATE'?'UPDATE':draft.format,review,applied:draft!.applied,sentenceEvidence:draft!.sentenceEvidence,externalPublishingEnabled:false}),needsReviewReasons:review.map(r=>`${r.code}: ${r.explanation}${r.detail ? " — "+r.detail : ""}`),ruleSetId:rules.id,modeAtProcessing:post.modeAtProcessing,processingStartedAt:base.processingStartedAt,processingEndedAt:null}});
             newsItemId=item.id;
           }
           if (newsItemId) await tx.newsEvidence.upsert({where:{newsItemId_sourcePostId:{newsItemId,sourcePostId:post.id}},create:{newsItemId,sourcePostId:post.id},update:{}});
         }
         const links=match.classification === "UNCERTAIN_MATCH" ? match.candidates.map(c=>c.revisionId) : revisionId ? [revisionId] : [];
         for (const id of links) await tx.eventMatch.upsert({where:{sourcePostId_eventRevisionId:{sourcePostId:post.id,eventRevisionId:id}},update:{},create:{sourcePostId:post.id,eventRevisionId:id,classification:match.classification,rationale:match.rationale+(match.candidate?.published?" — سبق نشر الحدث":""),evidence:json(match.evidence),matcherVersion:"layered-v1"}});
-        await tx.sourcePost.update({where:{id:post.id},data:{...base,status,processingResult:json({processingMode,acceptance,...decision,diagnostics:draft!.review.filter(r=>!review.includes(r)),validated:true,ruleSetVersion:ruleSet.version,provider:provider.id,classification:match.classification,eventRevisionId:revisionId??null,match:{rationale:match.rationale,evidence:match.evidence,candidates:match.candidates},extraction:u,draft,review,externalPublishingEnabled:false})}});
+        await tx.sourcePost.update({where:{id:post.id},data:{...base,status,processingResult:json({processingMode,acceptance,...decision,...(processingMode==='DIRECT'?{generationContract:'direct-generation-v2',semanticVerification:'DIAGNOSTIC_ONLY',provenanceKind:'SOURCE_LINK_NOT_SEMANTIC_ATTESTATION'}:{}),diagnostics:draft!.review.filter(r=>!review.includes(r)),validated:true,ruleSetVersion:ruleSet.version,provider:provider.id,classification:match.classification,eventRevisionId:revisionId??null,match:{rationale:match.rationale,evidence:match.evidence,candidates:match.candidates},extraction:u,draft,review,externalPublishingEnabled:false})}});
         for (const action of pipelineOrder) await audit(tx,post.id,action,action === "PUBLISHING_DECISION"?"المسودة محفوظة؛ الإرسال الخارجي معطل":`اكتملت مرحلة ${action}`,{processingMode,durationMs:Date.now()-attemptStartedAt,ruleSetVersion:ruleSet.version,classification:match.classification,status,reviewCodes:review.map(r=>r.code)});
       }
       await tx.processingJob.update({where:{id:job.id},data:{status:"COMPLETED",lockedAt:null,lockedBy:null,lastError:null}});
@@ -285,9 +287,9 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const next=new Date(Date.now()+(preciseWait?error.retryAfterMs:Math.max(retryDelay(job.attemptCount),policy.delayMs)));
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code,...(budgetHold?{attemptCount:{decrement:1}}:{})}});
       if (changed.count) {
-        const decision=editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
-        await tx.sourcePost.update({where:{id:post.id},data:{status:terminal&&decision.editorialEligibility!=="PROCESSING_ERROR"?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(retryable||decision.editorialEligibility==="PROCESSING_ERROR"?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
-        await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(retryable||decision.editorialEligibility==='PROCESSING_ERROR'?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
+        const decision=processingMode==='DIRECT'?{editorialEligibility:code==='DIRECT_MATCH_INPUT_INVALID'?'MATCHING_HOLD':'PROCESSING_ERROR',deliveryDecision:'HOLD',review:[]}:editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:processingMode==='DIRECT'?"FAILED":terminal&&decision.editorialEligibility!=="PROCESSING_ERROR"?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(processingMode==='DIRECT'||retryable||decision.editorialEligibility==="PROCESSING_ERROR"?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:processingMode==='DIRECT'||decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
+        await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(processingMode==='DIRECT'||retryable||decision.editorialEligibility==='PROCESSING_ERROR'?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
         if(isProviderWait(code)&&!terminal)await audit(tx,post.id,'PROCESSING_PROVIDER_WAIT','Provider-dependent stage scheduled; processing lane released',{jobId:job.id,code,eligibleAt:next.toISOString(),startedAt:new Date().toISOString()});
         if(isProviderWait(code)&&terminal)await audit(tx,post.id,'PROCESSING_PROVIDER_RECOVERY_REQUIRED','Provider outcome requires technical reconciliation; no automatic replay scheduled',{jobId:job.id,code});
       }

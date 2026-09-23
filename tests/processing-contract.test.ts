@@ -1,3 +1,4 @@
+import {directFinalArticle} from '../src/lib/processing/direct-generation';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
@@ -22,11 +23,11 @@ const response=(value:unknown)=>Response.json({candidates:[{finishReason:'STOP',
 const input=(content=source,processingMode:'NORMAL'|'DIRECT'='DIRECT')=>({content,processingMode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet});
 const held={autoPublish:false,shadowMode:true,requireApproval:true};
 test('exact live context error is repaired from unique source evidence, preserving disclaimer',async()=>{
- let calls=0;const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response(raw());});
+ let calls=0;const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const {coverage,publication,...matching}=raw();void coverage;return response(JSON.parse(String(init?.body)).generationConfig.responseJsonSchema.properties.statements?matching:{title:publication.title.text,body:'',diagnostics:[]});});
  const u=validateUnderstanding(await p.understand(input(),signal()),source);
  const d=await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
- const final=finalizeConstrainedDraft(d,source,u,unknownProfile);
- assert.equal(calls,1);assert.equal(editorialDecision({validated:true,review:final.review},held).editorialEligibility,'READY_TO_PUBLISH');
+ void d;const final=directFinalArticle(source,u);
+ assert.equal(calls,2);assert.equal(editorialDecision({validated:true,review:final.review},held).editorialEligibility,'READY_TO_PUBLISH');
  assert.match(final.title,/لا يمثل خبراً حقيقياً/);assert.equal(editoriallyFiltered(u,false,'DIRECT'),false);
 });
 test('context repair never guesses repeated evidence or invents a speaker',()=>{
@@ -34,12 +35,12 @@ test('context repair never guesses repeated evidence or invents a speaker',()=>{
  const x=raw();x.statements[0].speaker=ev('متحدث غير موجود');
  assert.throws(()=>validateMinimalExtraction({actors:x.actors,action:x.action,object:x.object,location:x.location,event_time:x.event_time,relevance:'POLITICAL_NEWS',statements:x.statements.map(({evidence,speaker})=>({evidence,speaker}))},source));
 });
-test('one bounded full-source repair restores omitted material; persistent omission hard-blocks',async()=>{
- let calls=0;const broken=raw();broken.statements[0].evidence=ev(source.slice(0,source.indexOf(' وأكدت')));broken.publication.title.text=broken.statements[0].evidence.excerpt;
- const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const req=JSON.parse(String(init?.body));if(calls===2)assert.match(req.contents[0].parts[0].text,/DIRECT_MATERIAL_COVERAGE_FAILED/);return response(calls===1?broken:raw());});
- const u=await p.understand(input(),signal());assert(u);assert.equal(calls,2);
- calls=0;const bad=new GeminiLanguageProvider('offline',async()=>{calls++;return response(broken);});
- await assert.rejects(bad.understand(input(),signal()),/DIRECT_MATERIAL_COVERAGE_FAILED/);assert.equal(calls,2);
+test('DIRECT coverage diagnostics no longer create a semantic-review receipt',async()=>{
+ const {coverage,publication,...matching}=raw();void coverage;let calls=0;
+ const p=new GeminiLanguageProvider('offline',async()=>response(++calls===1?matching:{title:publication.title.text,body:'',diagnostics:['DIRECT_MATERIAL_COVERAGE_FAILED']}));
+ const u=validateUnderstanding(await p.understand(input(),signal()),source);
+ await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
+ assert.equal(calls,2);assert.equal(directFinalArticle(source,u).review[0].detail,'DIRECT_MATERIAL_COVERAGE_FAILED');assert.equal(u.directGeneration?.semanticVerification,'DIAGNOSTIC_ONLY');
 });
 test('NORMAL relevance runs once; accepted uncertain Iran story survives priority and opinion labels',async()=>{
  const text='قال الوفد إن التعاون مع إيران سيستمر.';const u=newsroom(text,[text],'الوفد');u.relevance='UNCERTAIN';u.priority='P4';u.filterReason='OPINION';const parts=minimalParts(u);let calls=0;

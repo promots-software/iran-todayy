@@ -1,3 +1,5 @@
+import {isDeepStrictEqual} from 'node:util';
+import {directFinalArticle} from '../processing/direct-generation';
 import {Prisma} from '@prisma/client';
 import {validateUnderstanding} from '../processing/contracts';
 import {assertDirectFullCoverage} from '../processing/direct-bilingual';
@@ -30,7 +32,12 @@ export function publicationReady(item:PublicationCandidate,frozen=false){
   if(!post.jobs.length||post.jobs.some(j=>j.status!=='COMPLETED')||result.eventRevisionId!==item.eventRevisionId||!['NEW_EVENT','MATERIAL_UPDATE'].includes(String(result.classification))||!post.matches.some(m=>m.eventRevisionId===item.eventRevisionId&&['NEW_EVENT','MATERIAL_UPDATE'].includes(m.classification))||post.matches.some(m=>['UNCERTAIN','UNCERTAIN_MATCH'].includes(m.classification)))return false;
   try{
    const u=validateUnderstanding(result.extraction,post.originalContent);
-   if(mode==='DIRECT')assertDirectFullCoverage(post.originalContent,u);
+   if(mode==='DIRECT'){
+    if(result.generationContract==='direct-generation-v2'){
+     const article=directFinalArticle(post.originalContent,u);
+     if(!isDeepStrictEqual(item.factualEvidence,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent||record(item.validationResult).generationContract!=='direct-generation-v2')return false;
+    }else assertDirectFullCoverage(post.originalContent,u);
+   }
    else {
     const acceptance=record(result.acceptance);
     // Legacy READY receipts keep their original decision; never reconsider

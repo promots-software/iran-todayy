@@ -1,7 +1,7 @@
 import {isProviderWait} from "./failure-policy";
 /** Editorial quality and permission to deliver are independent. No send occurs here. */
-export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR';
-export const editorialLabels:Record<EditorialEligibility,string>={READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
+export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR'|'MATCHING_HOLD';
+export const editorialLabels:Record<EditorialEligibility,string>={MATCHING_HOLD:'تعذّر حسم المطابقة',READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
 export const arabicReasons:Record<string,string>={
  MATERIAL_EVIDENCE_UNRESOLVED:'تعذّر تثبيت موضع الدليل أو نسبة المعلومة بأمان بعد محاولة الإصلاح',
  SOURCE_TEXT_REQUIRED:'المنشور بلا نص؛ يلزم محتوى مكتوب قبل إعداد خبر للنشر',

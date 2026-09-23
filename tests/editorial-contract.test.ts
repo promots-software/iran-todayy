@@ -1,3 +1,4 @@
+import {directMatchingUnderstanding,directFinalArticle} from '../src/lib/processing/direct-generation';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -34,30 +35,34 @@ test('byte-exact canonical artifact has all 40 sections, final check and intact 
  assert.throws(()=>validateEditorialContract(Buffer.from(editorialContract.replace('40. FINAL QUALITY CHECK BEFORE OUTPUT',''))),/INTEGRITY/);
  for(const example of ['27 شهریور → 27 أيلول','Masoud Pezeshkian → مسعود بزشكيان','40. FINAL QUALITY CHECK BEFORE OUTPUT'])assert.ok(editorialContract.includes(example));
 });
-test('DIRECT Arabic actual generation and repair both receive entire contract',async()=>{
+test('DIRECT matching is separate; final article receives the complete contract',async()=>{
  process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';let calls=0;
- const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
-  inspect(init);calls++;return Response.json(geminiEnvelope({...raw,statements:calls===1?[]:raw.statements,coverage,publication:{title:{text:'إيران الآن | '+source.slice(0,-1),factIds:['f1']},body:[]}}));
- });
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;if(calls===1)return Response.json(geminiEnvelope(raw));inspect(init);return Response.json(geminiEnvelope({title:'إيران الآن | '+source,body:'',diagnostics:[]}));});
  const u=await provider.understand({content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,processingMode:'DIRECT'},signal());
  const d=await provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'DIRECT'},signal());
- assert.equal(calls,2);assert.equal(d.title,'إيران الآن | '+source.slice(0,-1));assert.equal(u.publicationProposal?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
+ assert.equal(calls,2);assert.equal(d.title,'إيران الآن | '+source);assert.equal(u.directGeneration?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
 });
-for(const language of ['ar','fa','en'] as const)for(const mode of ['NORMAL','DIRECT'] as const)test(`${mode} ${language} final generation uses actual contract; semantic review cannot be bypassed`,async()=>{
+for(const language of ['ar','fa','en'] as const)for(const mode of ['NORMAL','DIRECT'] as const)test(`${mode} ${language} final generation uses actual contract and mode-specific receipt`,async()=>{
  process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';
  const f=bilingualFixture(language==='ar'?'fa':language),p=prepareDirectBilingual(f.raw,f.source);
  const content=language==='ar'?source:f.source;
- const u=language==='ar'?adaptDirectExtraction(validateDirectExtraction(raw,source),source):adaptDirectExtraction(p.grounded,f.source,finalizeDirectBilingual(f.source,p,passingReview(f.source,p)));
+ let u=language==='ar'?adaptDirectExtraction(validateDirectExtraction(raw,source),source):adaptDirectExtraction(p.grounded,f.source,finalizeDirectBilingual(f.source,p,passingReview(f.source,p)));
+ if(mode==='DIRECT'){
+  const strip=(v:unknown):unknown=>Array.isArray(v)?v.map(strip):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([key])=>key!=='arabic').map(([key,value])=>[key,strip(value)])):v;
+  u=directMatchingUnderstanding(language==='ar'?raw:strip(f.raw),content);
+ }
  const facts=JSON.stringify(u.event);let calls=0;
  const publication={title:{text:'إيران الآن | افتتاح 12 مدرسة جديدة في العاصمة',factIds:['f1']},body:[{text:'افتتح المجلس 12 مدرسة جديدة في العاصمة.',factIds:['f1']}]};
  const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
   const req=inspect(init),data=JSON.parse(req.contents[0].parts[0].text);calls++;
   assert.equal(data.originalSource,content);
+  if(mode==='DIRECT')return Response.json(geminiEnvelope({title:publication.title.text,body:publication.body.map(s=>s.text).join('\n'),diagnostics:[]}));
   if(calls===1){assert.ok(req.generationConfig.responseJsonSchema.properties.publication);assert.deepEqual(data.validatedFacts,u.event);return Response.json(geminiEnvelope({coverage,publication}));}
   assert.equal(calls,2);assert.equal(u.publicationProposal,undefined,'no trust receipt before independent review');
   return Response.json(geminiEnvelope({review:data.publication.map((s:{id:string})=>({id:s.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[]}));
  });
  const d=await provider.draft({content,understanding:u,rules:ruleSet,processingMode:mode},signal());
+ if(mode==='DIRECT'){assert.equal(calls,1);assert.equal(directFinalArticle(content,u).title,publication.title.text);assert.equal(u.directGeneration?.semanticVerification,'DIAGNOSTIC_ONLY');assert.equal(JSON.stringify(u.event),facts);return;}
  assert.equal(calls,2);assert.equal(JSON.stringify(u.event),facts);assert.equal(d.title,publication.title.text);assert.equal(u.publicationProposal?.method,'INDEPENDENT');
  const final=finalizeConstrainedDraft(d,content,u,unknownProfile);assert.equal(final.title,d.title);assert.ok(!final.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
 });

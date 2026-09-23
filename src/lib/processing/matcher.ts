@@ -1,3 +1,4 @@
+import {directSourceGrounded} from './direct-generation';
 import { comparisonSchema, type EventData, type LanguageProvider, type Understanding, ProcessingError } from "./contracts";
 import {hasEditorialGrounding} from './editorial-grounding';
 import { ruleSet } from "./rules";
@@ -12,7 +13,7 @@ export function sameValidatedEvent(a:EventData,b:EventData){
  const semantic=(value:unknown):unknown=>Array.isArray(value)?value.map(semantic):value&&typeof value==='object'?Object.fromEntries(Object.entries(value).filter(([k])=>!['evidence','id'].includes(k)).sort(([a],[b])=>a.localeCompare(b)).map(([k,v])=>[k,semantic(v)])):value;
  return JSON.stringify(semantic(a))===JSON.stringify(semantic(b));
 }
-export type MatchGrounding={source:string;understanding:Understanding};
+export type MatchGrounding={source:string;understanding:Understanding;processingMode?:'NORMAL'|'DIRECT'};
 export async function matchEvent(incoming: EventData, publishedAt: Date, candidates: Candidate[], provider: LanguageProvider, signal: AbortSignal, grounding?:MatchGrounding): Promise<MatchDecision> {
   const results: (MatchDecision & { candidate: Candidate })[] = [];
   // Only identical semantic input is reused. Each event still gets its own
@@ -43,7 +44,7 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     // Independent truth verification is NOT evidence grounding. A provider's
     // boolean cannot authorize updates. Revalidate the exact incoming event,
     // source spans, attribution and reviewed translations at this boundary.
-    const sourceGrounded=!!grounding&&JSON.stringify(grounding.understanding.event)===JSON.stringify(incoming)&&hasEditorialGrounding(grounding.understanding,grounding.source);
+    const sourceGrounded=!!grounding&&JSON.stringify(grounding.understanding.event)===JSON.stringify(incoming)&&(grounding.processingMode==='DIRECT'?directSourceGrounded(grounding.understanding,grounding.source):hasEditorialGrounding(grounding.understanding,grounding.source));
     const material = fresh.filter(f => f.material && sourceGrounded && ["FIGURE", "DECISION", "OUTCOME", "STATEMENT"].includes(f.kind) && semantic.newFactIds.includes(f.id));
     const anchors = actors.length > 0 && action && (object || location || (!!incoming.eventTime && !!old.eventTime && timeA === timeB));
     const contradiction = locationConflict || objectConflict || timeConflict || semantic.conflictingFactIds.length > 0;

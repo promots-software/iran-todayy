@@ -4,6 +4,8 @@ import {recordDeliveryReceipt,reconcileDelivery,retryPersistence} from './delive
 import {assertPublishingActive} from '../operations-controls';
 import {formatTelegram,readTelegramSnapshot} from './format';
 import {transportApprovalDigest} from './format-digest';
+import {directFinalArticle} from '../processing/direct-generation';
+import {validateUnderstanding} from '../processing/contracts';
 import {createHash} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
 import {Prisma,type PrismaClient,type NewsItem} from '@prisma/client';
@@ -69,6 +71,18 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   const required=[...new Set(validation.review.map(reviewKey))];
   if(input.resolutions.length!==required.length||new Set(input.resolutions.map(r=>r.key)).size!==required.length||input.resolutions.some(r=>!required.includes(r.key)||r.note.trim().length<10||r.note.length>3000))throw new ProcessingError('EXPLICIT_REVIEW_REQUIRED');
   const event=eventSchema.parse(item.eventRevision.facts);
+  // A DIRECT update's event revision also retains historical facts. The new
+  // publication is bound only to its own source-backed generation evidence.
+  if((item.validationResult as {generationContract?:string})?.generationContract==='direct-generation-v2'){
+   const current=eventSchema.shape.facts.parse(item.factualEvidence);
+   if(!current.length||current.some(f=>!event.facts.some(e=>isDeepStrictEqual(e,f))))throw new ProcessingError('FACT_EVIDENCE_CHANGED');
+   const source=item.evidence.find(e=>e.sourcePostId===current[0].evidence.sourcePostId)?.sourcePost;
+   if(!source)throw new ProcessingError('SOURCE_PROVENANCE_REQUIRED');
+   const u=validateUnderstanding((source.processingResult as {extraction?:unknown})?.extraction,source.originalContent);
+   const article=directFinalArticle(source.originalContent,u);
+   if(!isDeepStrictEqual(current,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent)throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
+   event.facts=current;
+  }
   if(!event.facts.length||!isDeepStrictEqual(item.factualEvidence,event.facts))throw new ProcessingError('FACT_EVIDENCE_CHANGED');
   for(const fact of event.facts){
    const source=item.evidence.find(e=>e.sourcePostId===fact.evidence.sourcePostId)?.sourcePost;
