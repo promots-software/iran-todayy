@@ -164,6 +164,8 @@ model SourcePost {
   @@unique([sourceId, sourcePostId])
   @@index([contentHash])
   @@index([status, ingestedAt])
+  @@index([ingestedAt, id])
+  @@index([sourceId, ingestedAt, id])
 }
 
 model CanonicalEvent {

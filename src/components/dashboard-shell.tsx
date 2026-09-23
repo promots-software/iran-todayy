@@ -6,7 +6,7 @@ import {logoutAction} from '@/app/login/actions';
 import {allowed,roleLabel,type Role} from '@/lib/dashboard-permissions';
 const subscribe=(listener:()=>void)=>{window.addEventListener('storage',listener);window.addEventListener('themechange',listener);return()=>{window.removeEventListener('storage',listener);window.removeEventListener('themechange',listener);};};
 const snapshot=()=>localStorage.getItem('theme')??(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-const routes=[['/','نظرة عامة'],['/sources','المصادر'],['/approvals','الموافقات'],['/review','المراجعات'],['/published','الأخبار المنشورة'],['/filtered','المستبعد والمرفوض'],['/events','الأخبار المكررة'],['/processing','سجل المعالجة'],['/logs','سجل العمليات'],['/settings','الإعدادات'],['/system','حالة النظام'],['/operations','مركز العمليات']];
+const routes=[['/','نظرة عامة'],['/sources','المصادر'],['/monitoring','رصد'],['/approvals','الموافقات'],['/review','المراجعات'],['/published','الأخبار المنشورة'],['/filtered','المستبعد والمرفوض'],['/events','الأخبار المكررة'],['/processing','سجل المعالجة'],['/logs','سجل العمليات'],['/settings','الإعدادات'],['/system','حالة النظام'],['/operations','مركز العمليات']];
 export function DashboardShell({user,children}:{user:{displayName:string;role:Role}|null;children:React.ReactNode}){
  const path=usePathname(),[open,setOpen]=useState(false);
  const drawer=useRef<HTMLElement>(null),menuButton=useRef<HTMLButtonElement>(null);
