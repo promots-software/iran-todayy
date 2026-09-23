@@ -95,13 +95,14 @@ export class GroqLanguageProvider implements LanguageProvider {
     const selected=await normalStage('extract',async repair=>{
       const result=normalSelection(await this.request("understand", {...data,detectedLanguage,...(repair?{repair}:{})}, rules, signal, "extract"),input.content);
       firstContentType??=result.contentType;
+      if(firstContentType==='UNCERTAIN'||result.extraction.relevance==='UNCERTAIN')throw new ProcessingError('NEWS_ELIGIBILITY_UNCERTAIN');
       selection.relevance??=result.extraction.relevance==='IRRELEVANT'?'IRRELEVANT':'POLITICAL_NEWS';
       result.contentType=firstContentType;result.extraction.relevance=selection.relevance;
       if(firstContentType!=='PURE_PROMO'&&selection.relevance!=='IRRELEVANT'){const extracted=validateMinimalExtraction(result.extraction,input.content);requireCompleteExtraction(extracted,input.content);validateNormalExtractionCoverage(input.content,extracted,result.extraction);}
       return result;
-    });
+    },input.content);
     const parsed=selected.extraction;
-    // The first relevance decision survives repair; uncertainty is acceptance.
+    // The first definite relevance decision survives repair; uncertainty exits to review.
     selection.relevance??=parsed.relevance==='IRRELEVANT'?'IRRELEVANT':'POLITICAL_NEWS';
     if(selection.relevance==='IRRELEVANT'||selected.contentType==='PURE_PROMO')return {
       normalContentType:selected.contentType,language:detectedLanguage,relevance:'IRRELEVANT',filterReason:selected.contentType==='PURE_PROMO'?'NON_NEWS_PROMO':'UNRELATED',topic:'UNKNOWN',priority:'P4',rationale:'قرر فحص الصلة الأولي أن الخبر غير مرتبط بإيران',
@@ -142,7 +143,7 @@ export class GroqLanguageProvider implements LanguageProvider {
   async draft(input: Parameters<LanguageProvider["draft"]>[0], signal: AbortSignal) {
     signal.throwIfAborted();
     if(input.processingMode==='DIRECT'){
-      const raw=await this.request('draft',{originalSource:input.content},input.rules,signal,'direct_article',[],true);
+      const raw=await this.request('draft',{originalSource:input.content,groundedFacts:input.understanding.event},input.rules,signal,'direct_article',[],true);
       return completeDirectGeneration(raw,input.content,input.understanding);
     }
     if (selectionBlocksDraft(input.understanding,input.processingMode??'NORMAL')) throw new ProcessingError("GROQ_DRAFT_NOT_ACCEPTED");

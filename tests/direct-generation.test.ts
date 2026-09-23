@@ -25,7 +25,7 @@ const envelope=(raw:unknown)=>Response.json({candidates:[{finishReason:'STOP',co
 function provider(source:string,diagnostics:string[]=[],calls:string[]=[]){return new GeminiLanguageProvider('offline',async(_url,init)=>{
  const request=JSON.parse(String(init?.body));const schema=request.generationConfig.responseJsonSchema;
  if(schema.properties.statements){calls.push('match');return envelope(extraction(source));}
- calls.push('article');assert.ok(request.systemInstruction.parts[0].text.includes(editorialContract));assert.equal(JSON.parse(request.contents[0].parts[0].text).originalSource,source);
+ calls.push('article');assert.equal(request.systemInstruction.parts[0].text.split(editorialContract).length,2);const data=JSON.parse(request.contents[0].parts[0].text);assert.equal(data.originalSource,source);assert.equal(data.groundedFacts.facts[0].evidence.excerpt,source);
  return envelope({...article,diagnostics});
 });}
 for(const [language,source] of Object.entries(sources))test(`DIRECT ${language}: match then complete canonical generation; receipt is not a semantic attestation`,async()=>{

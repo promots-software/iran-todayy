@@ -3,6 +3,7 @@ import {isProviderWait} from "./failure-policy";
 export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR'|'MATCHING_HOLD';
 export const editorialLabels:Record<EditorialEligibility,string>={MATCHING_HOLD:'تعذّر حسم المطابقة',READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
 export const arabicReasons:Record<string,string>={
+ NEWS_ELIGIBILITY_UNCERTAIN:'تعذّر حسم صلة المادة أو كونها خبراً؛ تحتاج إلى مراجعة',
  NON_NEWS_PROMO:'إعلان أو ترويج لبرنامج وليس خبراً مستقلاً',
  AI_INVALID_SCHEMA:'استجابة المعالجة لا تطابق البنية المطلوبة',GROQ_INVALID_SCHEMA:'استجابة المعالجة لا تطابق البنية المطلوبة',
  MATERIAL_EVIDENCE_UNRESOLVED:'تعذّر تثبيت موضع الدليل أو نسبة المعلومة بأمان بعد محاولة الإصلاح',

@@ -2,10 +2,12 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {validateDataset,type GoldCase} from './benchmarks/direct-gold/schema';
-import {replayTransport} from './benchmarks/direct-gold/replay';
+import {replayTransport,replayExtraction} from './benchmarks/direct-gold/replay';
 import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
-import {unknownProfile,validateUnderstanding,type Understanding} from '../src/lib/processing/contracts';
-import {ruleSet} from '../src/lib/processing/rules';
+import {validateUnderstanding,type Understanding} from '../src/lib/processing/contracts';
+import {adaptDirectExtraction,validateDirectExtraction} from '../src/lib/processing/direct';
+import {prepareDirectBilingual,finalizeDirectBilingual} from '../src/lib/processing/direct-bilingual';
+import {passingReview} from './fixtures/direct-bilingual';
 import {buildAtoms,renderSelection} from '../src/lib/processing/constrained-rewrite';
 import {attributionLead} from '../src/lib/processing/attribution-rendering';
 import {matchEvent,type Candidate} from '../src/lib/processing/matcher';
@@ -13,25 +15,35 @@ const data=validateDataset(JSON.parse(readFileSync('tests/benchmarks/direct-gold
 const get=(id:string)=>structuredClone(data.cases.find(c=>c.id===id)!);
 const signal=new AbortController().signal,now=new Date('2026-01-01T00:00:00Z');
 async function understand(c:GoldCase){
- process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';let calls=0;const transport=replayTransport(c);
- const provider=new GeminiLanguageProvider('offline',async(...args)=>{calls++;return transport(...args);});
- const u=validateUnderstanding(await provider.understand({content:c.sourceText,publishedAt:now,profile:{...unknownProfile,verified:true,classification:'NEUTRAL',authority:'AGENCY'},rules:ruleSet,processingMode:'DIRECT'},signal),c.sourceText);
- return {u,provider,calls};
+ // Retained legacy receipt/matching utilities, not the current provider flow.
+ // The current two-request canonical path is tested in direct-generation.test.
+ const provider=new GeminiLanguageProvider('offline',replayTransport(c));
+ const raw=replayExtraction(c);
+ let adapted;
+ if(c.language==='ar'){
+  const extraction={...raw};delete (extraction as {publication?:unknown}).publication;delete (extraction as {coverage?:unknown}).coverage;
+  adapted=adaptDirectExtraction(validateDirectExtraction(extraction,c.sourceText),c.sourceText);
+ }else{
+  const p=prepareDirectBilingual(raw,c.sourceText);
+  adapted=adaptDirectExtraction(p.grounded,c.sourceText,finalizeDirectBilingual(c.sourceText,p,passingReview(c.sourceText,p)));
+ }
+ const u=validateUnderstanding(adapted,c.sourceText);
+ return {u,provider};
 }
 test('institutional grammar uses feminine head without inventing a medium',()=>{
  for(const s of ['وزارة النقل','هيئة النقل','البلدية','وكالة الأنباء','اللجنة'])assert.equal(attributionLead(s),`قالت ${s}:`);
  assert.equal(attributionLead('المجلس'),'قال المجلس:');
 });
-for(const id of ['D37','D39','D40'])test('Persian speaker-first keeps independent review and one attribution '+id,async()=>{
- const c=get(id),{u,provider,calls}=await understand(c);assert.equal(calls,2);assert(u.rendering?.fullSourceCoverage);
- const d=await provider.draft({content:c.sourceText,understanding:u,rules:ruleSet},signal);
+for(const id of ['D37','D39','D40'])test('retained Persian receipt preserves one attribution '+id,async()=>{
+ const c=get(id),{u}=await understand(c);assert(u.rendering?.fullSourceCoverage);
+ const d=renderSelection({titleAtomId:'f1',bodyAtomIds:['f1']},buildAtoms(c.sourceText,u));
  assert.equal(d.title,'إيران الآن | '+c.replay.arabicFacts[0].replace(/\.$/u,''));assert(!/إفادته|تصريحه|بيانه|قال وزارة/u.test(d.title));
  const speaker=c.requiredAttributions[0];assert.equal(d.title.split(speaker).length-1,1);
 });
 test('multi-sentence Persian keeps every reviewed attribution without duplicate heading',async()=>{
  const c=get('D37'),source='وزارت راه اعلام کرد نتایج بعداً منتشر می‌شود.',arabic='أعلنت وزارة النقل أن النتائج ستنشر لاحقاً.';
  c.sourceText+='\n'+source;c.materialFacts.push({id:'f2',sourceExcerpt:source,meaning:arabic,predicates:[{anyOf:['ستنشر']}]});c.replay.arabicFacts.push(arabic);c.expectedCoverage.push('f2');
- const {u,calls}=await understand(c);assert.equal(calls,2);
+ const {u}=await understand(c);
  const atoms=buildAtoms(c.sourceText,u),d=renderSelection({titleAtomId:'f1',bodyAtomIds:['f1','f2']},atoms);
  assert.equal(d.format,'STANDARD_STORY');assert.equal(d.body,arabic);assert(!/إفادته|تصريحه|بيانه/u.test(d.title+d.body));assert.equal(d.sentences.length,2);
  const broken=structuredClone(u);delete broken.rendering;assert.throws(()=>buildAtoms(c.sourceText,broken));

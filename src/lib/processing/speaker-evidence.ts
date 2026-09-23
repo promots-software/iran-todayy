@@ -1,8 +1,8 @@
 import {ProcessingError,checkEvidence,type Understanding} from './contracts';
 type Evidence=Understanding['event']['facts'][number]['evidence'];
-const bullet=/^\s*[🔹🔸🔻🔺▪▫•●◾◽*-][\s\uFE0E\uFE0F]*/u;
+const bullet=/^\s*[🔹🔸🔻🔺▪▫•●◾◽⭕*-][\s\uFE0E\uFE0F]*/u;
 const decoration=/^[\s\uFE0E\uFE0F🔹🔸🔻🔺▪▫•●◾◽⭕*-]*/u;
-const headingRole=/(?:^|\s)(?:معاون|وزیر|رئیس|سخنگو|المتحدث|الناطق|وزير|رئيس|مدير|نائب)(?:[\s‌]|$)/u;
+const headingRole=/(?:^|\s)(?:معاون|وزیر|رئیس|سخنگو|المتحدث|الناطق|وزير|رئيس|مدير|نائب|الرئيس|الوزير|المدير|النائب|المحافظ)(?:[\s‌]|$)/u;
 const speech=/(?:گفت(?:‌وگو)?|اظهار|اعلام|افزود|تأکید|تصریح|قال|ذكرت|أوضح|صرح|أضاف|says?|said|stated|told|interview)/iu;
 const explicitSpeakerRole=/(?:سخنگو|المتحدث|الناطق|spokes(?:person|man|woman))/iu;
 const descriptorRole=/^(?:[,،]\s*)?(?:تحلیل[‌ -]?گر|مشاور|محلل|مستشار|analyst|adviser|advisor)(?=[\s‌،,:：]|$)/iu;
@@ -14,7 +14,7 @@ const arabicSpeakerFirst=/^\s+(?:قالت?|أعلنت?|أكدت?|أوضحت?|ذ�
  * Coordinated people, narrative verbs and unrestricted prepositions are excluded. */
 function titlePrefix(prefix:string){
  const words=prefix.replace(/[,،]\s*$/u,'').trim().split(/\s+/u);
- const role=/^(?:أمين|رئيس|وزير|مدير|نائب|محافظ|اللواء|الفريق|العميد|المتحدث)$/u;
+ const role=/^(?:أمين|رئيس|الرئيس|وزير|الوزير|مدير|المدير|نائب|النائب|محافظ|المحافظ|اللواء|الفريق|العميد|المتحدث)$/u;
  return words.length>0&&words.length<=12&&role.test(words[0])&&words.every(w=>role.test(w)||/^(?:ال|لل|للأ)[\p{L}\p{M}]+$/u.test(w))&&!speech.test(prefix);
 }
 /** Explicit speech verb + official title + comma + extracted name. This is
@@ -42,7 +42,7 @@ export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evid
   // does not change who owns the explicit heading. Never cross another voice.
   const qualifiedHeading=/^\s+في\s+[\p{L}\p{M} ‌-]{1,80}[:：]\s*\S/u.exec(after);
   const explicitQualified=!!qualifiedHeading&&!speech.test(qualifiedHeading[0].split(/[:：]/u)[0])&&!/\s(?:و(?=\p{L}|\s)|(?:عن|ضد)\s)/u.test(qualifiedHeading[0]);
-  if((before===''&&(explicitQualified||/^\s*[:：]\s*\S/u.test(after)||persianIntroduction.test(after)||arabicSpeakerFirst.test(after))) || (arabicIntroduction.test(before)&&/^(?:\s+|\s*[:：]\s*)\S/u.test(after)))return;
+  if((titlePrefix(before)&&/^\s*[:：]\s*\S/u.test(after)) || (before===''&&(explicitQualified||/^\s*[:：]\s*\S/u.test(after)||persianIntroduction.test(after)||arabicSpeakerFirst.test(after))) || (arabicIntroduction.test(before)&&/^(?:\s+|\s*[,،:：]\s*)\S/u.test(after)))return;
  }
  const paragraphStart=source.lastIndexOf('\n',fact.start)+1;
  if(speaker.start>=paragraphStart&&speaker.end<=fact.start)return;

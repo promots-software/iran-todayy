@@ -1,4 +1,5 @@
 import {institutionalIdentity,digits,dateTokens} from './text-equivalence';
+import {presentationOnly} from './presentation-tokens';
 import {EDITORIAL_CONTRACT_SHA256,isGroundedTerminologyQuote} from './editorial-contract';
 import {validateEditorialGrounding} from './editorial-grounding';
 import {createHash} from 'node:crypto';
@@ -24,6 +25,7 @@ export function validateSourceCoverage(source:string,u:{event:{facts:CoverageFac
  if(rows.length!==units.length||new Set(rows.map(r=>r.unitId)).size!==units.length)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
  for(const unit of units){
   const row=rows.find(r=>r.unitId===unit.id);if(!row)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
+  if(presentationOnly(unit.text)&&!row.factIds.length&&!row.nonFactual)continue;
   if(row.nonFactual){if(!boilerplate(unit.text)||row.factIds.length)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');continue;}
   if(!row.factIds.length)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED',false,{stage:'coverage',issues:[{code:'UNCOVERED_SOURCE_SPAN',path:['sourceUnits',unit.id,'start',unit.start,'end',unit.end]}]});
   if(new Set(row.factIds).size!==row.factIds.length||row.factIds.some(id=>!facts.some(f=>f.id===id)))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
@@ -35,6 +37,7 @@ export function validateSourceCoverage(source:string,u:{event:{facts:CoverageFac
   const gaps=unit.text.split('').map((c,i)=>mask[i]?'\0':c).join('').matchAll(/[^\0]+/gu);
   for(const match of gaps){
    const gap=match[0],rest=gap.replace(punctuation,' ').trim(),index=match.index;
+   if(index===0&&presentationOnly(gap))continue;
    // A conjunction between two grounded clauses carries no omitted assertion.
    // Do not treat a leading/trailing token, negation, or factual word as layout.
    const joiningConjunction=rest==='و'&&/[،,؛;]|و\s+$/u.test(gap)&&index>0&&mask.slice(0,index).some(Boolean)&&mask.slice(index+gap.length).some(Boolean);
