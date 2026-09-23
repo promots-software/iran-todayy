@@ -25,6 +25,9 @@ export function resolveContextEvidence(value:unknown,source:string,locationActor
       // One deterministic context repair: a globally unique verbatim excerpt
       // needs no model-selected context. Speaker scope is checked separately.
       const unique=sourceView.value.indexOf(excerptView);
+      // Non-verbatim generation is not an ambiguous occurrence. Keep rejection
+      // strict, but give the single repair the right deterministic failure.
+      if(excerptView&&unique<0)throw new ProcessingError('INVALID_EVIDENCE');
       if(excerptView&&unique>=0&&sourceView.value.lastIndexOf(excerptView)===unique&&
         (base<0||sourceView.value.lastIndexOf(contextView)!==base||!contextView.includes(excerptView))){
         contextView=excerptView;base=unique;

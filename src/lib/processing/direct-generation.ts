@@ -20,7 +20,7 @@ export const directArticleInstructions='Reconstruct the complete ORIGINAL SOURCE
 export function directMatchingUnderstanding(raw:unknown,source:string):Understanding{
  let x:ReturnType<typeof validateDirectExtraction>;
  try{x=validateDirectExtraction(raw,source);}catch(error){
-  throw new ProcessingError('DIRECT_MATCH_INPUT_INVALID',false,{stage:'extract',field:error instanceof ProcessingError?error.code:'schema',output:raw});
+  throw new ProcessingError('DIRECT_MATCH_INPUT_INVALID',false,error instanceof ProcessingError&&error.diagnostic?error.diagnostic:{stage:'extract',field:error instanceof ProcessingError?error.code:'schema',output:raw});
  }
  const e=x.extraction,c=x.classification;
  const copy=(v:typeof e.action)=>v?{key:v.excerpt.normalize('NFKC').toLowerCase().trim(),arabic:v.excerpt,evidence:{...v}}:null;

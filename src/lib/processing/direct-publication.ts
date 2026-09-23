@@ -25,7 +25,8 @@ export function validateSourceCoverage(source:string,u:{event:{facts:CoverageFac
  for(const unit of units){
   const row=rows.find(r=>r.unitId===unit.id);if(!row)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
   if(row.nonFactual){if(!boilerplate(unit.text)||row.factIds.length)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');continue;}
-  if(!row.factIds.length||new Set(row.factIds).size!==row.factIds.length||row.factIds.some(id=>!facts.some(f=>f.id===id)))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
+  if(!row.factIds.length)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED',false,{stage:'coverage',issues:[{code:'UNCOVERED_SOURCE_SPAN',path:['sourceUnits',unit.id,'start',unit.start,'end',unit.end]}]});
+  if(new Set(row.factIds).size!==row.factIds.length||row.factIds.some(id=>!facts.some(f=>f.id===id)))throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');
   const mask=Array.from({length:unit.text.length},()=>false);
   for(const id of row.factIds){const f=facts.find(f=>f.id===id)!;let overlaps=false;for(const e of [f.evidence,f.speaker?.evidence]){if(!e)continue;for(let i=Math.max(unit.start,e.start);i<Math.min(unit.end,e.end);i++){mask[i-unit.start]=true;overlaps=true;}}if(!overlaps)throw new ProcessingError('DIRECT_MATERIAL_COVERAGE_FAILED');}
   // Context is NOT coverage: only exact fact/speaker evidence covers characters.

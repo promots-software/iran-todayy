@@ -9,6 +9,14 @@ const descriptorRole=/^(?:[,،]\s*)?(?:تحلیل[‌ -]?گر|مشاور|محل�
 const arabicIntroduction=/^(?:[وف])?(?:قالت?|أعلنت?|أكدت?|أوضحت?|ذكرت?|صرحت?|أضافت?)\s*$/u;
 const persianIntroduction=/^\s+(?:اعلام کرد|اظهار کرد|تأکید کرد|تصریح کرد|گفت|افزود)(?:[\s،:：]|$)/u;
 const arabicSpeakerFirst=/^\s+(?:قالت?|أعلنت?|أكدت?|أوضحت?|ذكرت?|صرحت?|أضافت?)(?:\s|[،:：])/u;
+/** Conservative title noun phrase immediately preceding an explicitly extracted
+ * name. No inferred identity: the name's evidence and heading colon stay exact.
+ * Coordinated people, narrative verbs and unrestricted prepositions are excluded. */
+function titlePrefix(prefix:string){
+ const words=prefix.replace(/[,،]\s*$/u,'').trim().split(/\s+/u);
+ const role=/^(?:أمين|رئيس|وزير|مدير|نائب|محافظ|اللواء|الفريق|العميد|المتحدث)$/u;
+ return words.length>0&&words.length<=12&&role.test(words[0])&&words.every(w=>role.test(w)||/^(?:ال|لل|للأ)[\p{L}\p{M}]+$/u.test(w))&&!speech.test(prefix);
+}
 /** A speaker heading may govern a contiguous bullet quotation block. Blank
  * lines are layout, but a new heading/narrative or attributed voice ends scope. */
 export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evidence){
@@ -36,12 +44,17 @@ export function validateSpeakerEvidence(source:string,fact:Evidence,speaker:Evid
  // authored speaker heading, not an inferred role or a reference in narration.
  const closing:Record<string,string>={'«':'»','“':'”','"':'"'};
  const quotedHeading=!!closing[prefix]&&heading.startsWith(closing[prefix])&&descriptorRole.test(heading.slice(1).trim());
- if(prefix&&!quotedHeading)throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
- if(!/[:：]$/u.test(heading)||(!quotedHeading&&!speech.test(heading)&&!explicitSpeakerRole.test(speaker.excerpt)&&!headingRole.test(speaker.excerpt)))throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
+ const titledHeading=titlePrefix(prefix)&&/^[:：]$/u.test(heading);
+ if(prefix&&!quotedHeading&&!titledHeading)throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
+ if(!/[:：]$/u.test(heading)||(!titledHeading&&!quotedHeading&&!speech.test(heading)&&!explicitSpeakerRole.test(speaker.excerpt)&&!headingRole.test(speaker.excerpt)))throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
  const between=source.slice(lineEnd+1,fact.start);
  const lines=between.split('\n');
  const lead=lines.pop()??'';
- if(lead.replace(bullet,'').trim())throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
+ const continuation=lead.replace(bullet,'').trim();
+ // Within the first quoted paragraph, later sentences retain the explicit
+ // heading speaker only when no new speech act or colon introduces a voice.
+ // Do not carry attribution through a separate narrative paragraph.
+ if(continuation&&(!titledHeading||lines.some(l=>l.trim())||speech.test(continuation)||/[:：]/u.test(continuation)||!/[.!؟?]\s*$/u.test(continuation)))throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
  for(const line of lines.filter(l=>l.trim())){
   if(!bullet.test(line)||speech.test(line)||/[:：]/u.test(line))throw new ProcessingError('SPEAKER_ATTRIBUTION_MISMATCH');
  }
