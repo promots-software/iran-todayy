@@ -1,4 +1,5 @@
 export const labels: Record<string, string> = {
+  NON_NEWS_PROMO:'إعلان أو ترويج لبرنامج وليس خبراً مستقلاً', AI_INVALID_SCHEMA:'استجابة غير مطابقة للبنية', GROQ_INVALID_SCHEMA:'استجابة غير مطابقة للبنية', AI_SCHEMA_REPAIR_FAILED:'فشل تصحيح بنية الاستجابة',
   DELIVERY_FAILED:'تعذر الإرسال', CANCELLED:'ملغى', READY_TO_PUBLISH:'جاهز للنشر',PROCESSING_ERROR:'خطأ في المعالجة',HOLD:'الإرسال معلّق',
   MATERIAL_UPDATE: "تطور جوهري", UNCERTAIN_MATCH: "مطابقة محتملة — تحتاج مراجعة",
   INGESTED: "تم الاستقبال", NORMALIZED: "تم الاستخراج", CLASSIFYING: "قيد التصنيف", DEDUPLICATING: "فحص التكرار",

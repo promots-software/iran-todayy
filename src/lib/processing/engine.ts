@@ -1,3 +1,5 @@
+import {directPublicationReceiptSchema} from './direct-publication-contract';
+import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
 import {directGenerationSchema} from './direct-generation-contract';
 import {isDeepStrictEqual} from 'node:util';
 import {cursorSchema} from '../telegram/monitor';
@@ -241,6 +243,11 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
         }
         if(!preparedDraft)throw new ProcessingError('DRAFT_PREPARATION_REQUIRED');
         const rawDraft=preparedDraft;
+        if(processingMode==='NORMAL'&&provider.live){
+          const receipt=directPublicationReceiptSchema.safeParse((preparedDraft as {normalGeneration?:unknown}).normalGeneration);
+          if(!receipt.success||receipt.data.editorialContractHash!==EDITORIAL_CONTRACT_SHA256)throw new ProcessingError('AI_CANONICAL_RENDER_REQUIRED');
+          u.publicationProposal=receipt.data;
+        }
         if(processingMode==='DIRECT')u.directGeneration=directGenerationSchema.parse((preparedDraft as {generationReceipt?:unknown}).generationReceipt);
         const draft=processingMode==='DIRECT'?directFinalArticle(post.originalContent,u):finalizeWithRepair(rawDraft,post.originalContent,u,sourceProfile,!!provider.constrainedRewrite);
         const review=processingMode==='DIRECT'?[]:blockingEditorialReasons(draft!.review);

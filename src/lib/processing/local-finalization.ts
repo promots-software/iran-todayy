@@ -1,3 +1,4 @@
+import {finalizeBodyPunctuation} from '../publication-finalization';
 import {publicationDraft} from './direct-publication';
 import {buildAtoms,renderSelection} from './constrained-rewrite';
 import {editDraft} from './editorial';
@@ -7,7 +8,13 @@ import {newsroomPrefix} from './newsroom-format';
 
 /** Reuse the provider's selection result without accepting its attestations. */
 export function finalizeConstrainedDraft(raw:unknown,content:string,u:Understanding,profile:SourceProfile){
- const d=draftSchema.parse(raw);
+ let value=raw;
+ if(raw&&typeof raw==='object'&&'normalGeneration' in raw){
+  const {normalGeneration,...draft}=raw;
+  if(JSON.stringify(normalGeneration)!==JSON.stringify(u.publicationProposal))throw new ProcessingError('AI_CANONICAL_RENDER_REQUIRED');
+  value=draft;
+ }
+ const d=draftSchema.parse(value);
  if(u.publicationProposal){
   const expected=publicationDraft(content,u);
   if(JSON.stringify(d)!==JSON.stringify(draftSchema.parse(expected)))throw new ProcessingError('CONSTRAINED_DRAFT_CHANGED');
@@ -51,6 +58,10 @@ function finalizeValidatedDraft(draft:ReturnType<typeof renderSelection>,content
  if(!draft.attestation.attributionChecked)reasons.attributionChecked='Existing explicit attribution check failed.';
  if(!draft.attestation.numbersChecked)reasons.numbersChecked='Existing numeric/format checks require editorial review.';
  const result=editDraft(draft,content,u,profile);
+ if(u.publicationProposal&&!result.body){
+  const old=result.title,next=finalizeBodyPunctuation(old);
+  if(next!==old){const entry=result.sentenceEvidence.find(s=>s.text===old);if(!entry)throw new ProcessingError('MISSING_TITLE_PROVENANCE');entry.text=next;result.title=next;}
+ }
  return {...result,attestations:draft.attestation,attestationReasons:reasons};
 }
 

@@ -104,7 +104,7 @@ test('final article repair is bounded, uses the complete contract and never chan
  const u=adaptDirectExtraction(validateDirectExtraction(raw,source),source),before=JSON.stringify(u.event);let calls=0;
  const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{inspect(init);calls++;return Response.json(geminiEnvelope({coverage,publication:{title:{text:resolves&&calls===2?source:source.replace('12','13'),factIds:['f1']},body:[]}}));});
  const task=provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'NORMAL'},signal());
- if(resolves){const d=await task;assert(d.title.includes('12'));}else await assert.rejects(task,/NUMBER_MISMATCH/);
+ if(resolves){const d=await task;assert(d.title.includes('12'));}else await assert.rejects(task,/AI_SCHEMA_REPAIR_FAILED/);
  assert.equal(calls,2);assert.equal(JSON.stringify(u.event),before);
  }
 });

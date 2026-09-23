@@ -35,8 +35,9 @@ export const eventSchema = z.object({
 }).strict();
 export type EventData = z.infer<typeof eventSchema>;
 export const understandingSchema = z.object({
+  normalContentType:z.enum(["NEWS","PURE_PROMO","UNCERTAIN"]).optional(),
   language: z.string().min(2).max(35), relevance: z.enum(["POLITICAL_NEWS", "IRRELEVANT", "UNCERTAIN"]),
-  filterReason: z.enum(["NONE", "UNRELATED", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
+  filterReason: z.enum(["NONE", "UNRELATED", "NON_NEWS_PROMO", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
   topic: z.enum(["IRAN_DOMESTIC", "DEFENCE", "NUCLEAR", "REGION", "GULF", "WEST", "ISRAEL", "GREAT_POWERS", "SECURITY", "HISTORY", "UNKNOWN"]),
   priority: z.enum(["P1", "P2", "P3", "P4"]), rationale: text, event: eventSchema,
   names: z.array(z.object({ arabic: text, kind: z.enum(["person", "place", "institution"]), evidence: evidenceSchema }).strict()),
@@ -78,7 +79,7 @@ export interface Monitor {
 }
 export class ProcessingError extends Error {
   availableDraft?: import('./available-draft').AvailableDraft;
-  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[]}, public readonly retryAfterMs=0) { super(code); }
+  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[];causeCode?:string}, public readonly retryAfterMs=0) { super(code); }
 }
 export function checkEvidence(content: string, evidence: z.infer<typeof evidenceSchema>) {
   if (content.slice(evidence.start, evidence.end) !== evidence.excerpt) throw new ProcessingError("INVALID_EVIDENCE");

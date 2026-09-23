@@ -15,7 +15,7 @@ test('minimal contract omits generated content and preserves unknowns without ma
  const x=validateMinimalExtraction(empty,input.content);assert.deepEqual(x.statements,[]);
  assert.throws(()=>requireCompleteExtraction(x),/INCOMPLETE_EXTRACTION/);
  const {statements,...missing}=empty;assert.equal(statements.length,0);
- assert.throws(()=>validateMinimalExtraction(missing,input.content),/GROQ_INVALID_SCHEMA/);
+ assert.throws(()=>validateMinimalExtraction(missing,input.content),/AI_INVALID_SCHEMA/);
 });
 test('120B override uses strict minimal extraction then classification without publication metadata',async()=>{
  const [extraction]=minimalParts(sample.understanding);let calls=0;
@@ -28,7 +28,7 @@ test('120B override uses strict minimal extraction then classification without p
   assert.ok(!('publishedAt' in data));
   if(!calls){assert.ok(!JSON.stringify(request.response_format.json_schema.schema).includes('"start"'));assert.ok(!JSON.stringify(request.response_format.json_schema.schema).includes('summary'));}
   else {assert.deepEqual(data,idClassificationInput(grounded,official));assert.equal(data.classificationReferences.entries.find((e:{id:string})=>e.id==='f1')!.evidence.start,0);}
-  return response(calls++===0?extraction:classification);
+  return response(calls++===0?{...extraction,contentType:'NEWS',contentTypeEvidence:{excerpt:input.content,context:input.content}}:classification);
  },()=>{},'openai/gpt-oss-120b');
  const u=await provider.understand(input,new AbortController().signal);
  assert.equal(u.event.summary,null);assert.equal(u.event.eventTime,null);assert.equal(u.event.facts[0].id,'f1');assert.equal(u.event.facts[0].verified,false);assert.equal(calls,2);
@@ -37,8 +37,8 @@ test('invalid or incomplete extraction never reaches classification',async()=>{
  for(const mode of ['fabricated','empty'] as const){
   const values=minimalParts(sample.understanding);let calls=0;
   if(mode==='fabricated')values[0].actors[0].excerpt='invented nationality';else values[0].statements=[];
-  const provider=new GroqLanguageProvider('mock',async()=>{calls++;return response(values[0]);},()=>{});
-  await assert.rejects(provider.understand(input,new AbortController().signal),mode==='fabricated'?/MATERIAL_EVIDENCE_UNRESOLVED/:/INCOMPLETE_EXTRACTION/);assert.equal(calls,2);
+  const provider=new GroqLanguageProvider('mock',async()=>{calls++;return response({...values[0],contentType:'NEWS',contentTypeEvidence:{excerpt:input.content,context:input.content}});},()=>{});
+  await assert.rejects(provider.understand(input,new AbortController().signal),/AI_SCHEMA_REPAIR_FAILED/);assert.equal(calls,2);
  }
 });
 test('classification cannot replace evidence, omit statements, change IDs, or infer absent anchors',()=>{

@@ -17,7 +17,7 @@ export const minimalExtractionSchema=z.object({
 type Evidence=z.infer<typeof evidenceSchema>;
 export function validateMinimalExtraction(raw:unknown,source:string){
   const p=minimalExtractionSchema.safeParse(raw);
-  if(!p.success)throw new ProcessingError('GROQ_INVALID_SCHEMA');
+  if(!p.success)throw new ProcessingError('AI_INVALID_SCHEMA');
   let field='schema';
   try{
   const resolve=(value:z.infer<typeof evidence>|null,path:string,locationActors?:Evidence[]):Evidence|null=>{
@@ -80,7 +80,7 @@ export function validateGroundedExtraction(x:GroundedExtraction,source:string){
 
 export function adaptClassification(x:GroundedExtraction,raw:unknown,source:string,language:string):Understanding {
   const p=semanticClassificationSchema.safeParse(raw);
-  if(!p.success)throw new ProcessingError('GROQ_INVALID_SCHEMA');
+  if(!p.success)throw new ProcessingError('AI_INVALID_SCHEMA');
   const c=p.data,names:Understanding['names']=[];
   const excerpts=extractedExcerpts(x);
   requireArabic(c.rationale);

@@ -3,6 +3,8 @@ import {isProviderWait} from "./failure-policy";
 export type EditorialEligibility = 'READY_TO_PUBLISH'|'NEEDS_REVIEW'|'FILTERED'|'PROCESSING_ERROR'|'MATCHING_HOLD';
 export const editorialLabels:Record<EditorialEligibility,string>={MATCHING_HOLD:'تعذّر حسم المطابقة',READY_TO_PUBLISH:'جاهز للنشر',NEEDS_REVIEW:'يحتاج مراجعة',FILTERED:'مرفوض / غير مناسب للنشر',PROCESSING_ERROR:'خطأ في المعالجة'};
 export const arabicReasons:Record<string,string>={
+ NON_NEWS_PROMO:'إعلان أو ترويج لبرنامج وليس خبراً مستقلاً',
+ AI_INVALID_SCHEMA:'استجابة المعالجة لا تطابق البنية المطلوبة',GROQ_INVALID_SCHEMA:'استجابة المعالجة لا تطابق البنية المطلوبة',
  MATERIAL_EVIDENCE_UNRESOLVED:'تعذّر تثبيت موضع الدليل أو نسبة المعلومة بأمان بعد محاولة الإصلاح',
  SOURCE_TEXT_REQUIRED:'المنشور بلا نص؛ يلزم محتوى مكتوب قبل إعداد خبر للنشر',
  UNCERTAIN_SCOPE:'لم تثبت صلة جغرافية واضحة بنطاق التغطية',
@@ -43,7 +45,7 @@ export function softEditorialReason(r:ReasonInput){
  return soft.has(r.code);
 }
 export function isTechnicalFailure(code:string){
- if(isProviderWait(code)||code==='SOURCE_PROCESSING_MODE_CHANGED'||code==='SOURCE_DISABLED')return true;
+ if(code==='AI_CANONICAL_RENDER_REQUIRED'||isProviderWait(code)||code==='SOURCE_PROCESSING_MODE_CHANGED'||code==='SOURCE_DISABLED')return true;
  return /(?:SCHEMA|INVALID_JSON|INVALID_RESPONSE|INVALID_ID_CLASSIFICATION|TRANSPORT|HTTP_|UNAVAILABLE|REQUEST_LIMIT|INPUT_LIMIT|RATE_LIMIT|INTERRUPTED|TIMEOUT|LEASE_|STALE_CLAIM|AUTH_FAILED|API_KEY|PROCESSING_FAILED|REQUEST_REJECTED|REQUEST_TOO_LARGE|REFUSAL|^(?:GEMINI|GROQ|OPENAI)_INCOMPLETE$)/u.test(code);
 }
 export type ReasonInput={code:string;detail?:string};

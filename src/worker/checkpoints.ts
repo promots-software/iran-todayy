@@ -25,7 +25,7 @@ export function checkpointProvider(provider:LanguageProvider, store:CheckpointSt
   async function stage<T>(name:string,input:unknown,signal:AbortSignal,call:()=>Promise<T>):Promise<T> {
     signal.throwIfAborted();
     const context=input as {processingMode?:string;content?:string};
-    const key=createHash('sha256').update(JSON.stringify([context.processingMode==='DIRECT'?'worker-direct-generation-v2':name==='draft'?'worker-local-draft-v3':'worker-checkpoint-v1',provider.id,name,input])).digest('hex');
+    const key=createHash('sha256').update(JSON.stringify([context.processingMode==='DIRECT'?'worker-direct-generation-v2':name==='compare'?'worker-checkpoint-v1':'worker-normal-v2',provider.id,name,input])).digest('hex');
     return checkpointCall(store,key,call);
   }
   return {
