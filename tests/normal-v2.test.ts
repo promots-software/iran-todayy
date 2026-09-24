@@ -1,3 +1,4 @@
+import {supportedLedger} from './fixtures/fidelity-review';
 import {automaticDeliveryCycle} from '../src/lib/telegram/automatic-delivery';
 import {publicationCandidateInclude,publicationReady} from '../src/lib/telegram/publication-policy';
 import {publicationUnits} from '../src/lib/processing/direct-publication';
@@ -43,7 +44,8 @@ function mock(source:string,options:{promo?:boolean;unrelated?:boolean;uncovered
    if(broken('number'))publication.body[0].text+=' وتضم 99 قاعة.';
    return envelope({coverage:publicationUnits(source).map(u=>({unitId:u.id,factIds:['f1'],nonFactual:false})),publication});
   }
-  return envelope({review:data.publication.map((p:{id:string})=>({id:p.id,verdict:options.bad==='unsupported'?'UNSUPPORTED':'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,options.bad!=='unsupported'])),issues:options.bad==='unsupported'?['UNSUPPORTED_FACT']:[]})),fullSourceCovered:true,publicationQuality:true,issues:options.bad==='unsupported'?['UNSUPPORTED_FACT']:[]});
+  const ledger=supportedLedger(source,data.publication);for(const claim of ledger.claims)if(options.bad==='unsupported'||claim.excerpt.includes('99')){claim.verdict='UNSUPPORTED' as 'SUPPORTED';claim.explanation='Unsupported generated assertion/quantity: '+claim.excerpt;}
+  return envelope({fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:options.bad==='unsupported'?'UNSUPPORTED':'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,options.bad!=='unsupported'])),issues:options.bad==='unsupported'?['UNSUPPORTED_FACT']:[]})),fullSourceCovered:true,publicationQuality:true,issues:options.bad==='unsupported'?['UNSUPPORTED_FACT']:[]});
  });return {provider,calls};
 }
 const input=(content:string)=>({content,publishedAt:new Date(),profile:official,rules:ruleSet});
@@ -51,11 +53,12 @@ for(const source of ['ضيف الحلقة اليوم فلان وسيتحدث ع�
  const p=mock(source,{promo:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'NON_NEWS_PROMO');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);
 });
 for(const source of ['قال المسؤول خلال مقابلة إن المجلس افتتح مدرسة جديدة.','أعلن المجلس في برنامج تلفزيوني افتتاح مدرسة جديدة.','افتتح المجلس مدرسة جديدة.'])test('substantive interview/news remains eligible: '+source,async()=>{const p=mock(source);const u=await p.provider.understand(input(source),signal());assert.equal(u.relevance,'POLITICAL_NEWS');assert.equal(u.normalContentType,'NEWS');assert.deepEqual(p.calls,['extract','classify']);});
-for(const bad of ['rationale','emptyFacts','unknownFact','number'] as const)for(const always of [false,true])test(`${bad}: one stage-aware repair; persistent invalidity fails closed (${always})`,async()=>{
+for(const bad of ['rationale','emptyFacts','unknownFact','number'] as const)for(const always of [false,true])test(`${bad}: grounded prose repair only; invalid identifier/schema fails closed (${always})`,async()=>{
  const source='افتتح المجلس مدرسة جديدة.';const p=mock(source,{bad,always});
  const run=async()=>{const u=await p.provider.understand(input(source),signal());return p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());};
+ if(bad!=='number'){await assert.rejects(run());assert.equal(p.calls.filter(s=>s===(bad==='rationale'?'classify':'draft')).length,1);return;}
  if(always)await assert.rejects(run(),/AI_SCHEMA_REPAIR_FAILED/);else assert((await run()).title.startsWith('إيران الآن |'));
- assert.equal(p.calls.filter(s=>s==='extract').length,1);assert.equal(p.calls.filter(s=>s===(bad==='rationale'?'classify':'draft')).length,2);
+ assert.equal(p.calls.filter(s=>s==='extract').length,1);assert.equal(p.calls.filter(s=>s==='draft').length,2);
 });
 test('independent factual rejection cannot become READY through schema repair',async()=>{const source='افتتح المجلس مدرسة جديدة.';const p=mock(source,{bad:'unsupported'});const u=await p.provider.understand(input(source),signal());await assert.rejects(p.provider.draft({content:source,understanding:u,rules:ruleSet},signal()),/AI_SCHEMA_REPAIR_FAILED/);assert.equal(p.calls.filter(s=>s==='draft').length,2);assert(!u.publicationProposal);});
 test('cost and transport waits do not cause repair calls',async()=>{for(const code of ['PROVIDER_COST_WAIT','GEMINI_HTTP_503','GEMINI_HTTP_429']){let calls=0;await assert.rejects(normalStage('draft',async()=>{calls++;throw new ProcessingError(code,true);}),new RegExp(code));assert.equal(calls,1);}});
@@ -105,10 +108,10 @@ for(const [source,body] of [
  ['تنبيه تجريبي — المجلس قام بافتتاح مدرسة جديدة وذلك اليوم.','تنبيه تجريبي — افتتح المجلس مدرسة جديدة اليوم.'],
  ['تنبيه تجريبي — قال المجلس إنه افتتح مدرسة جديدة. وأضاف أنه سيعلن التفاصيل لاحقاً.','تنبيه تجريبي — قال المجلس إنه افتتح مدرسة جديدة. وأضاف أنه سيعلن التفاصيل لاحقاً.'],
  ['تنبيه تجريبي — افتتح المجلس 3 مدارس اليوم بعد 4 ساعات من المراجعة.','تنبيه تجريبي — افتتح المجلس 3 مدارس اليوم بعد 4 ساعات من المراجعة.'],
-])test('missing source-unit mapping repairs without rewriting valid evidence: '+source,async()=>{
+])test('source occurrence restores representation without rewriting evidence: '+source,async()=>{
  const p=mock(source,{uncovered:true,body});const u=await p.provider.understand(input(source),signal());const draft=await p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());
- assert.equal(p.calls.filter(s=>s==='extract').length,2);assert.equal(p.calls.filter(s=>s==='classify').length,1);assert.equal(p.calls.filter(s=>s==='draft').length,1);assert.equal(u.event.facts[0].evidence.excerpt,source.split('— ')[1]);assert('normalGeneration' in draft);assert.equal(u.publicationProposal?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
+ assert.equal(p.calls.filter(s=>s==='extract').length,1);assert.equal(p.calls.filter(s=>s==='classify').length,1);assert.equal(p.calls.filter(s=>s==='draft').length,1);assert.equal(u.event.facts[0].evidence.excerpt,source.split('— ')[1]);assert('normalGeneration' in draft);assert.equal(u.publicationProposal?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
 });
-test('unrepaired source gap fails closed before paid downstream stages',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{uncovered:true,always:true});await assert.rejects(p.provider.understand(input(source),signal()),(e:unknown)=>{assert(e instanceof ProcessingError);assert.equal(e.code,'AI_SCHEMA_REPAIR_FAILED');assert.equal(e.diagnostic?.stage,'extract');return true;});assert.deepEqual(p.calls,['extract','extract']);});
+test('source mapping is not a semantic completeness certificate',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{uncovered:true,always:true,bad:'unsupported'});const u=await p.provider.understand(input(source),signal());await assert.rejects(p.provider.draft({content:source,understanding:u,rules:ruleSet},signal()));assert.equal(p.calls.filter(s=>s==='extract').length,1);assert(!u.publicationProposal);});
 
-test('UNRELATED bypasses coverage repair and rendering without changing selection',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{unrelated:true,uncovered:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'UNRELATED');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});
+test('UNRELATED bypasses coverage repair and rendering without changing selection',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{unrelated:true,uncovered:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'UNRELATED_TO_IRAN');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});

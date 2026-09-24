@@ -22,7 +22,9 @@ export function idClassificationSchema(x:GroundedExtraction){
  const refs=classificationReferences(x);
  const ids=refs.entries.map(e=>e.id);
  const array=(values:string[])=>z.array(values.length?z.enum(values):z.string()).length(values.length);
- const factLabels=x.statements.map(f=>z.object({id:z.literal(f.id),kind:f.speaker?z.enum(['CLAIM','STATEMENT','FIGURE','DECISION','OUTCOME']):z.enum(['FACT','FIGURE','DECISION','OUTCOME']),material:z.boolean()}).strict());
+ // A source-attributed factual report remains FACT; attribution is a separate,
+ // immutable evidence relationship. CLAIM/STATEMENT still require a speaker.
+ const factLabels=x.statements.map(f=>z.object({id:z.literal(f.id),kind:f.speaker?z.enum(['FACT','CLAIM','STATEMENT','FIGURE','DECISION','OUTCOME']):z.enum(['FACT','FIGURE','DECISION','OUTCOME']),material:z.boolean()}).strict());
  return z.object({
   anchorIds:array(refs.requiredAnchorIds),
   factLabels:z.array(factLabels.length>1?z.union(factLabels):factLabels[0]??z.object({id:z.string(),kind:z.literal('FACT'),material:z.boolean()}).strict()).length(x.statements.length),
@@ -44,7 +46,7 @@ export function idClassificationInput(x:GroundedExtraction,profile:SourceProfile
 /** Classifier output cannot supply any text to these local factual copies. */
 function copy(id:string,e:Evidence|null,translations:Map<string,string>|null){
  if(!e)return null;
- const arabic=translations?.get(id)??e.excerpt;requireArabic(arabic);
+ const arabic=translations?.get(id)??e.excerpt;if(translations)requireArabic(arabic);
  const label={key:e.excerpt.normalize('NFKC').toLowerCase().trim(),arabic};
  return {key:label.key,arabic,evidence:{...e}};
 }
@@ -53,7 +55,7 @@ export function preflightIdClassification(x:GroundedExtraction,source:string,ren
  validateGroundedExtraction(x,source);
  const language=sourceLanguage(source);
  if(language==='unknown')throw new ProcessingError('SOURCE_LANGUAGE_UNCERTAIN');
- if(language==='ar'){for(const e of renderingReferences(x))requireArabic(e.evidence.excerpt);return null;}
+ if(language==='ar')return null;
  return resolveRendering(source,renderingReferences(x),rendering);
 }
 export function adaptIdClassification(x:GroundedExtraction,raw:unknown,source:string,rendering?:RenderingReceipt):Understanding{

@@ -1,4 +1,4 @@
-import {directSourceGrounded} from './direct-generation';
+import {directSourceGrounded,reviewedDirectComparison} from './direct-generation';
 import { comparisonSchema, type EventData, type LanguageProvider, type Understanding, ProcessingError } from "./contracts";
 import {hasEditorialGrounding} from './editorial-grounding';
 import { ruleSet } from "./rules";
@@ -33,11 +33,16 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     // Entities alone never establish sameness. Meaning is checked for every plausible candidate.
     if (!actors.length && !factsOverlap.length) continue;
     const comparisonInput={incoming,existing:old},comparisonKey=JSON.stringify(comparisonInput);
-    const raw = sameValidatedEvent(incoming,old)?{relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'تطابق كامل للحقائق والمرتكزات المثبتة؛ تُفحص المدة والتعارض محلياً'}:comparisons.has(comparisonKey)?comparisons.get(comparisonKey):await provider.compare(comparisonInput, signal);
+    const raw = sameValidatedEvent(incoming,old)?{relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'تطابق كامل للحقائق والمرتكزات المثبتة؛ تُفحص المدة والتعارض محلياً'}:comparisons.has(comparisonKey)?comparisons.get(comparisonKey):grounding?.processingMode==='DIRECT'&&grounding.understanding.directGeneration?.version==='direct-generation-v3'?reviewedDirectComparison(grounding.source,grounding.understanding,old):await provider.compare(comparisonInput, signal);
     comparisons.set(comparisonKey,raw);
     const parsed = comparisonSchema.safeParse(raw);
     if (!parsed.success) throw new ProcessingError("INVALID_COMPARISON_SCHEMA");
     const semantic = parsed.data;
+    const identity=semantic.identity;
+    if(identity&&(identity.incomingFactIds.some(id=>!incoming.facts.some(f=>f.id===id))||identity.existingFactIds.some(id=>!old.facts.some(f=>f.id===id))))throw new ProcessingError('INVALID_COMPARISON_EVIDENCE');
+    const identical=sameValidatedEvent(incoming,old);
+    const sameOccurrence=identical||identity?.basis==='SAME_OCCURRENCE';
+    if(identity?.basis==='TOPIC_ONLY'||identity?.basis==='DIFFERENT_OCCURRENCE')continue;
     const knownIds = new Set(incoming.facts.map(f => f.id));
     if ([...semantic.newFactIds, ...semantic.conflictingFactIds].some(id => !knownIds.has(id))) throw new ProcessingError("INVALID_COMPARISON_EVIDENCE");
     const fresh = incoming.facts.filter(f => !old.facts.some(o => norm(o.key) === norm(f.key)));
@@ -45,14 +50,14 @@ export async function matchEvent(incoming: EventData, publishedAt: Date, candida
     // boolean cannot authorize updates. Revalidate the exact incoming event,
     // source spans, attribution and reviewed translations at this boundary.
     const sourceGrounded=!!grounding&&JSON.stringify(grounding.understanding.event)===JSON.stringify(incoming)&&(grounding.processingMode==='DIRECT'?directSourceGrounded(grounding.understanding,grounding.source):hasEditorialGrounding(grounding.understanding,grounding.source));
-    const material = fresh.filter(f => f.material && sourceGrounded && ["FIGURE", "DECISION", "OUTCOME", "STATEMENT"].includes(f.kind) && semantic.newFactIds.includes(f.id));
+    const material = fresh.filter(f => f.material && sourceGrounded && semantic.newFactIds.includes(f.id));
     const anchors = actors.length > 0 && action && (object || location || (!!incoming.eventTime && !!old.eventTime && timeA === timeB));
     const contradiction = timeConflict || semantic.conflictingFactIds.length > 0;
     const evidence = { actors, action, object, location, anchors, elapsedHours, insideDuplicateWindow: elapsedHours <= ruleSet.duplicateWindowHours, locationConflict, objectConflict, timeConflict, factsOverlap, newFacts: fresh.map(f=>f.id), materialFacts: material.map(f=>f.id), sourceGrounded,materialBasis:'source-grounded-not-independent-truth', semantic, matcherVersion: "layered-v1" };
     if (semantic.relation === "DIFFERENT") continue;
     let classification: MatchDecision["classification"] = "UNCERTAIN_MATCH";
     // Historical relationship remains visible, but the 24h rule is never silently extended.
-    if (semantic.relation === "SAME" && !contradiction && elapsedHours <= ruleSet.duplicateWindowHours) {
+    if (semantic.relation === "SAME" && sameOccurrence && !contradiction && elapsedHours <= ruleSet.duplicateWindowHours) {
       classification = material.length ? "MATERIAL_UPDATE" : semantic.newFactIds.length ? "UNCERTAIN_MATCH" : "DUPLICATE";
     }
     results.push({ classification, candidate: c, rationale: semantic.rationale, newFactIds: material.map(f=>f.id), evidence, candidates: [] });

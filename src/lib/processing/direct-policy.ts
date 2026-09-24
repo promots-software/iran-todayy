@@ -1,10 +1,9 @@
 import type {Understanding} from './contracts';
-/** Selection policy is decided by source administration; factual validity is not. */
+/** Both modes require a source-grounded Iran relevance decision. */
 export function editoriallyFiltered(u:Understanding,approvedAnalyst:boolean,mode:'NORMAL'|'DIRECT'){
- if(mode==='DIRECT')return false;
- void approvedAnalyst;
+ void approvedAnalyst;void mode;
  return u.relevance==='IRRELEVANT';
 }
 export function selectionBlocksDraft(u:Understanding,mode:'NORMAL'|'DIRECT'){
- return mode==='NORMAL'&&u.relevance==='IRRELEVANT';
+ void mode;return u.relevance==='IRRELEVANT';
 }

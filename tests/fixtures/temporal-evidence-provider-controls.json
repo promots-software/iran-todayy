@@ -1,0 +1,524 @@
+[
+  {
+    "control": "negative",
+    "source": "إيران الآن| المتحدث باسم الخارجية الإيرانية: جرت أمس جولة تبادل رسائل وتوضيحها مع الولايات المتحدة عبر الوسيط القطري.\n\n- تبادل الرسائل استغرق ساعتين تم فيهما نقل شروطنا لإحياء التفاوض إلى الأمريكيين.\n\n- جولة أمس لتبادل الرسائل جاءت في إطار المحادثات التي كانت تتم عبر الوسطاء\n\n- شروطنا تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات",
+    "publication": [
+      {
+        "id": "title",
+        "text": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض"
+      },
+      {
+        "id": "body:1",
+        "text": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات المستمرة التي تجري عبر الوسطاء."
+      },
+      {
+        "id": "body:2",
+        "text": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي."
+      },
+      {
+        "id": "body:3",
+        "text": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات."
+      }
+    ],
+    "review": {
+      "fidelityLedger": {
+        "sourceCoverage": [
+          {
+            "unitId": "u1",
+            "publicationIds": [
+              "title",
+              "body:1"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:1",
+                "sourceExcerpt": "جرت أمس",
+                "candidateExcerpt": "أجرت أمس",
+                "explanation": "The source identifies the event occurred yesterday. The candidate correctly preserves this temporal marker.",
+                "sourceState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The event of message exchange and the speaker's identity are preserved."
+          },
+          {
+            "unitId": "u3",
+            "publicationIds": [
+              "title",
+              "body:2"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:2",
+                "sourceExcerpt": "استغرق ساعتين",
+                "candidateExcerpt": "استمر لمدة ساعتين",
+                "explanation": "Both source and candidate confirm the two-hour duration of the exchange.",
+                "sourceState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The content of the message exchange is accurately captured."
+          },
+          {
+            "unitId": "u5",
+            "publicationIds": [
+              "body:1"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:1",
+                "sourceExcerpt": "كانت تتم",
+                "candidateExcerpt": "المستمرة التي تجري",
+                "explanation": "The source specifies past continuous process; the candidate captures the ongoing nature of the mediation talks.",
+                "sourceState": {
+                  "time": "PAST",
+                  "phase": "OCCURRING",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "PRESENT",
+                  "phase": "OCCURRING",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The mediation framework is correctly contextualized."
+          },
+          {
+            "unitId": "u7",
+            "publicationIds": [
+              "body:3"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:3",
+                "sourceExcerpt": "تتضمن",
+                "candidateExcerpt": "تتضمن",
+                "explanation": "The source presents these as standing conditions; the candidate maintains this present tense framing.",
+                "sourceState": {
+                  "time": "TIMELESS",
+                  "phase": "UNSPECIFIED",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "TIMELESS",
+                  "phase": "UNSPECIFIED",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The specific conditions are accurately reported."
+          }
+        ],
+        "claims": [
+          {
+            "publicationId": "title",
+            "excerpt": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض",
+            "sourceUnitIds": [
+              "u1",
+              "u3"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Accurate summary of the message exchange and goal."
+          },
+          {
+            "publicationId": "body:1",
+            "excerpt": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات المستمرة التي تجري عبر الوسطاء.",
+            "sourceUnitIds": [
+              "u1",
+              "u5"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Factual alignment with speaker, event, and mediation context."
+          },
+          {
+            "publicationId": "body:2",
+            "excerpt": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي.",
+            "sourceUnitIds": [
+              "u3"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Preserves duration and content accurately."
+          },
+          {
+            "publicationId": "body:3",
+            "excerpt": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات.",
+            "sourceUnitIds": [
+              "u7"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Accurately lists the stated conditions."
+          }
+        ]
+      },
+      "review": [
+        {
+          "id": "title",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        },
+        {
+          "id": "body:1",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        },
+        {
+          "id": "body:2",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        },
+        {
+          "id": "body:3",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        }
+      ],
+      "fullSourceCovered": true,
+      "publicationQuality": true,
+      "issues": []
+    },
+    "expected": "TEMPORAL_SCOPE_CHANGE",
+    "usage": [
+      {
+        "stage": "iran_today_direct_publication_review",
+        "attempt": 1,
+        "httpStatus": 200,
+        "inputTokens": 9245,
+        "outputTokens": 1777,
+        "thinkingTokens": 0,
+        "estimatedCostUsd": 0.00497675,
+        "replayed": false,
+        "durationMs": 6367
+      }
+    ]
+  },
+  {
+    "control": "positive",
+    "source": "إيران الآن| المتحدث باسم الخارجية الإيرانية: جرت أمس جولة تبادل رسائل وتوضيحها مع الولايات المتحدة عبر الوسيط القطري.\n\n- تبادل الرسائل استغرق ساعتين تم فيهما نقل شروطنا لإحياء التفاوض إلى الأمريكيين.\n\n- جولة أمس لتبادل الرسائل جاءت في إطار المحادثات التي كانت تتم عبر الوسطاء\n\n- شروطنا تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات",
+    "publication": [
+      {
+        "id": "title",
+        "text": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض"
+      },
+      {
+        "id": "body:1",
+        "text": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات التي كانت تتم عبر الوسطاء."
+      },
+      {
+        "id": "body:2",
+        "text": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي."
+      },
+      {
+        "id": "body:3",
+        "text": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات."
+      }
+    ],
+    "review": {
+      "fidelityLedger": {
+        "sourceCoverage": [
+          {
+            "unitId": "u1",
+            "publicationIds": [
+              "title",
+              "body:1"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:1",
+                "sourceExcerpt": "جرت أمس",
+                "candidateExcerpt": "أجرت أمس",
+                "explanation": "The source identifies the exchange as happening yesterday; the candidate correctly asserts this past occurrence.",
+                "sourceState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The source's report of the exchange via a Qatari mediator is fully preserved."
+          },
+          {
+            "unitId": "u3",
+            "publicationIds": [
+              "title",
+              "body:2"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:2",
+                "sourceExcerpt": "استغرق ساعتين",
+                "candidateExcerpt": "استمر لمدة ساعتين",
+                "explanation": "Both source and candidate assert the duration was two hours for the past event.",
+                "sourceState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "PAST",
+                  "phase": "COMPLETED",
+                  "continuity": "BOUNDED",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The source's report on the duration and the goal of transmitting conditions is preserved."
+          },
+          {
+            "unitId": "u5",
+            "publicationIds": [
+              "body:1"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:1",
+                "sourceExcerpt": "كانت تتم",
+                "candidateExcerpt": "كانت تتم",
+                "explanation": "The source describes the ongoing nature of mediation; the candidate preserves this context.",
+                "sourceState": {
+                  "time": "PAST",
+                  "phase": "OCCURRING",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "PAST",
+                  "phase": "OCCURRING",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The source's contextual note regarding previous mediation is preserved."
+          },
+          {
+            "unitId": "u7",
+            "publicationIds": [
+              "body:3"
+            ],
+            "temporal": [
+              {
+                "publicationId": "body:3",
+                "sourceExcerpt": "شروطنا تتضمن",
+                "candidateExcerpt": "الشروط الإيرانية تتضمن",
+                "explanation": "The source describes the conditions as current standing requirements; the candidate preserves this modality.",
+                "sourceState": {
+                  "time": "TIMELESS",
+                  "phase": "UNSPECIFIED",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "candidateState": {
+                  "time": "TIMELESS",
+                  "phase": "UNSPECIFIED",
+                  "continuity": "CONTINUING",
+                  "certainty": "ASSERTED"
+                },
+                "assessment": "PRESERVED"
+              }
+            ],
+            "disposition": "PRESERVED",
+            "explanation": "The list of conditions reported by the spokesperson is preserved."
+          }
+        ],
+        "claims": [
+          {
+            "publicationId": "title",
+            "excerpt": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض",
+            "sourceUnitIds": [
+              "u1",
+              "u3"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "The title accurately summarizes the core facts from the source."
+          },
+          {
+            "publicationId": "body:1",
+            "excerpt": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات التي كانت تتم عبر الوسطاء.",
+            "sourceUnitIds": [
+              "u1",
+              "u5"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Accurately represents the spokesperson's statement."
+          },
+          {
+            "publicationId": "body:2",
+            "excerpt": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي.",
+            "sourceUnitIds": [
+              "u3"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Matches the source content regarding the duration and purpose of the exchange."
+          },
+          {
+            "publicationId": "body:3",
+            "excerpt": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات.",
+            "sourceUnitIds": [
+              "u7"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "Faithfully lists the conditions reported by the spokesperson."
+          }
+        ]
+      },
+      "review": [
+        {
+          "id": "title",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        },
+        {
+          "id": "body:1",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        },
+        {
+          "id": "body:2",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        },
+        {
+          "id": "body:3",
+          "verdict": "SUPPORTED",
+          "checks": {
+            "scope": true,
+            "entitiesAndRelationships": true,
+            "namesAndTitles": true,
+            "numbers": true,
+            "attribution": true,
+            "negationAndModality": true,
+            "literalQuotes": true
+          },
+          "issues": []
+        }
+      ],
+      "fullSourceCovered": true,
+      "publicationQuality": true,
+      "issues": []
+    },
+    "expected": "PASS",
+    "usage": [
+      {
+        "stage": "iran_today_direct_publication_review",
+        "attempt": 1,
+        "httpStatus": 200,
+        "inputTokens": 9243,
+        "outputTokens": 1803,
+        "thinkingTokens": 0,
+        "estimatedCostUsd": 0.00501525,
+        "replayed": false,
+        "durationMs": 7486
+      }
+    ]
+  }
+]

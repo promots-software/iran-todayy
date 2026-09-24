@@ -1,3 +1,4 @@
+import {reviewedResponse} from './fixtures/direct-reviewed';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
@@ -20,7 +21,7 @@ for(const mode of ['NORMAL','DIRECT'] as const)test(mode+' canary gates, human s
  const f=fixture('automatic',content);
  const ev=(excerpt:string)=>({excerpt,context:content});
  const raw={actors:[ev('المجلس')],action:ev('افتتح'),object:ev('مدرسة جديدة'),location:ev('العاصمة'),event_time:null,statements:[{evidence:ev(content),speaker:null,kind:'FACT',material:false}],safety:{filterReason:'NONE',priority:'P4',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false},coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:content.slice(0,-1),factIds:['f1']},body:[]}};
- const direct=new GeminiLanguageProvider('offline',async(_url,init)=>{const {publication,...matching}=raw;return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(JSON.parse(String(init?.body)).generationConfig.responseJsonSchema.properties.statements?matching:{title:publication.title.text,body:'',diagnostics:[]})}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10}});});
+ const direct=new GeminiLanguageProvider('offline',async(_url,init)=>{const {publication,...matching}=raw;return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(reviewedResponse(JSON.parse(String(init?.body)),matching,{title:publication.title.text,body:'',diagnostics:[]}))}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10}});});
  await processJob(db,job,mode==='DIRECT'?direct:{id:'fixture',live:false,understand:async()=>f.understanding,draft:async()=>f.draft,compare:async()=>({relation:'DIFFERENT',rationale:'حدث مختلف',newFactIds:[],conflictingFactIds:[]})},new AbortController().signal);
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:post.id}}},include});
  const policy:AutoPolicy={version:'telegram-auto-v1',id:randomUUID(),state:'CANARY',destination:env.TELEGRAM_CHAT_ID,notBefore:new Date(Date.now()-60000).toISOString(),sourceIds:[source.id],canaryCandidateId:item.id,authorizedBy:'offline-owner'};

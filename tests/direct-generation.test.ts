@@ -1,3 +1,5 @@
+import {supportedLedger} from './fixtures/fidelity-review';
+import {renderingChecks} from '../src/lib/processing/rendering-contract';
 import {publicationUnits} from '../src/lib/processing/direct-publication';
 import {duplicatePage,outcomePage} from '../src/lib/processing-visibility';
 import {checkpointProvider,type CheckpointStore} from '../src/worker/checkpoints';
@@ -23,17 +25,19 @@ const sources={ar:'افتتح المجلس مدرسة جديدة.',fa:'شورا�
 function extraction(source:string){return {coverage:publicationUnits(source).map(u=>({unitId:u.id,nonFactual:false,factIds:['f1']})),actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null,kind:'FACT',material:false}],safety};}
 const article={title:'إيران الآن | افتتاح مدرسة جديدة',body:'افتتح المجلس مدرسة جديدة.',diagnostics:[] as string[]};
 const envelope=(raw:unknown)=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(raw)}]}}],usageMetadata:{promptTokenCount:1,candidatesTokenCount:1,thoughtsTokenCount:0}});
+function reviewed(article:{body:string}){return {review:['title',...(article.body?['body:1']:[])].map(id=>({id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[],comparisons:[]};}
 function provider(source:string,diagnostics:string[]=[],calls:string[]=[]){return new GeminiLanguageProvider('offline',async(_url,init)=>{
  const request=JSON.parse(String(init?.body));const schema=request.generationConfig.responseJsonSchema;
- if(schema.properties.statements){calls.push('match');return envelope(extraction(source));}
- calls.push('article');assert.equal(request.systemInstruction.parts[0].text.split(editorialContract).length,2);const data=JSON.parse(request.contents[0].parts[0].text);assert.equal(data.originalSource,source);assert.equal(data.groundedFacts.facts[0].evidence.excerpt,source);
- return envelope({...article,diagnostics});
+ assert.equal(request.systemInstruction.parts[0].text.split(editorialContract).length,2);
+ if(schema.properties.extraction){calls.push('combined');return envelope({extraction:{...extraction(source),relevance:'POLITICAL_NEWS',contentType:'NEWS',contentTypeEvidence:{excerpt:source,context:source}},article:{...article,diagnostics}});}
+ calls.push('independent');const data=JSON.parse(request.contents[0].parts[0].text);assert.equal(data.originalSource,source);assert.equal(data.validatedEvidence.facts[0].evidence.excerpt,source);
+ return envelope({...reviewed(article),fidelityLedger:supportedLedger(source,data.publication)});
 });}
-for(const [language,source] of Object.entries(sources))test(`DIRECT ${language}: match then complete canonical generation; receipt is not a semantic attestation`,async()=>{
+for(const [language,source] of Object.entries(sources))test(`DIRECT ${language}: combined canonical generation then independent semantic review`,async()=>{
  const calls:string[]=[];const p=provider(source,[],calls);const u=validateUnderstanding(await p.understand({content:source,processingMode:'DIRECT',publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},signal()),source);
- assert.equal(Object(u).directGeneration,undefined);
+ assert.equal(u.directGeneration?.version,'direct-generation-v3');
  await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
- const final=directFinalArticle(source,u);assert.equal(final.title,article.title);assert.deepEqual(calls,['match','article']);assert.equal(u.directGeneration?.semanticVerification,'DIAGNOSTIC_ONLY');assert.equal(u.directGeneration?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
+ const final=directFinalArticle(source,u);assert.equal(final.title,article.title);assert.deepEqual(calls,['combined','independent']);assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');assert.equal(u.directGeneration?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
 });
 test('DIRECT material update freezes only current evidence; uncertain match and exhausted lease stay out of editorial review',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const db=new PrismaClient({datasourceUrl:process.env.TEST_DATABASE_URL});
@@ -43,8 +47,8 @@ test('DIRECT material update freezes only current evidence; uncertain match and 
   const post=await ingest(db,src.id,{externalId:String(Date.now()),url:src.url+'/1',content,publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:post.id},data:{availableAt:new Date(0)}});
   const job=await claimJob(db,'update',new Date(),false,(await db.processingJob.findMany({where:{sourcePostId:{not:post.id}},select:{sourcePostId:true}})).map(j=>j.sourcePostId));assert.ok(job);
   const e=(excerpt:string)=>({excerpt,context:content});const raw={...extraction(content),actors:[e('اللجنة')],action:e('افتتحت'),object:e('مدرسة'),statements:[{evidence:e(content),speaker:null,kind:'DECISION',material:true}]};
-  const p=new GeminiLanguageProvider('offline',async(_url,init)=>{const schema=JSON.parse(String(init?.body)).generationConfig.responseJsonSchema;return envelope(schema.properties.statements?raw:{title:'إيران الآن | '+content,body:'',diagnostics:[]});});
-  p.compare=async()=>({relation:uncertain?'UNCERTAIN':'SAME',newFactIds:['f1'],conflictingFactIds:[],rationale:'تحديث في الخبر'});
+  const p=new GeminiLanguageProvider('offline',async(_url,init)=>{const request=JSON.parse(String(init?.body)),schema=request.generationConfig.responseJsonSchema,data=JSON.parse(request.contents[0].parts[0].text);return envelope(schema.properties.extraction?{extraction:raw,article:{title:'إيران الآن | '+content,body:'',diagnostics:[]}}:{...reviewed({body:''}),comparisons:data.comparisons.map((c:{id:string})=>({id:c.id,decision:{relation:uncertain?'UNCERTAIN':'SAME',newFactIds:['f1'],conflictingFactIds:[],rationale:'تحديث في الخبر'}}))});});
+  p.compare=async()=>{throw new Error('UNEXPECTED_THIRD_CALL');};
   await processJob(db,job,p,signal());return post;
  }
  await run('افتتحت اللجنة مدرسة.');const update=await run('افتتحت اللجنة مدرسة وقررت توسعتها.');
@@ -80,14 +84,14 @@ test('restart restores the completed article receipt without another provider ca
   const output=await p.draft({processingMode:'DIRECT',content:sources.ar,understanding:u,rules:ruleSet},signal()) as ReturnType<typeof directFinalArticle>;
   u.directGeneration=output.generationReceipt;assert.equal(directFinalArticle(sources.ar,u).title,article.title);
  }
- assert.deepEqual(calls,['match','article']);
+ assert.deepEqual(calls,['combined','independent']);
 });
 test('DIRECT material update uses literal source evidence, never independent-truth flag',async()=>{
  const source='قرر المجلس فتح مدرسة جديدة.';const raw=extraction(source);raw.actors=[{excerpt:'المجلس',context:source}] as never[];
  const u=directMatchingUnderstanding(raw,source);u.event.action={key:'open',arabic:'فتح',evidence:{excerpt:'فتح',start:source.indexOf('فتح'),end:source.indexOf('فتح')+3}};u.event.object={key:'school',arabic:'مدرسة',evidence:{excerpt:'مدرسة',start:source.indexOf('مدرسة'),end:source.indexOf('مدرسة')+5}};u.event.facts[0].kind='DECISION';u.event.facts[0].material=true;
  const previous=structuredClone(u.event);previous.facts[0].key='earlier-plan';
  const c:Candidate={id:'event',revisionId:'r',revision:1,publishedAt:new Date(),published:true,data:previous};
- const p=provider(source);p.compare=async()=>({relation:'SAME',newFactIds:['f1'],conflictingFactIds:[],rationale:'تحديث في القرار'});
+ const p=provider(source);p.compare=async()=>({relation:'SAME',newFactIds:['f1'],conflictingFactIds:[],rationale:'تحديث في القرار',identity:{basis:'SAME_OCCURRENCE',incomingFactIds:['f1'],existingFactIds:['f1'],explanation:'Fixture grounded update of same event'}});
  assert.equal((await matchEvent(u.event,new Date(),[c],p,signal(),{source,understanding:u,processingMode:'DIRECT'})).classification,'MATERIAL_UPDATE');assert.equal(u.event.facts[0].verified,false);
  p.compare=async()=>({relation:'UNCERTAIN',newFactIds:[],conflictingFactIds:[],rationale:'تعذر حسم التطابق'});
  assert.equal((await matchEvent(u.event,new Date(),[c],p,signal(),{source,understanding:u,processingMode:'DIRECT'})).classification,'UNCERTAIN_MATCH');
@@ -99,7 +103,7 @@ test('real processor + existing publisher: DIRECT diagnostics READY, manual OFF,
  const post=await ingest(db,src.id,{externalId:'1',url:src.url+'/1',content:sources.ar,publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:post.id},data:{availableAt:new Date(0)}});
  const job=await claimJob(db,'offline');assert.ok(job);assert.ok(!('error' in await processJob(db,job,provider(sources.ar,['DIRECT_MATERIAL_COVERAGE_FAILED','SPEAKER_ATTRIBUTION_MISMATCH']),signal())));
  const stored=await db.sourcePost.findUniqueOrThrow({where:{id:post.id}});assert.equal(stored.status,'PENDING_APPROVAL');
- const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:post.id}}},include:publicationCandidateInclude});assert.equal(item.status,'PENDING_APPROVAL');assert.equal(publicationReady(item),true);assert.equal(Object(item.validationResult).semanticVerification,'DIAGNOSTIC_ONLY');assert.equal(Object(item.validationResult).editorialEligibility,'READY_TO_PUBLISH');
+ const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:post.id}}},include:publicationCandidateInclude});assert.equal(item.status,'PENDING_APPROVAL');assert.equal(publicationReady(item),true);assert.equal(Object(item.validationResult).semanticVerification,'INDEPENDENT');assert.equal(Object(item.validationResult).editorialEligibility,'READY_TO_PUBLISH');
  assert.equal(publicationReady({...item,title:item.title+' altered'}),false);assert.equal(publicationReady({...item,humanDraft:{id:'human'} as NonNullable<typeof item.humanDraft>}),false);
  const env={AUTO_PUBLISH:'true',SHADOW_MODE:'false',REQUIRE_APPROVAL:'true',TELEGRAM_PUBLISH_ENABLED:'true',TELEGRAM_BOT_TOKEN:'123:offline',TELEGRAM_CHAT_ID:'-100123'};
  let sends=0;const transport:typeof fetch=async()=>{sends++;return Response.json({ok:true,result:{message_id:91,chat:{id:-100123}}});};
@@ -113,7 +117,7 @@ test('real processor + existing publisher: DIRECT diagnostics READY, manual OFF,
  const failed=await ingest(db,src.id,{externalId:'3',url:src.url+'/3',content:'نص مختلف',publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:failed.id},data:{availableAt:new Date(0)}});const failedJob=await claimJob(db,'failure');assert.ok(failedJob);await processJob(db,failedJob,new GeminiLanguageProvider('offline',async()=>new Response('{}',{status:503})),signal());const failure=await db.sourcePost.findUniqueOrThrow({where:{id:failed.id}});assert.equal(failure.status,'FAILED');assert.equal(Object(failure.processingResult).editorialEligibility,'PROCESSING_ERROR');assert.equal(await db.publication.count({where:{newsItemId:item.id}}),1);
  }finally{await db.$disconnect();}
 });
-for(const language of ['fa','en'] as const)test(`persisted DIRECT ${language} candidate reaches Approvals without semantic review`,{skip:!process.env.TEST_DATABASE_URL},async()=>{
+for(const language of ['fa','en'] as const)test(`persisted DIRECT ${language} candidate reaches Approvals after independent semantic review`,{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const url=new URL(process.env.TEST_DATABASE_URL!);assert.equal(url.hostname,'127.0.0.1');assert.match(url.pathname,/^\/direct_/);
  const db=new PrismaClient({datasourceUrl:url.href});
  try{

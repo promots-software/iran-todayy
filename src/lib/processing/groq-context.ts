@@ -2,7 +2,7 @@ import type { ruleSet } from "./rules";
 import { z } from "zod";
 import type { Stage } from "./openai";
 import { structuredSchema } from "./openai";
-import {coverageInstructions} from './editorial-scope';
+import {iranRelevanceInstructions} from './iran-relevance';
 
 /** Strict structure on the wire; all value/format constraints remain enforced by local Zod. */
 export function groqSchema(stage: Stage, contract?: z.ZodType) {
@@ -15,7 +15,7 @@ export function groqSchema(stage: Stage, contract?: z.ZodType) {
     if(node.properties && typeof node.properties === "object") {
       const properties=node.properties as Record<string,unknown>;
       delete properties.sourcePostId;
-      if ('excerpt' in properties) properties.context={type:'string',description:'Verbatim surrounding source text identifying this excerpt exactly once within a unique source context. Include enough context to disambiguate repeated excerpts.'};
+      if ('excerpt' in properties && 'context' in properties) properties.context={type:'string',description:'Verbatim surrounding source text identifying this excerpt exactly once within a unique source context. Include enough context to disambiguate repeated excerpts.'};
       // Property names are user data, not schema keywords (e.g. a field named format).
       Object.values(properties).forEach(visit);
       node.required=Object.keys(properties);node.additionalProperties=false;
@@ -34,7 +34,7 @@ export function groqSchema(stage: Stage, contract?: z.ZodType) {
 /** Stage-specific context, not new policy. Rewriting still receives every editorial rule. */
 export function groqRuleContext(stage: Stage, rules: typeof ruleSet) {
   if (stage === "compare") return {version:rules.version,duplicateWindowHours:rules.duplicateWindowHours};
-  if (stage === "understand") return {version:rules.version,coverageVersion:'iran-acceptance-v1',policy:rules.policy.filter(r=>["FILTER","PRIORITY","SOURCES","TITLES","CREDIBILITY"].includes(r.id)).map(r=>r.id==='FILTER'?{...r,reference:'One-time Iran relevance acceptance; material factual validation retained',instruction:coverageInstructions}:r),names:rules.names,reviewReasons:rules.reviewReasons,ambiguities:rules.ambiguities};
+  if (stage === "understand") return {version:rules.version,coverageVersion:'iran-acceptance-v1',policy:rules.policy.filter(r=>["FILTER","PRIORITY","SOURCES","TITLES","CREDIBILITY"].includes(r.id)).map(r=>r.id==='FILTER'?{...r,reference:'One-time Iran relevance acceptance; material factual validation retained',instruction:iranRelevanceInstructions}:r),names:rules.names,reviewReasons:rules.reviewReasons,ambiguities:rules.ambiguities};
   return {version:rules.version,pipelineOrder:rules.pipelineOrder,policy:rules.policy.map(({id,instruction})=>({id,instruction})),
     // instruction repeats from/to; category/reference are provenance, not operative requirements.
     terminology:rules.terminology.map(({id,mode,from,to,condition})=>({id,mode,from,to,condition})),names:rules.names,ambiguities:rules.ambiguities,externalPublishingEnabled:false};

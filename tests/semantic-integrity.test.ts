@@ -28,17 +28,18 @@ for(const row of rows.filter(r=>r.case!==9))test(`production ${row.case} / ${row
  // This proves objective extraction, not semantic correctness, final article
  // quality or READY. In case 1 the historical repair deleted valid attribution.
  if(row.case===1){
-  const merged=validateMinimalExtraction(preserveGroundedExtraction(extraction(row.outputs[0]),extraction(row.outputs[1]),row.sourceText),row.sourceText);
-  assert(merged.statements.every(s=>s.speaker));
+  assert.throws(()=>preserveGroundedExtraction(extraction(row.outputs[0]),extraction(row.outputs[1]),row.sourceText),/REPAIR_GROUNDED_IDENTITY_CHANGED/);
  }
 });
-test('production 9: invalid review IDs and fabricated direct quotation remain defects',()=>{
+test('production 9: invalid review IDs remain defects; outlet typography is not direct speech',()=>{
  const row=rows.find(r=>r.case===9)!;
  const draft=row.outputs[3] as {publication:{title:{text:string};body:{text:string}[]}};
  const review=row.outputs[4] as {review:{id:string}[]};
  assert.notDeepEqual(review.review.map(r=>r.id),['title',...draft.publication.body.map((_,i)=>`body:${i+1}`)]);
  const repaired=row.outputs[5] as typeof draft;
- assert.throws(()=>validateObjectiveArticle(row.sourceText,repaired.publication.title.text,repaired.publication.body.map(p=>p.text).join('\n')),/QUOTE_MISMATCH/);
+ // This only proves outlet quotation typography, never the article's semantics.
+ assert.doesNotThrow(()=>validateObjectiveArticle(row.sourceText,repaired.publication.title.text,repaired.publication.body.map(p=>p.text).join('\n')));
+ assert.throws(()=>validateObjectiveArticle(row.sourceText,'قال بزشكيان: «سنفعل ذلك غداً».',''),/DATE_MISMATCH|QUOTE_MISMATCH/);
 });
 const evidence=(source:string,text:string)=>({excerpt:text,start:source.indexOf(text),end:source.indexOf(text)+text.length});
 const offsetRows=JSON.parse(readFileSync('tests/fixtures/semantic-offset-production.json','utf8')) as {telegramId:string;source:string;outputs:Record<string,unknown>[]}[];
@@ -76,8 +77,9 @@ test('repeated word resolved by verified range, not first occurrence',()=>{
  assert.throws(()=>resolveContextEvidence({excerpt:'تحدث',context:source},source),/AMBIGUOUS/);
  assert.throws(()=>resolveContextEvidence({...value,startOffset:1,endOffset:5,context:source},source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
 });
-test('verbatim means exact characters, including whitespace and invented ellipses',()=>{
- for(const excerpt of ['اختار ... المقر','اختار  المقر'])assert.throws(()=>resolveContextEvidence({excerpt,context:'اختار المقر'},'اختار المقر'),/INVALID_EVIDENCE/);
+test('whitespace projection recovers exact source bytes but never invented ellipses',()=>{
+ assert.throws(()=>resolveContextEvidence({excerpt:'اختار ... المقر',context:'اختار المقر'},'اختار المقر'),/INVALID_EVIDENCE/);
+ const value={excerpt:'اختار  المقر',context:'اختار المقر'};resolveContextEvidence(value,'اختار المقر');assert.equal(value.excerpt,'اختار المقر');
 });
 test('semantic unit mapping: repeated headline, unfamiliar brand/footer and factual hashtag',()=>{
  const source='مرصد الزمرد | افتتاح مكتبة\nافتتح المجلس مكتبة في #البصرة.\n#مرصد_الزمرد\n◆';
@@ -98,28 +100,30 @@ for(const [source,output,error] of [
  ['أعلنت اللجنة الموعد في 12 أيلول.','أعلنت اللجنة الموعد في 13 أيلول.','NUMBER'],
  ['قالت اللجنة إن العمل بدأ.','قالت اللجنة «انتهى العمل».','QUOTE'],
 ])test(`objective final integrity ${error}`,()=>assert.throws(()=>validateObjectiveArticle(source,output,''),new RegExp(error)));
-test('targeted extraction merge preserves valid statements, speakers, numbers and IDs',()=>{
+test('extraction repair cannot silently delete grounded statements or speakers',()=>{
  const source='قال المجلس: افتتحنا 3 مدارس. وأعلن موعداً جديداً.';
  const e=(excerpt:string)=>({excerpt,context:source});
  const previous={actors:[e('المجلس')],action:e('افتتحنا ... مدارس'),statements:[{evidence:e('افتتحنا 3 مدارس.'),speaker:e('المجلس')}]};
  const next={actors:[],action:e('افتتحنا'),statements:[{evidence:e('أعلن موعداً جديداً'),speaker:null}]};
- const merged=preserveGroundedExtraction(previous,next,source) as typeof previous;
- assert.deepEqual(merged.statements,previous.statements);assert.deepEqual(merged.actors,previous.actors);assert.deepEqual(merged.action,next.action);
+ assert.throws(()=>preserveGroundedExtraction(previous,next,source),/REPAIR_GROUNDED_IDENTITY_CHANGED/);
 });
-test('targeted draft merge cannot delete unrelated copy',()=>{
+test('draft repair returns the complete untrusted proposal for full revalidation',()=>{
  const before={publication:{title:{text:'عنوان صحيح',factIds:['f1']},body:[{text:'نص غير صحيح',factIds:['f1']}]}};
  const next={publication:{title:{text:'تغيير غير مطلوب',factIds:['f2']},body:[{text:'النص المصحح',factIds:['f1']}]}};
  const merged=mergeDiagnosedRepair(before,next,{stage:'draft',code:'INVALID',issues:[{code:'INVALID',path:['publication','body',0,'text']}],instructions:''}) as typeof before;
- assert.deepEqual(merged.publication.title,before.publication.title);assert.equal(merged.publication.body[0].text,'النص المصحح');
+ assert.deepEqual(merged,next);assert.equal(before.publication.body[0].text,'نص غير صحيح');
 });
-test('one bounded repair preserves separate initial/repair diagnostics',async()=>{
+const repairSource='أعلنت الوزارة افتتاح 8 مدارس.';
+function repairFailure(){const text='افتتاح 9 مدارس';return new ProcessingError('DIRECT_PUBLICATION_NUMBER_MISMATCH',false,{stage:'draft',issues:[{code:'DIRECT_PUBLICATION_NUMBER_MISMATCH',path:['publication','title','text']}],output:{publication:{title:{text,factIds:['f1']}}},repairDiagnostics:[{code:'DIRECT_PUBLICATION_NUMBER_MISMATCH',path:['publication','title','text'],current:text,expected:'8 schools',cause:'Wrong quantity',sourceSpans:[{start:0,end:repairSource.length,text:repairSource}],factIds:['f1'],speakerIds:[],occurrenceIds:['0:'+repairSource.length],allowedPaths:[['publication','title','text']]}]});}
+test('one justified repair preserves separate initial and post-repair diagnostics',async()=>{
  let calls=0;
- await assert.rejects(normalStage('extract',async()=>{calls++;throw new ProcessingError(calls===1?'INVALID_EVIDENCE':'AMBIGUOUS_EVIDENCE_CONTEXT',false,{stage:'extract',issues:[{code:'BAD_SPAN',path:['action']}]});}),error=>{
+ await assert.rejects(normalStage('draft',async()=>{calls++;if(calls===1)throw repairFailure();throw new ProcessingError('AMBIGUOUS_EVIDENCE_CONTEXT');},repairSource),error=>{
   assert(error instanceof ProcessingError);assert.equal(error.code,'AI_SCHEMA_REPAIR_FAILED');
   const diagnostic=error.diagnostic as {initialFailure:{code:string};repairFailure:{code:string}};
-  assert.equal(diagnostic.initialFailure.code,'INVALID_EVIDENCE');assert.equal(diagnostic.repairFailure.code,'AMBIGUOUS_EVIDENCE_CONTEXT');return true;
+  assert.equal(diagnostic.initialFailure.code,'DIRECT_PUBLICATION_NUMBER_MISMATCH');assert.equal(diagnostic.repairFailure.code,'AMBIGUOUS_EVIDENCE_CONTEXT');return true;
  });assert.equal(calls,2);
 });
+
 test('canonical file preserved byte-for-byte, complete 40 sections',()=>{
  assert.equal(createHash('sha256').update(readFileSync('config/editorial/iran-now-contract.txt')).digest('hex'),EDITORIAL_CONTRACT_SHA256);
  assert.equal(EDITORIAL_CONTRACT_SHA256,'9782065875b461bcd02951a0496acb397f13750af9611253abc4b2ecbd466456');
@@ -148,18 +152,18 @@ test('date tokens have lexical boundaries, not substrings of unrelated place nam
 
 test('repair transport failure preserves original retry policy and initial diagnosis',async()=>{
  let calls=0;
- await assert.rejects(normalStage('draft',async()=>{if(++calls===1)throw new ProcessingError('INVALID_DRAFT_FACT_LINK');throw new ProcessingError('GEMINI_HTTP_503',true,undefined,1200);}),error=>{
+ await assert.rejects(normalStage('draft',async()=>{if(++calls===1)throw repairFailure();throw new ProcessingError('GEMINI_HTTP_503',true,undefined,1200);},repairSource),error=>{
   assert(error instanceof ProcessingError);assert.equal(error.code,'GEMINI_HTTP_503');assert.equal(error.retryable,true);assert.equal(error.retryAfterMs,1200);
-  assert.equal(repairDiagnosticSummary({diagnostic:error.diagnostic}).initial?.code,'INVALID_DRAFT_FACT_LINK');return true;
+  assert.equal(repairDiagnosticSummary({diagnostic:error.diagnostic}).initial?.code,'DIRECT_PUBLICATION_NUMBER_MISMATCH');return true;
  });assert.equal(calls,2);
 });
 
 
 test('a revisited review stage cannot spend a second repair after a draft repair',async()=>{
  let used=false,calls=0;const budget=()=>{if(used)return false;used=true;return true;};
- const first=await normalStage('publication_review',async repair=>{calls++;if(!repair)throw new ProcessingError('DIRECT_PUBLICATION_REVIEW_FAILED');return 'valid';},undefined,undefined,budget);
+ const first=await normalStage('draft',async repair=>{calls++;if(!repair)throw repairFailure();return 'valid';},repairSource,undefined,budget);
  assert.equal(first,'valid');
- await assert.rejects(normalStage('publication_review',async()=>{calls++;throw new ProcessingError('DIRECT_PUBLICATION_REVIEW_FAILED');},undefined,undefined,budget),error=>{
-  assert(error instanceof ProcessingError);assert.equal(error.code,'AI_SCHEMA_REPAIR_FAILED');assert.equal(repairDiagnosticSummary({diagnostic:error.diagnostic}).repair?.code,'REPAIR_BUDGET_EXHAUSTED');return true;
+ await assert.rejects(normalStage('draft',async()=>{calls++;throw repairFailure();},repairSource,undefined,budget),error=>{
+  assert(error instanceof ProcessingError);assert.equal(error.code,'DIRECT_PUBLICATION_NUMBER_MISMATCH');assert.equal(repairDiagnosticSummary({diagnostic:error.diagnostic}).repair?.code,'REPAIR_BUDGET_EXHAUSTED');return true;
  });assert.equal(calls,3);
 });

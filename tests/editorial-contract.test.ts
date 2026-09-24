@@ -1,3 +1,6 @@
+import {supportedLedger} from './fixtures/fidelity-review';
+import {validateUnderstanding} from '../src/lib/processing/contracts';
+import {reviewedResponse} from './fixtures/direct-reviewed';
 import {directMatchingUnderstanding,directFinalArticle} from '../src/lib/processing/direct-generation';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -35,9 +38,9 @@ test('byte-exact canonical artifact has all 40 sections, final check and intact 
  assert.throws(()=>validateEditorialContract(Buffer.from(editorialContract.replace('40. FINAL QUALITY CHECK BEFORE OUTPUT',''))),/INTEGRITY/);
  for(const example of ['27 شهریور → 27 أيلول','Masoud Pezeshkian → مسعود بزشكيان','40. FINAL QUALITY CHECK BEFORE OUTPUT'])assert.ok(editorialContract.includes(example));
 });
-test('DIRECT matching is separate; final article receives the complete contract',async()=>{
+test('DIRECT combined generation and independent review both receive the complete contract',async()=>{
  process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';let calls=0;
- const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;if(calls===1)return Response.json(geminiEnvelope({...raw,coverage}));inspect(init);return Response.json(geminiEnvelope({title:'إيران الآن | '+source,body:'',diagnostics:[]}));});
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const req=inspect(init);return Response.json(geminiEnvelope(reviewedResponse(req,{...raw,coverage},{title:'إيران الآن | '+source,body:'',diagnostics:[]})));});
  const u=await provider.understand({content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,processingMode:'DIRECT'},signal());
  const d=await provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'DIRECT'},signal());
  assert.equal(calls,2);assert.equal(d.title,'إيران الآن | '+source);assert.equal(u.directGeneration?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
@@ -47,22 +50,25 @@ for(const language of ['ar','fa','en'] as const)for(const mode of ['NORMAL','DIR
  const f=bilingualFixture(language==='ar'?'fa':language),p=prepareDirectBilingual(f.raw,f.source);
  const content=language==='ar'?source:f.source;
  let u=language==='ar'?adaptDirectExtraction(validateDirectExtraction(raw,source),source):adaptDirectExtraction(p.grounded,f.source,finalizeDirectBilingual(f.source,p,passingReview(f.source,p)));
+ let directRaw:unknown;
  if(mode==='DIRECT'){
   const strip=(v:unknown):unknown=>Array.isArray(v)?v.map(strip):v&&typeof v==='object'?Object.fromEntries(Object.entries(v).filter(([key])=>key!=='arabic').map(([key,value])=>[key,strip(value)])):v;
-  u=directMatchingUnderstanding(language==='ar'?raw:strip(f.raw),content);
+  directRaw={...(language==='ar'?raw:strip(f.raw)) as Record<string,unknown>,coverage};
+  u=directMatchingUnderstanding(directRaw,content);
  }
  const facts=JSON.stringify(u.event);let calls=0;
  const publication={title:{text:'إيران الآن | افتتاح 12 مدرسة جديدة في العاصمة',factIds:['f1']},body:[{text:'افتتح المجلس 12 مدرسة جديدة في العاصمة.',factIds:['f1']}]};
  const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
   const req=inspect(init),data=JSON.parse(req.contents[0].parts[0].text);calls++;
+  if(mode==='DIRECT')return Response.json(geminiEnvelope(reviewedResponse(req,directRaw,{title:publication.title.text,body:publication.body.map(s=>s.text).join('\n'),diagnostics:[]})));
   assert.equal(data.originalSource,content);
-  if(mode==='DIRECT')return Response.json(geminiEnvelope({title:publication.title.text,body:publication.body.map(s=>s.text).join('\n'),diagnostics:[]}));
   if(calls===1){assert.ok(req.generationConfig.responseJsonSchema.properties.publication);assert.deepEqual(data.validatedFacts,u.event);return Response.json(geminiEnvelope({coverage,publication}));}
   assert.equal(calls,2);assert.equal(u.publicationProposal,undefined,'no trust receipt before independent review');
-  return Response.json(geminiEnvelope({review:data.publication.map((s:{id:string})=>({id:s.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[]}));
+  return Response.json(geminiEnvelope({fidelityLedger:supportedLedger(data.originalSource,data.publication),review:data.publication.map((s:{id:string})=>({id:s.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[]}));
  });
+ if(mode==='DIRECT')u=validateUnderstanding(await provider.understand({content,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,processingMode:mode},signal()),content);
  const d=await provider.draft({content,understanding:u,rules:ruleSet,processingMode:mode},signal());
- if(mode==='DIRECT'){assert.equal(calls,1);assert.equal(directFinalArticle(content,u).title,publication.title.text);assert.equal(u.directGeneration?.semanticVerification,'DIAGNOSTIC_ONLY');assert.equal(JSON.stringify(u.event),facts);return;}
+ if(mode==='DIRECT'){assert.equal(calls,2);assert.equal(directFinalArticle(content,u).title,publication.title.text);assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');assert.equal(JSON.stringify(u.event),facts);return;}
  assert.equal(calls,2);assert.equal(JSON.stringify(u.event),facts);assert.equal(d.title,publication.title.text);assert.equal(u.publicationProposal?.method,'INDEPENDENT');
  const final=finalizeConstrainedDraft(d,content,u,unknownProfile);assert.equal(final.title,d.title);assert.ok(!final.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));
 });
@@ -102,10 +108,19 @@ test('final article repair is bounded, uses the complete contract and never chan
  process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';
  for(const resolves of [true,false]){
  const u=adaptDirectExtraction(validateDirectExtraction(raw,source),source),before=JSON.stringify(u.event);let calls=0;
- const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{inspect(init);calls++;return Response.json(geminiEnvelope({coverage,publication:{title:{text:resolves&&calls===2?source:source.replace('12','13'),factIds:['f1']},body:[]}}));});
+ let generations=0;
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
+  const req=inspect(init),data=JSON.parse(req.contents[0].parts[0].text);calls++;
+  if(Array.isArray(data.publication)){
+   const ledger=supportedLedger(source,data.publication),bad=data.publication.some((p:{text:string})=>p.text.includes('13'));
+   if(bad)for(const claim of ledger.claims){claim.verdict='UNSUPPORTED' as 'SUPPORTED';claim.explanation='The source states 12, not 13 schools.';}
+   return Response.json(geminiEnvelope({fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:bad?'UNSUPPORTED':'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,!bad])),issues:bad?['NUMBER_CHANGED']:[]})),fullSourceCovered:true,publicationQuality:true,issues:[]}));
+  }
+  generations++;return Response.json(geminiEnvelope({coverage,publication:{title:{text:resolves&&generations>1?source:source.replace('12','13'),factIds:['f1']},body:[]}}));
+ });
  const task=provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'NORMAL'},signal());
  if(resolves){const d=await task;assert(d.title.includes('12'));}else await assert.rejects(task,/AI_SCHEMA_REPAIR_FAILED/);
- assert.equal(calls,2);assert.equal(JSON.stringify(u.event),before);
+ assert.equal(calls,4);assert.equal(JSON.stringify(u.event),before);
  }
 });
 
@@ -133,4 +148,28 @@ test('independent factual review rejects certainty, planned/completed, identity 
   const review={review:['title','body:1'].map(id=>({id,verdict:'SUPPORTED',checks:{...Object.fromEntries(renderingChecks.map(k=>[k,true])),[check]:false},issues:['material contradiction']})),fullSourceCovered:true,publicationQuality:true,issues:[]};
   assert.throws(()=>acceptPublication(source,u,p,review),/DIRECT_PUBLICATION_UNSUPPORTED/,check);
  }
+});
+
+test('publication-quality rejection cannot be ignored by an otherwise positive review',()=>{
+ const u=adaptDirectExtraction(validateDirectExtraction(raw,source),source);
+ const proposal={title:{text:'افتتاح 12 مدرسة جديدة في العاصمة',factIds:['f1']},body:[{text:source,factIds:['f1']}]};
+ const p=preparePublication(source,u,proposal,coverage);
+ const review={review:['title','body:1'].map(id=>({id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:false,issues:['SOFT:STYLE']};
+ assert.throws(()=>acceptPublication(source,u,p,review),/PUBLICATION_UNSUPPORTED/);
+});
+
+test('complete draft repair cannot smuggle unsupported prose past independent review',async()=>{
+ const u=adaptDirectExtraction(validateDirectExtraction(raw,source),source);let calls=0,reviewed=false;
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
+  calls++;inspect(init);const request=JSON.parse(String(init?.body));
+  const data=JSON.parse(request.contents[0].parts[0].text);
+  if(Array.isArray(data.publication)){
+   reviewed=true;assert(data.publication.some((p:{text:string})=>p.text.includes('اتفاقاً عسكرياً')));
+   const ledger=supportedLedger(source,data.publication);for(const claim of ledger.claims){claim.verdict='UNSUPPORTED' as 'SUPPORTED';claim.explanation='The source does not establish an agreement.';}
+   return Response.json(geminiEnvelope({fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:'UNSUPPORTED',checks:{...Object.fromEntries(renderingChecks.map(k=>[k,true])),scope:false},issues:['UNSUPPORTED_ADDITION']})),fullSourceCovered:true,publicationQuality:false,issues:['UNSUPPORTED_ADDITION']}));
+  }
+  return Response.json(geminiEnvelope({coverage,publication:{title:{text:calls===1?source.replace('12','13'):source,factIds:['f1']},body:[{text:source+' وأعلنت اتفاقاً عسكرياً جديداً.',factIds:['f1']}]}}));
+ });
+ await assert.rejects(provider.draft({content:source,understanding:u,rules:ruleSet,processingMode:'NORMAL'},signal()),/AI_SCHEMA_REPAIR_FAILED/);
+ assert.equal(reviewed,true);assert.equal(calls,6);assert.equal(u.publicationProposal,undefined);
 });

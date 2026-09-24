@@ -1,3 +1,5 @@
+import {eventIdentitySchema} from './event-identity';
+import {repairTraceSchema,type RepairDiagnostic,type RepairTrace} from './repair-contract';
 import { z } from "zod";
 import type { ruleSet } from "./rules";
 import {directCoverageSchema,directPublicationReceiptSchema} from './direct-publication-contract';
@@ -34,13 +36,13 @@ export const eventSchema = z.object({
   summary: text.nullable(),
 }).strict();
 export type EventData = z.infer<typeof eventSchema>;
-export const validationHistorySchema=z.array(z.object({stage:z.string(),initialCode:z.string(),initialIssues:z.array(z.object({code:z.string(),path:z.array(z.union([z.string(),z.number()]))})),repairCode:z.string().nullable()}).strict()).max(16);
+export const validationHistorySchema=z.array(z.object({stage:z.string(),initialCode:z.string(),initialIssues:z.array(z.object({code:z.string(),path:z.array(z.union([z.string(),z.number()]))})),repairCode:z.string().nullable(),cycles:z.array(repairTraceSchema).max(3).optional()}).strict()).max(16);
 export const understandingSchema = z.object({
   validationHistory:validationHistorySchema.optional(),
   semanticCoverage:directCoverageSchema.optional(),
   normalContentType:z.enum(["NEWS","PURE_PROMO","UNCERTAIN"]).optional(),
   language: z.string().min(2).max(35), relevance: z.enum(["POLITICAL_NEWS", "IRRELEVANT", "UNCERTAIN"]),
-  filterReason: z.enum(["NONE", "UNRELATED", "NON_NEWS_PROMO", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
+  filterReason: z.enum(["NONE", "UNRELATED", "UNRELATED_TO_IRAN", "NON_NEWS_PROMO", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
   topic: z.enum(["IRAN_DOMESTIC", "DEFENCE", "NUCLEAR", "REGION", "GULF", "WEST", "ISRAEL", "GREAT_POWERS", "SECURITY", "HISTORY", "UNKNOWN"]),
   priority: z.enum(["P1", "P2", "P3", "P4"]), rationale: text, event: eventSchema,
   names: z.array(z.object({ arabic: text, kind: z.enum(["person", "place", "institution"]), evidence: evidenceSchema }).strict()),
@@ -53,7 +55,8 @@ export const understandingSchema = z.object({
 export type Understanding = z.infer<typeof understandingSchema>;
 export const comparisonSchema = z.object({
   relation: z.enum(["SAME", "DIFFERENT", "UNCERTAIN"]), rationale: text,
-  newFactIds: z.array(text), conflictingFactIds: z.array(text),
+    newFactIds: z.array(text), conflictingFactIds: z.array(text),
+    identity:eventIdentitySchema.optional(),
 }).strict();
 export type Comparison = z.infer<typeof comparisonSchema>;
 export const draftSchema = z.object({
@@ -71,7 +74,7 @@ export interface LanguageProvider {
   readonly live: boolean;
   readonly draftOnlyAccepted?: boolean;
   readonly constrainedRewrite?: boolean;
-  understand(input: { processingMode?: "NORMAL"|"DIRECT"; content: string; publishedAt: Date; profile: SourceProfile; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
+  understand(input: { comparisonCandidates?: EventData[]; processingMode?: "NORMAL"|"DIRECT"; content: string; publishedAt: Date; profile: SourceProfile; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
   compare(input: { incoming: EventData; existing: EventData }, signal: AbortSignal): Promise<unknown>;
   draft(input: { processingMode?: "NORMAL"|"DIRECT"; content: string; understanding: Understanding; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
 }
@@ -82,7 +85,7 @@ export interface Monitor {
 }
 export class ProcessingError extends Error {
   availableDraft?: import('./available-draft').AvailableDraft;
-  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[];causeCode?:string;output?:unknown;initialFailure?:{code:string;issues:{code:string;path:(string|number)[]}[]};repairFailure?:{code:string;issues:{code:string;path:(string|number)[]}[]}}, public readonly retryAfterMs=0) { super(code); }
+  constructor(public readonly code: string, public readonly retryable = false, public readonly diagnostic?: {stage:'extract';field:string;output:unknown}|{stage:string;issues:{code:string;path:(string|number)[]}[];causeCode?:string;output?:unknown;repairDiagnostics?:RepairDiagnostic[];repairTrace?:RepairTrace[];initialFailure?:{code:string;issues:{code:string;path:(string|number)[]}[]};repairFailure?:{code:string;issues:{code:string;path:(string|number)[]}[]}}, public readonly retryAfterMs=0) { super(code); }
 }
 export function checkEvidence(content: string, evidence: z.infer<typeof evidenceSchema>) {
   if (!Number.isInteger(evidence.start)||!Number.isInteger(evidence.end)||evidence.start<0||evidence.end<=evidence.start||evidence.end>content.length||content.slice(evidence.start, evidence.end) !== evidence.excerpt) throw new ProcessingError("INVALID_EVIDENCE");

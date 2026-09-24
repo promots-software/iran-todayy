@@ -1,3 +1,4 @@
+import {numericTokens} from './text-equivalence';
 import {factualReviewPassed,factualReviewInstructions} from './rendering-contract';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
@@ -9,7 +10,7 @@ import {persianMonths,validateMonthRendering} from './newsroom-format';
 export type RenderingReference={id:string;role:string;evidence:{excerpt:string;start:number;end:number;sourcePostId?:string}};
 const sourceHash=(source:string)=>createHash('sha256').update(source).digest('hex');
 const exactIds=(actual:string[],expected:string[])=>actual.length===expected.length&&new Set(actual).size===expected.length&&expected.every(id=>actual.includes(id));
-const digits=(text:string)=>(text.replace(/[٠-٩۰-۹]/gu,c=>String('٠١٢٣٤٥٦٧٨٩'.includes(c)?'٠١٢٣٤٥٦٧٨٩'.indexOf(c):'۰۱۲۳۴۵۶۷۸۹'.indexOf(c))).match(/\d+(?:[.,]\d+)*/g)??[]).sort();
+const digits=(text:string)=>numericTokens(text).sort();
 function validateEntry(ref:RenderingReference,arabic:string){
  requireArabic(arabic);
  // Calendar metadata may not introduce a factual country/entity relationship.

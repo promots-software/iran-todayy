@@ -74,14 +74,15 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   const event=eventSchema.parse(item.eventRevision.facts);
   // A DIRECT update's event revision also retains historical facts. The new
   // publication is bound only to its own source-backed generation evidence.
-  if((item.validationResult as {generationContract?:string})?.generationContract==='direct-generation-v2'){
+  const generationContract=(item.validationResult as {generationContract?:string})?.generationContract;
+  if(generationContract==='direct-generation-v2'||generationContract==='direct-generation-v3'){
    const current=eventSchema.shape.facts.parse(item.factualEvidence);
    if(!current.length||current.some(f=>!event.facts.some(e=>isDeepStrictEqual(e,f))))throw new ProcessingError('FACT_EVIDENCE_CHANGED');
    const source=item.evidence.find(e=>e.sourcePostId===current[0].evidence.sourcePostId)?.sourcePost;
    if(!source)throw new ProcessingError('SOURCE_PROVENANCE_REQUIRED');
    const u=validateUnderstanding((source.processingResult as {extraction?:unknown})?.extraction,source.originalContent);
    const article=directFinalArticle(source.originalContent,u);
-   if(!isDeepStrictEqual(current,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent)throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
+   if(u.directGeneration?.version!==generationContract||!isDeepStrictEqual(current,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent)throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
    event.facts=current;
   }
   if(!event.facts.length||!isDeepStrictEqual(item.factualEvidence,event.facts))throw new ProcessingError('FACT_EVIDENCE_CHANGED');

@@ -1,3 +1,4 @@
+import {sourceUnits} from './source-units';
 import {publicationDraft} from './direct-publication';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
@@ -18,9 +19,7 @@ const hash=(source:string)=>createHash('sha256').update(source).digest('hex');
 /** Line boundaries preserve the original text and offsets; full source is also
  * provided intact. The reviewer must check ALL assertions within each line. */
 export function sourceCoverageUnits(source:string){
- let start=0;const units:{id:string;start:number;end:number;text:string}[]=[];
- for(const text of source.split('\n')){const end=start+text.length;if(text.trim())units.push({id:`u${units.length+1}`,start,end,text});start=end+1;}
- return units;
+ return sourceUnits(source).map((unit,i)=>({...unit,id:`u${i+1}`}));
 }
 export function prepareDirectBilingual(raw:unknown,source:string){
  const parsed=directBilingualSchema.safeParse(raw);

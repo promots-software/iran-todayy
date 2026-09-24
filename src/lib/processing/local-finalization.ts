@@ -1,3 +1,4 @@
+import {structurallyEqual} from './structural-integrity';
 import {finalizeBodyPunctuation} from '../publication-finalization';
 import {publicationDraft} from './direct-publication';
 import {buildAtoms,renderSelection} from './constrained-rewrite';
@@ -11,13 +12,13 @@ export function finalizeConstrainedDraft(raw:unknown,content:string,u:Understand
  let value=raw;
  if(raw&&typeof raw==='object'&&'normalGeneration' in raw){
   const {normalGeneration,...draft}=raw;
-  if(JSON.stringify(normalGeneration)!==JSON.stringify(u.publicationProposal))throw new ProcessingError('AI_CANONICAL_RENDER_REQUIRED');
+  if(!structurallyEqual(normalGeneration,u.publicationProposal))throw new ProcessingError('AI_CANONICAL_RENDER_REQUIRED');
   value=draft;
  }
  const d=draftSchema.parse(value);
  if(u.publicationProposal){
   const expected=publicationDraft(content,u);
-  if(JSON.stringify(d)!==JSON.stringify(draftSchema.parse(expected)))throw new ProcessingError('CONSTRAINED_DRAFT_CHANGED');
+  if(!structurallyEqual(d,draftSchema.parse(expected)))throw new ProcessingError('CONSTRAINED_DRAFT_CHANGED');
   return finalizeValidatedDraft(expected,content,u,profile);
  }
  const atoms=buildAtoms(content,u);
@@ -30,7 +31,7 @@ export function finalizeConstrainedDraft(raw:unknown,content:string,u:Understand
  if(!title||ids.some(id=>!id))throw new ProcessingError('CONSTRAINED_TEXT_CHANGED');
  const selection={titleAtomId:title.id,bodyAtomIds:ids};
  const expected=renderSelection(selection,atoms);
- if(JSON.stringify({...d,attestation:expected.attestation})!==JSON.stringify(expected))throw new ProcessingError('CONSTRAINED_DRAFT_CHANGED');
+ if(!structurallyEqual({...d,attestation:expected.attestation},expected))throw new ProcessingError('CONSTRAINED_DRAFT_CHANGED');
  return finalizeSelection(selection,content,u,profile);
 }
 

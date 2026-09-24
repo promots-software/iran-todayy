@@ -33,9 +33,9 @@ export function publicationReady(item:PublicationCandidate,frozen=false){
   try{
    const u=validateUnderstanding(result.extraction,post.originalContent);
    if(mode==='DIRECT'){
-    if(result.generationContract==='direct-generation-v2'){
+    if(result.generationContract==='direct-generation-v2'||result.generationContract==='direct-generation-v3'){
      const article=directFinalArticle(post.originalContent,u);
-     if(!isDeepStrictEqual(item.factualEvidence,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent||record(item.validationResult).generationContract!=='direct-generation-v2')return false;
+     if(u.directGeneration?.version!==result.generationContract||!isDeepStrictEqual(item.factualEvidence,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent||record(item.validationResult).generationContract!==result.generationContract)return false;
     }else assertDirectFullCoverage(post.originalContent,u);
    }
    else {

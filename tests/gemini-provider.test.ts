@@ -7,7 +7,7 @@ import {unknownProfile} from '../src/lib/processing/contracts';
 
 test('cached stage responses consume no new-request allowance or token/cost accounting',async()=>{
  const f=fixture('cached','قال المسؤول إن الاجتماع انتهى.','ar','قال المسؤول إن الاجتماع انتهى.');
- const provider=new GeminiLanguageProvider('offline',async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'نفس الحدث'})}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10}},{headers:{'x-worker-checkpoint-replayed':'true'}}),u=>{assert.equal(u.estimatedCostUsd,0);assert.equal(u.inputTokens,0);assert.equal(u.replayed,true);});
+ const provider=new GeminiLanguageProvider('offline',async()=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify({relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'نفس الحدث',identity:{basis:'SAME_OCCURRENCE',incomingFactIds:['cached:visit'],existingFactIds:['cached:visit'],explanation:'Offline exact event'}})}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10}},{headers:{'x-worker-checkpoint-replayed':'true'}}),u=>{assert.equal(u.estimatedCostUsd,0);assert.equal(u.inputTokens,0);assert.equal(u.replayed,true);});
  for(let i=0;i<10;i++)await provider.compare({incoming:f.understanding.event,existing:f.understanding.event},new AbortController().signal);
 });
 test('Gemini extraction uses fixed model, no thinking and leaves 503 retry to durable queue',async()=>{
@@ -31,11 +31,11 @@ test('invalid provider schema preserves only safe stage and field diagnostics',a
  const source='افتتح المجلس مدرسة جديدة.';let calls=0;
  const provider=new GeminiLanguageProvider('offline',async()=>{
   calls++;
-  const output=calls===1?{contentType:'NEWS',contentTypeEvidence:{excerpt:source,context:source},relevance:'POLITICAL_NEWS',actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null}]}:{anchorIds:[],factLabels:[{id:'f1',kind:'FACT',material:true}],filterReason:'NONE',topic:'UNKNOWN',topicEvidenceId:null,priority:'P3',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false,rationaleIds:[]};
+  const output=calls===1?{contentType:'NEWS',contentTypeEvidence:{excerpt:source,context:source},relevance:'POLITICAL_NEWS',coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null}]}:{anchorIds:[],factLabels:[{id:'f1',kind:'FACT',material:true}],filterReason:'NONE',topic:'UNKNOWN',topicEvidenceId:null,priority:'P3',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false,rationaleIds:[]};
   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:1,candidatesTokenCount:1}});
  });
  await assert.rejects(provider.understand({content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},new AbortController().signal),(error:unknown)=>{
   assert(error instanceof Error);const failure=error as Error&{code:string;diagnostic:{stage:string;issues:{code:string;path:(string|number)[]}[]}};
-  assert.equal(failure.code,'AI_SCHEMA_REPAIR_FAILED');assert(failure.diagnostic.stage.includes('classif'));assert(failure.diagnostic.issues.some(i=>i.code==='too_small'&&i.path.join('.')==='rationaleIds'));assert(!JSON.stringify(failure.diagnostic).includes(source));assert(!('output' in failure.diagnostic));return true;
- });assert.equal(calls,3);
+  assert.equal(failure.code,'AI_INVALID_SCHEMA');assert(failure.diagnostic.stage.includes('classif'));assert(failure.diagnostic.issues.some(i=>i.code==='too_small'&&i.path.join('.')==='rationaleIds'));assert(!JSON.stringify(failure.diagnostic).includes(source));assert.deepEqual((failure.diagnostic as {output?:{rationaleIds:string[]}}).output?.rationaleIds,[]);return true;
+ });assert.equal(calls,2);
 });

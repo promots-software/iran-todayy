@@ -1,0 +1,82 @@
+[
+  {
+    "source": "mayadeenchannel",
+    "telegramId": "79989",
+    "sourcePostId": "cmuept0z6006epc0ydnomodbm",
+    "originalContent": "\"صنعاء أوصلت إلى دول العالم رسائلها بأن المشكلة هي سعودية يمنية ولا علاقة لها بالدول الأخرى\"\n\n مدير مكتب #الميادين في اليمن عبد الله الفرح",
+    "mode": "NORMAL",
+    "expectedRelevance": "IRRELEVANT",
+    "reason": "Source establishes a foreign bilateral/regional event only; no material Iran relationship.",
+    "storedRelevance": "POLITICAL_NEWS",
+    "storedTopic": "REGION",
+    "storedFacts": [
+      {
+        "id": "f1",
+        "key": "صنعاء أوصلت إلى دول العالم رسائلها بأن المشكلة هي سعودية يمنية ولا علاقة لها بالدول الأخرى",
+        "kind": "CLAIM",
+        "arabic": "صنعاء أوصلت إلى دول العالم رسائلها بأن المشكلة هي سعودية يمنية ولا علاقة لها بالدول الأخرى",
+        "speaker": {
+          "key": "عبد الله الفرح",
+          "arabic": "عبد الله الفرح",
+          "evidence": {
+            "end": 138,
+            "start": 124,
+            "excerpt": "عبد الله الفرح",
+            "sourcePostId": "cmuept0z6006epc0ydnomodbm"
+          }
+        },
+        "evidence": {
+          "end": 91,
+          "start": 1,
+          "excerpt": "صنعاء أوصلت إلى دول العالم رسائلها بأن المشكلة هي سعودية يمنية ولا علاقة لها بالدول الأخرى",
+          "sourcePostId": "cmuept0z6006epc0ydnomodbm"
+        },
+        "material": true,
+        "verified": false
+      }
+    ],
+    "finalTitle": "إيران الآن | عبد الله الفرح: صنعاء أكدت للعالم أن الصراع مع الرياض شأن يمني-سعودي حصراً",
+    "finalBody": "أكد مدير مكتب الميادين في اليمن، عبد الله الفرح، أن صنعاء نجحت في إيصال رسائل واضحة إلى المجتمع الدولي مفادها أن الصراع الدائر هو قضية ثنائية بين اليمن والسعودية.\nوشدد الفرح على أن صنعاء تعتبر هذا الملف شأناً سعودياً-يمنياً لا علاقة لأطراف دولية أخرى به.",
+    "newsItemStatus": "PUBLISHED"
+  },
+  {
+    "source": "mayadeenchannel",
+    "telegramId": "79990",
+    "sourcePostId": "cmuepz0vi007ypc0yih0gpatd",
+    "originalContent": "\"التفاهم الأمني العراقي التركي بُني على جولة سريعة لدبلوماسي تركي على مسؤولين في بغداد\"\n\nمدير مكتب #الميادين في بغداد عبد الله بدران",
+    "mode": "NORMAL",
+    "expectedRelevance": "IRRELEVANT",
+    "reason": "Source establishes a foreign bilateral/regional event only; no material Iran relationship.",
+    "storedRelevance": "POLITICAL_NEWS",
+    "storedTopic": "REGION",
+    "storedFacts": [
+      {
+        "id": "f1",
+        "key": "التفاهم الأمني العراقي التركي بُني على جولة سريعة لدبلوماسي تركي على مسؤولين في بغداد",
+        "kind": "STATEMENT",
+        "arabic": "التفاهم الأمني العراقي التركي بُني على جولة سريعة لدبلوماسي تركي على مسؤولين في بغداد",
+        "speaker": {
+          "key": "عبد الله بدران",
+          "arabic": "عبد الله بدران",
+          "evidence": {
+            "end": 132,
+            "start": 118,
+            "excerpt": "عبد الله بدران",
+            "sourcePostId": "cmuepz0vi007ypc0yih0gpatd"
+          }
+        },
+        "evidence": {
+          "end": 86,
+          "start": 1,
+          "excerpt": "التفاهم الأمني العراقي التركي بُني على جولة سريعة لدبلوماسي تركي على مسؤولين في بغداد",
+          "sourcePostId": "cmuepz0vi007ypc0yih0gpatd"
+        },
+        "material": true,
+        "verified": false
+      }
+    ],
+    "finalTitle": "إيران الآن | الميادين: التفاهم الأمني بين بغداد وأنقرة جاء نتيجة جولة دبلوماسية سريعة",
+    "finalBody": "أكد مدير مكتب قناة الميادين في بغداد، عبد الله بدران، أن التفاهم الأمني العراقي-التركي استند إلى جولة سريعة قام بها دبلوماسي تركي للقاء مسؤولين في العاصمة العراقية.",
+    "newsItemStatus": "PUBLISHED"
+  }
+]

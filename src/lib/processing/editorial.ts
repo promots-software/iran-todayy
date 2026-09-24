@@ -1,5 +1,7 @@
 import {publicationDraft} from './direct-publication';
-import {EDITORIAL_CONTRACT_SHA256,isGroundedTerminologyQuote} from './editorial-contract';
+import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
+import {unsupportedQuotes} from './quote-integrity';
+import {numericTokens} from './text-equivalence';
 import {attributionLead,normalizeAttributionAgreement} from './attribution-rendering';
 import {finalizeBodyPunctuation} from '../publication-finalization';
 import {guidelineFindings} from './guideline-checks';
@@ -73,12 +75,11 @@ export function editDraft(raw: unknown, content: string, u: Understanding, profi
   }
   const protectedTexts = [...sourceQuotes.map(q=>q.text), ...draft.protectedSpans.map(s=>s.text), ...names.institutions, "قناة الشرق الأوسط"];
   const joined = draft.title + "\n" + draft.body;
-  const digits=(s:string)=>s.replace(/[٠-٩۰-۹]/gu,c=>String("٠١٢٣٤٥٦٧٨٩".includes(c)?"٠١٢٣٤٥٦٧٨٩".indexOf(c):"۰۱۲۳۴۵۶۷۸۹".indexOf(c)));
-  const sourceNumbers=new Set(digits(content).match(/\d+(?:[.,]\d+)*/g)??[]);
-  if ((digits(joined).match(/\d+(?:[.,]\d+)*/g)??[]).some(n=>!sourceNumbers.has(n))) review.push(reason("UNSUPPORTED_OUTPUT","رقم في المسودة غير موجود في المصدر؛ التحويل يحتاج دليلاً"));
+  const sourceNumbers=new Set(numericTokens(content));
+  if (numericTokens(joined).some(n=>!sourceNumbers.has(n))) review.push(reason("UNSUPPORTED_OUTPUT","رقم في المسودة غير موجود في المصدر؛ التحويل يحتاج دليلاً"));
   // Quotes may be faithfully paraphrased; only output presented as literal is protected.
   const groundedWriting=canonicalWriting&&hasEditorialGrounding(u,content)?u.event.facts.map(f=>f.arabic).join('\n'):'';
-  for (const q of literalQuotes(joined)) if (!content.includes(q.text)&&!(canonicalWriting&&(isGroundedTerminologyQuote(q.text,content+'\n'+groundedWriting)||u.language!=='ar'&&literalQuotes(groundedWriting).some(p=>p.text===q.text)))) review.push(reason("UNSUPPORTED_OUTPUT", "QUOTE_INTEGRITY_FAILURE"));
+  if(unsupportedQuotes(joined,content+'\n'+groundedWriting).length)review.push(reason("UNSUPPORTED_OUTPUT", "QUOTE_INTEGRITY_FAILURE"));
   const factIds = new Set(u.event.facts.map(f=>f.id));
   const used = new Set<string>();
   for (const s of draft.sentences) {

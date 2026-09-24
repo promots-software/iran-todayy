@@ -1,10 +1,18 @@
 import type {Understanding,Draft} from './contracts';
 import {ProcessingError} from './contracts';
 export const newsroomPrefix='إيران الآن | ';
+/** Fixed canonical display labels are not factual clauses. Only the existing
+ * explicit video-source marker permits the section-22 video presentation label. */
+export function sourceHasVideoLabel(source:string){return /(?:^|\n)\s*(?:فيديو|مشاهد من|بالفيديو|ویدئو|ویدیو|Video\b)/iu.test(source);}
+export function canonicalPresentationPrefixLength(source:string,text:string){
+ let end=text.startsWith(newsroomPrefix)?newsroomPrefix.length:0;
+ if(sourceHasVideoLabel(source)&&text.slice(end).startsWith('فيديو | '))end+='فيديو | '.length;
+ return end;
+}
 export function chooseNewsroomFormat(u:Understanding,source:string):Draft['format']{
  const facts=u.event.facts;
  if(/(?:أنباء|تقارير أولية|معلومات متداولة|بحسب تقارير)/u.test(facts.map(f=>f.arabic).join(' ')))return 'UNCERTAIN_REPORT';
- if(/(?:^|\n)\s*(?:فيديو|مشاهد من|بالفيديو|ویدئو|ویدیو|Video\b)/iu.test(source))return 'VISUAL';
+ if(sourceHasVideoLabel(source))return 'VISUAL';
  if((facts.length>1||facts[0]?.arabic.length>240)&&facts.every(f=>f.speaker&&f.speaker.key===facts[0].speaker?.key))return 'STATEMENT';
  if(facts.length===1&&/[«“"]/u.test(facts[0].arabic)&&facts[0].speaker)return 'QUOTE_LED';
  if(facts.length===1)return 'FLASH';

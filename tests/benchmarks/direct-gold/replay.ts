@@ -24,7 +24,7 @@ export function replayTransport(c:GoldCase):typeof fetch{
   const request=JSON.parse(String(init?.body)),properties=request.generationConfig.responseJsonSchema.properties;
   let value:unknown;
   if(properties.statements)value=raw;
-  else if(properties.relation)value=c.replay.comparison??{relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'نفس الحقائق المثبتة'};
+  else if(properties.relation){const input=JSON.parse(request.contents[0].parts[0].text);value={...(c.replay.comparison??{relation:'SAME',newFactIds:[],conflictingFactIds:[],rationale:'نفس الحقائق المثبتة'}),identity:{basis:'SAME_OCCURRENCE',incomingFactIds:input.incoming.facts.map((f:{id:string})=>f.id),existingFactIds:input.existing.facts.map((f:{id:string})=>f.id),explanation:'Authored fixture asserts the same occurrence, not model-quality evidence.'}};}
   else if(properties.publication)value={
    publication:c.replay.publication??{title:{text:'إيران الآن | '+c.replay.arabicFacts[0].replace(/\.$/u,''),factIds:['f1']},body:c.materialFacts.length>1?c.replay.arabicFacts.map((text,i)=>({text,factIds:[`f${i+1}`]})):[]},
    coverage:publicationUnits(c.sourceText).map(unit=>({unitId:unit.id,nonFactual:false,factIds:c.materialFacts.filter(f=>unit.text.includes(f.sourceExcerpt)).map(f=>f.id)})),

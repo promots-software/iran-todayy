@@ -1,3 +1,4 @@
+import {iranRelevanceInstructions} from './iran-relevance';
 import {semanticCoverageInstructions} from './normal-v2';
 import {validateSourceCoverage} from './direct-publication';
 import {z} from 'zod';
@@ -8,8 +9,7 @@ import type {RenderingReceipt} from './rendering-contract';
 import {directCoverageSchema,directProposalSchema} from './direct-publication-contract';
 import {extractionTask,uniqueContextInstructions} from './gemini-benchmark-prompt';
 
-// No scope, relevance or geography decision is requested. Safety labels remain
-// attached to their original assertion, then receive immutable IDs locally.
+// Evidence and source-mode history remain independent of semantic intake.
 const literalEvidence=minimalExtractionSchema.shape.actors.element;
 export function directStatementSchema<T extends typeof literalEvidence>(e:T){return z.union([
  z.object({evidence:e,speaker:z.null(),kind:z.enum(['FACT','FIGURE','DECISION','OUTCOME']),material:z.boolean()}).strict(),
@@ -22,19 +22,19 @@ export const directExtractionSchema=minimalExtractionSchema.omit({relevance:true
   priority:z.enum(['P1','P2','P3','P4']),sensitiveActor:z.boolean(),leaderDeath:z.boolean(),seriousClaim:z.boolean(),rankUnverified:z.boolean(),
  }).strict(),
 }).strict();
-export const directInstructions=extractionTask.replace('Extract only verbatim source spans and relevance.','Extract only verbatim source spans.').replaceAll('POLITICAL_NEWS','source-approved content')+' '+uniqueContextInstructions+' '+semanticCoverageInstructions+
- ' The authenticated source administrator has already decided that all source content is in scope. Do not classify relevance, geography, target keywords or political importance. No relevance or topic fields are permitted. Extract faithfully even outside the normal geography. Safety labels describe only the supplied assertions: distinguish advertisements, satire, rumours, opinion and incitement without treating ordinary news outside the geography as unsafe. Each statement retains its kind and material-change label. Unattributed narration may be FACT, FIGURE, DECISION or OUTCOME, never CLAIM/STATEMENT without an explicit validated speaker. Attributed speech may be CLAIM, STATEMENT, FIGURE, DECISION or OUTCOME, never an unattributed FACT. Preserve serious-claim, leader-death, sensitive-actor and unresolved-rank flags; never declare correctness or verification. Choose priority by urgency only, not scope. P4 is for genuinely archive-only material, never merely unrecognized geography. No inferred relationships, identities or ownership.';
-export function validateDirectExtraction(raw:unknown,source:string){
+export const directInstructions=extractionTask+' '+uniqueContextInstructions+' '+semanticCoverageInstructions+' '+iranRelevanceInstructions+
+ ' Extract complete source evidence. Safety labels describe supplied assertions only. Unattributed narration may be FACT, FIGURE, DECISION or OUTCOME, never CLAIM/STATEMENT without an explicit validated speaker. Attributed speech retains its explicit speaker. Preserve serious-claim, leader-death, sensitive-actor and unresolved-rank flags; never declare independent truth verification. Priority describes urgency only, never eligibility or geography. No inferred relationships, identities or ownership.';
+export function validateDirectExtraction(raw:unknown,source:string,deferToIndependentReview=false){
  const parsed=directExtractionSchema.safeParse(raw);
  if(!parsed.success)throw new ProcessingError('INVALID_DIRECT_EXTRACTION_SCHEMA');
  const {safety,statements,coverage,...anchors}=parsed.data;
  const extraction=validateMinimalExtraction({...anchors,relevance:'POLITICAL_NEWS',statements:statements.map(({evidence,speaker})=>({evidence,speaker}))},source);
  requireCompleteExtraction(extraction,source);
- if(coverage)validateSourceCoverage(source,{event:{facts:extraction.statements.map(f=>({...f,speaker:f.speaker?{evidence:f.speaker}:null}))}},coverage);
+ const resolvedCoverage=coverage?validateSourceCoverage(source,{event:{facts:extraction.statements.map(f=>({...f,speaker:f.speaker?{evidence:f.speaker}:null}))}},coverage,deferToIndependentReview):coverage;
  const refs=classificationReferences(extraction);
  const classification={...safety,topic:'UNKNOWN',topicEvidenceId:null,anchorIds:refs.requiredAnchorIds,
   factLabels:statements.map((s,i)=>({id:extraction.statements[i].id,kind:s.kind,material:s.material})),rationaleIds:refs.requiredFactIds};
- return {extraction,classification,coverage};
+ return {extraction,classification,coverage:resolvedCoverage};
 }
 export function adaptDirectExtraction(value:ReturnType<typeof validateDirectExtraction>,source:string,rendering?:RenderingReceipt){
  // Reuse the complete strict ID/speaker/evidence/rendering validators.

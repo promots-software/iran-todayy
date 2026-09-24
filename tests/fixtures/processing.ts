@@ -48,6 +48,6 @@ export function fixtureProvider(records=scenarios) {
   const sameGroup=new Set(["telegram-a","telegram-b","x-a","english","persian","rewrite","تحديث الاتفاق"]);
   return new FixtureLanguageProvider(records,(a,b)=>{
     const relation=a.summary === "uncertain" || b.summary === "uncertain" ? "UNCERTAIN" : sameGroup.has(a.summary??"")&&sameGroup.has(b.summary??"") ? "SAME" : a.summary === b.summary ? "SAME" : "DIFFERENT";
-    return {relation,rationale:relation === "SAME"?"المصدران يصفان زيارة عراقجي نفسها إلى طهران":relation === "DIFFERENT"?"الزيارتان حدثان مختلفان":"هوية الزيارة ومكانها غير محسومين",newFactIds:a.summary === "تحديث الاتفاق"&&!b.facts.some(f=>f.key === "araghchi-signs-agreement-2026-08-10")?["update:agreement"]:[],conflictingFactIds:[]};
+    return {relation,identity:{basis:relation==='SAME'?'SAME_OCCURRENCE':relation==='DIFFERENT'?'DIFFERENT_OCCURRENCE':'UNRESOLVED',incomingFactIds:a.facts.map(f=>f.id),existingFactIds:b.facts.map(f=>f.id),explanation:'Hand-labelled fixture event identity'},rationale:relation === "SAME"?"المصدران يصفان زيارة عراقجي نفسها إلى طهران":relation === "DIFFERENT"?"الزيارتان حدثان مختلفان":"هوية الزيارة ومكانها غير محسومين",newFactIds:a.summary === "تحديث الاتفاق"&&!b.facts.some(f=>f.key === "araghchi-signs-agreement-2026-08-10")?["update:agreement"]:[],conflictingFactIds:[]};
   });
 }

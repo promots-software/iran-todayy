@@ -30,3 +30,18 @@ export function layoutProjection(text:string){
  for(let i=0;i<text.length;){const start=i;if(/[\s\u200b\u200e\u200f]/u.test(text[i])){while(i<text.length&&/[\s\u200b\u200e\u200f]/u.test(text[i]))i++;value+=' ';starts.push(start);ends.push(i);}else{value+=text[i];starts.push(i);ends.push(++i);}}
  return {value,starts,ends};
 }
+
+/** Exact Arabic compound ordinals have a deterministic numeric value. This is
+ * a comparison view only, not a quantity/entity/relationship equivalence claim.
+ * Restrict to complete definite ordinal constructions, never ordinary nouns. */
+export function numericTokens(text:string):string[]{
+ const value=orthography(digits(text));
+ const ones:Record<string,number>={'الحادي':1,'الحادية':1,'الثاني':2,'الثانية':2,'الثالث':3,'الثالثة':3,'الرابع':4,'الرابعة':4,'الخامس':5,'الخامسة':5,'السادس':6,'السادسة':6,'السابع':7,'السابعة':7,'الثامن':8,'الثامنة':8,'التاسع':9,'التاسعة':9};
+ const tens:Record<string,number>={'العشرون':20,'العشرين':20,'الثلاثون':30,'الثلاثين':30,'الاربعون':40,'الاربعين':40,'الخمسون':50,'الخمسين':50,'الستون':60,'الستين':60,'السبعون':70,'السبعين':70,'الثمانون':80,'الثمانين':80,'التسعون':90,'التسعين':90};
+ const pattern=new RegExp('(?<![\\p{L}\\p{N}])('+Object.keys(ones).join('|')+')\\s+و('+Object.keys(tens).join('|')+')(?![\\p{L}\\p{N}])','gu');
+ const persianOnes:Record<string,number>={'یک':1,'یکم':1,'یکمین':1,'دو':2,'دوم':2,'دومین':2,'سه':3,'سوم':3,'سومین':3,'چهار':4,'چهارم':4,'پنج':5,'پنجم':5,'شش':6,'ششم':6,'هفت':7,'هفتم':7,'هشت':8,'هشتم':8,'نه':9,'نهم':9};
+ const persianTens:Record<string,number>={'بیست':20,'سی':30,'چهل':40,'پنجاه':50,'شصت':60,'هفتاد':70,'هشتاد':80,'نود':90};
+ const persianPattern=new RegExp('(?<![\\p{L}\\p{N}])('+Object.keys(persianTens).join('|')+')\\s+و\\s+('+Object.keys(persianOnes).sort((a,b)=>b.length-a.length).join('|')+')(?![\\p{L}\\p{N}])','gu');
+ // Parse explicit compound values only; no guessed number/entity relationship.
+ return [...(value.match(/[0-9]+(?:[.,][0-9]+)*/gu)??[]),...[...value.matchAll(pattern)].map(m=>String(ones[m[1]]+tens[m[2]])),...[...digits(text).matchAll(persianPattern)].map(m=>String(persianTens[m[1]]+persianOnes[m[2]]))];
+}

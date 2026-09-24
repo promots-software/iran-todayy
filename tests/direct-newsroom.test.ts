@@ -1,3 +1,4 @@
+import {reviewedResponse} from './fixtures/direct-reviewed';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -37,9 +38,9 @@ test('Persian speaker grounding checks exact source, not handcrafted speech synt
 test('FACT with explicit speaker rejected by structured contract',()=>{
  const f=fixture(1);const x={...f.raw,statements:f.raw.statements.map(s=>({...s,kind:'FACT'}))};assert.equal(directExtractionSchema.safeParse(x).success,false);
 });
-for(const i of [0,1,3])test('Arabic case '+(i+1)+' uses matching plus canonical article, two calls, READY',async()=>{
+for(const i of [0,1,3])test('Arabic case '+(i+1)+' uses combined canonical generation plus independent review, two calls, READY',async()=>{
  const f=fixture(i),publication=proposalFor(f),coverage=coverageFor(f);let calls=0;
- const provider=new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(calls===1?{...f.raw,coverage}:{title:publication.title.text,body:publication.body.map(p=>p.text).join('\n'),diagnostics:[]}));});
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;return Response.json(geminiEnvelope(reviewedResponse(JSON.parse(String(init?.body)),{...f.raw,coverage},{title:publication.title.text,body:publication.body.map(p=>p.text).join('\n'),diagnostics:[]})));});
  const u=validateUnderstanding(await provider.understand(input(f.source),new AbortController().signal),f.source);
  const final=await provider.draft({processingMode:'DIRECT',content:f.source,understanding:u,rules:ruleSet},new AbortController().signal);
  assert.equal(calls,2);assert.equal(final.title.replace(/\.$/u,''),'إيران الآن | '+publication.title.text);assert.equal(editorialDecision({validated:true,review:'review' in final?final.review:[]},{autoPublish:false,shadowMode:true,requireApproval:true}).editorialEligibility,'READY_TO_PUBLISH');
@@ -94,7 +95,7 @@ test('literal quote mutation and negation reversal cannot be locally accepted',(
 test('truncated generation or independent-review response cannot produce a trusted publication',async()=>{
  for(const stage of [1,2]){
  const f=fixture(0),publication=proposalFor(f);publication.title.text=publication.title.text.replace('إطلاق','تدشين');let calls=0;
- const provider=new GeminiLanguageProvider('offline',async()=>{calls++;return Response.json(geminiEnvelope(calls===1?{...f.raw,coverage:coverageFor(f)}:{title:publication.title.text,body:'',diagnostics:[]},calls===stage?'MAX_TOKENS':'STOP'));});
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;return Response.json(geminiEnvelope(reviewedResponse(JSON.parse(String(init?.body)),{...f.raw,coverage:coverageFor(f)},{title:publication.title.text,body:'',diagnostics:[]}),calls===stage?'MAX_TOKENS':'STOP'));});
  await assert.rejects((async()=>{const u=await provider.understand(input(f.source),new AbortController().signal);return provider.draft({processingMode:'DIRECT',content:f.source,understanding:u,rules:ruleSet},new AbortController().signal);})(),/GEMINI_INCOMPLETE/);assert.equal(calls,stage);
  }
 });

@@ -12,9 +12,9 @@ test('DIRECT literal locative-qualified speaker heading remains source-grounded'
  assert.equal(u.event.facts[0].speaker?.evidence.excerpt,'المجلس المحلي');assert.equal(u.event.facts[0].verified,false);assert.equal(u.event.facts[0].evidence.excerpt,excerpt);
 });
 for(const source of ['المجلس في العاصمة قال الوزير: افتتحت مدرسة.','المجلس في العاصمة و الوزارة: افتتحت مدرسة.','المجلس في العاصمة والوزارة: افتتحت مدرسة.','ذكر الوزير المجلس في العاصمة: افتتحت مدرسة.'])test('attribution semantics are not adjudicated by punctuation regex: '+source,()=>{assert.doesNotThrow(()=>validateSpeakerEvidence(source,ev(source,source),ev(source,'المجلس')));});
-test('nonexistent speaker remains blocked with the exact field, one repair only',async()=>{
+test('nonexistent speaker remains blocked with the exact field, no speculative repair',async()=>{
  const source='أعلنت مؤسسة افتتاح المدرسة.';const raw={relevance:'POLITICAL_NEWS',actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:{excerpt:'الجهة',context:source}}]};let calls=0;
- await assert.rejects(normalStage('extract',async repair=>{calls++;if(repair)assert.deepEqual(repair.issues,[{code:'INVALID_EVIDENCE',path:['statements','0','speaker']}]);return validateMinimalExtraction(raw,source);}),/AI_SCHEMA_REPAIR_FAILED/);assert.equal(calls,2);
+ await assert.rejects(normalStage('extract',async repair=>{calls++;if(repair)assert.deepEqual(repair.issues,[{code:'INVALID_EVIDENCE',path:['statements','0','speaker']}]);return validateMinimalExtraction(raw,source);}),/(?:INVALID_EVIDENCE|DIRECT_MATERIAL_COVERAGE_FAILED)/);assert.equal(calls,1);
 });
 for(const source of ['وسم تجريبي — افتتح المجلس مدرسة جديدة.','برچسب آزمایشی — شورا مدرسه جدیدی افتتاح کرد.','Experimental label — The council has opened a new school.'])test('missing semantic coverage mapping is explicit: '+source,()=>{
  const excerpt=source.split('— ')[1];const x=validateMinimalExtraction({relevance:'POLITICAL_NEWS',actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt,context:source},speaker:null}]},source);

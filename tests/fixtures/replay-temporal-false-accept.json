@@ -1,0 +1,101 @@
+{
+  "source": "إيران الآن| المتحدث باسم الخارجية الإيرانية: جرت أمس جولة تبادل رسائل وتوضيحها مع الولايات المتحدة عبر الوسيط القطري.\n\n- تبادل الرسائل استغرق ساعتين تم فيهما نقل شروطنا لإحياء التفاوض إلى الأمريكيين.\n\n- جولة أمس لتبادل الرسائل جاءت في إطار المحادثات التي كانت تتم عبر الوسطاء\n\n- شروطنا تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات",
+  "publication": [
+    {
+      "id": "title",
+      "text": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض"
+    },
+    {
+      "id": "body:1",
+      "text": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات المستمرة التي تجري عبر الوسطاء."
+    },
+    {
+      "id": "body:2",
+      "text": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي."
+    },
+    {
+      "id": "body:3",
+      "text": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات."
+    }
+  ],
+  "ledger": {
+    "claims": [
+      {
+        "publicationId": "title",
+        "excerpt": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض",
+        "sourceUnitIds": [
+          "u1",
+          "u3"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "Summarizes the event and goal described in units 1 and 3."
+      },
+      {
+        "publicationId": "body:1",
+        "excerpt": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات المستمرة التي تجري عبر الوسطاء.",
+        "sourceUnitIds": [
+          "u1",
+          "u5"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "Preserves the speaker, event, timing, and framework as reported in source."
+      },
+      {
+        "publicationId": "body:2",
+        "excerpt": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي.",
+        "sourceUnitIds": [
+          "u3"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "Accurately represents the duration and content of the message exchange mentioned in unit 3."
+      },
+      {
+        "publicationId": "body:3",
+        "excerpt": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات.",
+        "sourceUnitIds": [
+          "u7"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "Faithfully cites the Iranian conditions listed in the source text."
+      }
+    ],
+    "sourceCoverage": [
+      {
+        "unitId": "u1",
+        "publicationIds": [
+          "title",
+          "body:1"
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "Event details covered."
+      },
+      {
+        "unitId": "u3",
+        "publicationIds": [
+          "title",
+          "body:2"
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "Duration and purpose preserved."
+      },
+      {
+        "unitId": "u5",
+        "publicationIds": [
+          "body:1"
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "Context of mediator talks preserved."
+      },
+      {
+        "unitId": "u7",
+        "publicationIds": [
+          "body:3"
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "Conditions preserved verbatim."
+      }
+    ]
+  },
+  "expected": "BLOCKED",
+  "reason": "Past intermediary talks were strengthened into a continuing present process. Independent reviewer still accepted this change."
+}

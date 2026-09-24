@@ -1,3 +1,5 @@
+import {supportedLedger} from './fixtures/fidelity-review';
+import {reviewedResponse} from './fixtures/direct-reviewed';
 import {directFinalArticle} from '../src/lib/processing/direct-generation';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -23,7 +25,7 @@ const response=(value:unknown)=>Response.json({candidates:[{finishReason:'STOP',
 const input=(content=source,processingMode:'NORMAL'|'DIRECT'='DIRECT')=>({content,processingMode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet});
 const held={autoPublish:false,shadowMode:true,requireApproval:true};
 test('exact live context error is repaired from unique source evidence, preserving disclaimer',async()=>{
- let calls=0;const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const {publication,...matching}=raw();return response(JSON.parse(String(init?.body)).generationConfig.responseJsonSchema.properties.statements?matching:{title:publication.title.text,body:'',diagnostics:[]});});
+ let calls=0;const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const {publication,...matching}=raw();return response(reviewedResponse(JSON.parse(String(init?.body)),matching,{title:publication.title.text,body:'',diagnostics:[]}));});
  const u=validateUnderstanding(await p.understand(input(),signal()),source);
  const d=await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
  void d;const final=directFinalArticle(source,u);
@@ -35,20 +37,20 @@ test('context repair never guesses repeated evidence or invents a speaker',()=>{
  const x=raw();x.statements[0].speaker=ev('متحدث غير موجود');
  assert.throws(()=>validateMinimalExtraction({actors:x.actors,action:x.action,object:x.object,location:x.location,event_time:x.event_time,relevance:'POLITICAL_NEWS',statements:x.statements.map(({evidence,speaker})=>({evidence,speaker}))},source));
 });
-test('DIRECT coverage diagnostics no longer create a semantic-review receipt',async()=>{
+test('DIRECT diagnostic labels cannot replace the independent semantic-review receipt',async()=>{
  const {publication,...matching}=raw();let calls=0;
- const p=new GeminiLanguageProvider('offline',async()=>response(++calls===1?matching:{title:publication.title.text,body:'',diagnostics:['DIRECT_MATERIAL_COVERAGE_FAILED']}));
+ const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;return response(reviewedResponse(JSON.parse(String(init?.body)),matching,{title:publication.title.text,body:'',diagnostics:['DIRECT_MATERIAL_COVERAGE_FAILED']}));});
  const u=validateUnderstanding(await p.understand(input(),signal()),source);
  await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet},signal());
- assert.equal(calls,2);assert.equal(directFinalArticle(source,u).review[0].detail,'DIRECT_MATERIAL_COVERAGE_FAILED');assert.equal(u.directGeneration?.semanticVerification,'DIAGNOSTIC_ONLY');
+ assert.equal(calls,2);assert.equal(directFinalArticle(source,u).review[0].detail,'DIRECT_MATERIAL_COVERAGE_FAILED');assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');
 });
 test('NORMAL relevance runs once; accepted Iran story survives priority and opinion labels',async()=>{
  const text='قال الوفد إن التعاون مع إيران سيستمر.';const u=newsroom(text,[text],'الوفد');u.relevance='POLITICAL_NEWS';u.priority='P4';u.filterReason='OPINION';const parts=minimalParts(u);Object.assign(parts[0],{contentType:'NEWS',contentTypeEvidence:{excerpt:text,context:text},coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}]});let calls=0;
- const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response(calls<=2?parts[calls-1]:{coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:'إيران الآن | '+text.replace(/\.$/u,''),factIds:['f1']},body:[]}});});
+ const p=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const data=JSON.parse(JSON.parse(String(init?.body)).contents[0].parts[0].text);if(Array.isArray(data.publication))return response({fidelityLedger:supportedLedger(text,data.publication),review:data.publication.map((p:{id:string})=>({id:p.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[]});return response(calls<=2?parts[calls-1]:{coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:'إيران الآن | '+text.replace(/\.$/u,''),factIds:['f1']},body:[]}});});
  const result=validateUnderstanding(await p.understand(input(text,'NORMAL'),signal()),text);
  assert.equal(result.relevance,'POLITICAL_NEWS');assert.equal(editoriallyFiltered(result,false,'NORMAL'),false);assert.equal(selectionBlocksDraft(result,'NORMAL'),false);
  const draft=await p.draft({content:text,processingMode:'NORMAL',understanding:result,rules:ruleSet},signal());
- const final=finalizeConstrainedDraft(draft,text,result,unknownProfile);assert.equal(editorialDecision({validated:true,review:final.review},held).editorialEligibility,'READY_TO_PUBLISH');assert.equal(calls,3);
+ const final=finalizeConstrainedDraft(draft,text,result,unknownProfile);assert.equal(editorialDecision({validated:true,review:final.review},held).editorialEligibility,'READY_TO_PUBLISH');assert.equal(calls,4);
  assert.equal(editoriallyFiltered({...result,relevance:'IRRELEVANT'},false,'NORMAL'),true);
 });
 test('soft diagnostics cannot alone hold validated output; material checks and human review remain',()=>{

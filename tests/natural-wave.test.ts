@@ -23,7 +23,7 @@ test('missing colon remains uncertain',()=>{const s='أمين المجلس ال�
 for(const f of fixtures.filter(f=>f.mode==='NORMAL'))test('saved NORMAL incomplete or ambiguous evidence remains blocked '+f.post,()=>{
  assert.throws(()=>{const x=validateMinimalExtraction(normalSelection(f.responses.at(-1),f.source).extraction,f.source);validateNormalExtractionCoverage(f.source,x);},ProcessingError);
 });
-test('bounded repair remains one even for natural repeated failures',async()=>{let calls=0;await assert.rejects(normalStage('extract',async()=>{calls++;throw new ProcessingError('INVALID_EVIDENCE');}),/AI_SCHEMA_REPAIR_FAILED/);assert.equal(calls,2);});
+test('invalid evidence never spends a speculative repair',async()=>{let calls=0;await assert.rejects(normalStage('extract',async()=>{calls++;throw new ProcessingError('INVALID_EVIDENCE');}),/(?:INVALID_EVIDENCE|DIRECT_MATERIAL_COVERAGE_FAILED)/);assert.equal(calls,1);});
 
 import {resolveContextEvidence} from '../src/lib/processing/groq-validation';
 test('non-verbatim action is distinguished from a repeated location',()=>{
@@ -42,8 +42,8 @@ test('DIRECT wrapper preserves the exact failing speaker field',()=>{
  const source='ذكر الوزير أحمد سالم:\n\nافتتحت المدرسة.';const e=(excerpt:string)=>({excerpt,context:source});
  assert.throws(()=>directMatchingUnderstanding({actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:e('افتتحت المدرسة.'),speaker:e('أحمد سالم'),kind:'CLAIM',material:true}],safety:{priority:'P3',filterReason:'NONE',leaderDeath:false,seriousClaim:false,rankUnverified:false,sensitiveActor:false}},source),(err:unknown)=>{assert(err instanceof ProcessingError);assert.equal(err.code,'DIRECT_MATCH_INPUT_INVALID');assert(err.diagnostic&&'field'in err.diagnostic);assert.equal(err.diagnostic.field,'statements.f1.speaker');return true;});
 });
-test('single repair receives the schema-checked candidate, retaining unaffected evidence',async()=>{
+test('invalid stored extraction remains blocked without speculative repair',async()=>{
  const f=fixtures.find(f=>f.post==='19707')!;let calls=0;
- await assert.rejects(normalStage('extract',async repair=>{calls++;if(repair){assert.deepEqual(repair.previousOutput,normalSelection(f.responses[0],f.source).extraction);assert.equal(repair.code,'INVALID_EVIDENCE');assert.deepEqual(repair.issues,[{code:'INVALID_EVIDENCE',path:['action']}]);}return validateMinimalExtraction(normalSelection(f.responses[0],f.source).extraction,f.source);}),/AI_SCHEMA_REPAIR_FAILED/);
- assert.equal(calls,2);
+ await assert.rejects(normalStage('extract',async repair=>{calls++;if(repair){assert.deepEqual(repair.previousOutput,normalSelection(f.responses[0],f.source).extraction);assert.equal(repair.code,'INVALID_EVIDENCE');assert.deepEqual(repair.issues,[{code:'INVALID_EVIDENCE',path:['action']}]);}return validateMinimalExtraction(normalSelection(f.responses[0],f.source).extraction,f.source);}),/AI_INVALID_SCHEMA/);
+ assert.equal(calls,1);
 });
