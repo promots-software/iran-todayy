@@ -6,6 +6,9 @@ import {reconcileDelivery} from './delivery-receipt';
 import {requireAutoPolicy,autoPolicySchema,type AutoPolicy} from './auto-policy';
 import {publicationCandidateInclude as include,eligibleAutomatic} from './publication-policy';
 export {eligibleAutomatic} from './publication-policy';
+// Only deterministic checks thrown BEFORE publication writes may be isolated.
+// DB, authorization, policy and uncertain-delivery errors must still escape.
+const candidateFreezeErrors=new Set(['FACT_EVIDENCE_CHANGED','DIRECT_GENERATION_RECEIPT_CHANGED','SOURCE_PROVENANCE_REQUIRED','INVALID_EVIDENCE','TITLE_PROVENANCE_REQUIRED','INVALID_DRAFT_FACT_LINK','INCOMPLETE_DRAFT_PROVENANCE','NO_PUBLICATION_CONTENT','TELEGRAM_TEXT_TOO_LONG']);
 export async function closeAutomaticPolicy(db:PrismaClient,id:string,reason:string){return db.$transaction(async tx=>{
  await lockEditorialPublication(tx);const s=await tx.appSettings.findUniqueOrThrow({where:{id:1}});const p=autoPolicySchema.safeParse(s.telegramAutoPolicy);
  if(!p.success||p.data.id!==id||p.data.state==='CLOSED')return;
@@ -43,8 +46,16 @@ export async function automaticDeliveryCycle(db:PrismaClient,env:Record<string,s
   for(const item of items){
    for(const sourceId of [...new Set(item.evidence.map(e=>e.sourcePost.sourceId))].sort())await tx.$queryRaw`SELECT id FROM "Source" WHERE id=${sourceId} FOR SHARE`;
    const fresh=await tx.newsItem.findUniqueOrThrow({where:{id:item.id},include});if(!eligibleAutomatic(fresh,p))continue;
-   const publication=await freezeValidatedPublication(tx,{newsItemId:fresh.id,digest:approvalDigest(fresh),resolutions:[]},'automatic-telegram-worker',env,'TELEGRAM',true);
-   return tx.publication.update({where:{id:publication.id},data:{automaticPolicyId:p.id}});
+   try {
+    const publication=await freezeValidatedPublication(tx,{newsItemId:fresh.id,digest:approvalDigest(fresh),resolutions:[]},'automatic-telegram-worker',env,'TELEGRAM',true);
+    return tx.publication.update({where:{id:publication.id},data:{automaticPolicyId:p.id}});
+   }catch(error){
+    if(!(error instanceof ProcessingError)||!candidateFreezeErrors.has(error.code))throw error;
+    // Preserve evidence/validation receipts. A blocked item needs explicit review;
+    // later cycles cannot silently retry it or prevent unrelated READY delivery.
+    await tx.newsItem.update({where:{id:fresh.id},data:{status:'NEEDS_REVIEW',error:error.code,validationResult:{...Object(fresh.validationResult),editorialEligibility:'NEEDS_REVIEW',deliveryDecision:'HOLD',publicationFreezeFailure:{code:error.code,stage:'FREEZE'}}}});
+    await tx.auditLog.create({data:{actor:'automatic-telegram-worker',action:'AUTOMATIC_PUBLICATION_BLOCKED',entityType:'NewsItem',entityId:fresh.id,message:error.code,metadata:{policyId:p.id,stage:'FREEZE',digest:approvalDigest(fresh),publicationCreated:false,priorValidationResult:fresh.validationResult}}});
+   }
   }
   cursor=items.length===100?items.at(-1)!.id:undefined;
   }while(cursor);

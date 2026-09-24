@@ -1,3 +1,4 @@
+import {normalMaterialUpdateFacts} from './material-update-evidence';
 import {isDeepStrictEqual} from 'node:util';
 import {directFinalArticle} from '../processing/direct-generation';
 import {Prisma} from '@prisma/client';
@@ -26,6 +27,7 @@ export function publicationReady(item:PublicationCandidate,frozen=false){
  const mode=record(item.validationResult).processingMode;
  if(!['NORMAL','DIRECT'].includes(String(mode))||item.status!==(frozen?'APPROVED':'PENDING_APPROVAL')||item.validationStatus!=='PASSED'||item.error||item.rejectionReason||item.needsReviewReasons.length||item.humanDraft||(!frozen&&item.publication)||!clean(item.validationResult,mode))return false;
  const contributors=publicationContributors(item);if(!contributors.length)return false;
+ try{normalMaterialUpdateFacts(item);}catch{return false;}
  for(const post of contributors){
   const result=record(post.processingResult);
   if(post.source.processingMode!==mode||!post.source.enabled||post.source.deletedAt||post.source.platform!=='TELEGRAM'||post.humanDraft||post.status!=='PENDING_APPROVAL'||post.error||post.rejectionReason||!clean(result,mode))return false;

@@ -1,3 +1,5 @@
+import {newsPage} from '../src/lib/dashboard-pagination';
+import {workflowState} from '../src/lib/workflow-state';
 import {reviewedResponse} from './fixtures/direct-reviewed';
 import {reconcileSourceAuthorization} from '../src/lib/telegram/source-authorization';
 import {changeSource} from '../src/lib/source-service';
@@ -8,7 +10,7 @@ import {PrismaClient,Prisma} from '@prisma/client';
 import {automaticDeliveryCycle,eligibleAutomatic} from '../src/lib/telegram/automatic-delivery';
 import {publicationCandidateInclude as include} from '../src/lib/telegram/publication-policy';
 import {publishReadyDirect} from '../src/lib/telegram/direct-auto';
-import {approvalDigest,freezeValidatedPublication,publishOne} from '../src/lib/telegram/publisher';
+import {approvalDigest,freezeValidatedPublication,publishOne,publicationText} from '../src/lib/telegram/publisher';
 import {fixture,official} from './fixtures/processing';
 import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
 import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
@@ -128,4 +130,59 @@ test('MODE audit: committed claim is the point of no return; later OFF cannot re
  };const value=Reflect.get(target,key);return typeof value==='function'?value.bind(target):value;}});
  await publishOne(intercepted,p.id,env,transport);assert(flipped);assert.equal(sends,1);await sent(a.item.id);
  await automaticDeliveryCycle(db,env,transport);assert.equal(sends,1);
+});
+
+// Regression for NORMAL publication facts (current receipt) versus event history.
+async function asMaterialUpdate(a:Awaited<ReturnType<typeof make>>){
+ assert(a.item);
+ const event=structuredClone(a.item.eventRevision.facts) as unknown as Record<string,unknown>;
+ const facts=structuredClone(a.item.factualEvidence) as unknown as Record<string,unknown>[];
+ const historical={...facts[0],key:'previous-independent-fact',evidence:{...Object(facts[0].evidence),sourcePostId:'historical-source-post'}};
+ await db.eventRevision.update({where:{id:a.item.eventRevisionId},data:{facts:jsonValue({...event,facts:[historical,...facts]}),materialChange:'current update'}});
+ const post=await db.sourcePost.findUniqueOrThrow({where:{id:a.post.id}});
+ await db.sourcePost.update({where:{id:post.id},data:{processingResult:jsonValue({...Object(post.processingResult),classification:'MATERIAL_UPDATE'})}});
+ await db.eventMatch.updateMany({where:{sourcePostId:post.id,eventRevisionId:a.item.eventRevisionId},data:{classification:'MATERIAL_UPDATE'}});
+ await db.newsItem.update({where:{id:a.item.id},data:{validationResult:jsonValue({...Object(a.item.validationResult),format:'UPDATE'})}});
+ return db.newsItem.findUniqueOrThrow({where:{id:a.item.id},include});
+}
+function jsonValue(value:unknown):Prisma.InputJsonValue{return JSON.parse(JSON.stringify(value));}
+async function freezeManually(id:string){const item=await db.newsItem.findUniqueOrThrow({where:{id},include});return db.$transaction(tx=>freezeValidatedPublication(tx,{newsItemId:id,digest:approvalDigest(item),resolutions:[]},'offline-human',env));}
+test('FREEZE A NORMAL update freezes only complete unchanged current evidence; historical ID collisions are harmless',async()=>{
+ const a=await make('NORMAL'),item=await asMaterialUpdate(a);assert(eligibleAutomatic(item,a.policy));
+ const pub=await freezeManually(item.id);assert.equal(pub.contentSnapshot,publicationText(item));assert.equal(pub.attemptCount,0);assert.equal(sends,0);
+});
+for(const mutation of ['current-change','current-remove','revision-remove','receipt-change'] as const)test('FREEZE B required evidence '+mutation+' remains rejected',async()=>{
+ const a=await make('NORMAL'),item=await asMaterialUpdate(a);
+ if(mutation==='current-change')await db.newsItem.update({where:{id:item.id},data:{factualEvidence:jsonValue((item.factualEvidence as Prisma.JsonArray).map(f=>({...Object(f),key:'changed'})))}});
+ if(mutation==='current-remove')await db.newsItem.update({where:{id:item.id},data:{factualEvidence:[]}});
+ if(mutation==='revision-remove')await db.eventRevision.update({where:{id:item.eventRevisionId},data:{facts:jsonValue({...Object(item.eventRevision.facts),facts:[]})}});
+ if(mutation==='receipt-change'){const p=await db.sourcePost.findUniqueOrThrow({where:{id:a.post.id}});const r=JSON.parse(JSON.stringify(p.processingResult));r.extraction.event.facts[0].key='changed';await db.sourcePost.update({where:{id:p.id},data:{processingResult:r}});}
+ const changed=await db.newsItem.findUniqueOrThrow({where:{id:item.id},include});assert.equal(eligibleAutomatic(changed,a.policy),false);
+ await assert.rejects(freezeManually(item.id),/FACT_EVIDENCE_CHANGED/);assert.equal(await db.publication.count(),0);assert.equal(sends,0);
+});
+test('FREEZE C NEW_EVENT still requires full equality',async()=>{
+ const a=await make('NORMAL');assert(a.item);const revision=Object(a.item.eventRevision.facts);await db.eventRevision.update({where:{id:a.item.eventRevisionId},data:{facts:jsonValue({...revision,facts:[...revision.facts,{...revision.facts[0],key:'extra'}]})}});
+ await assert.rejects(freezeManually(a.item.id),/FACT_EVIDENCE_CHANGED/);
+ await db.eventRevision.update({where:{id:a.item.eventRevisionId},data:{facts:jsonValue(a.item.eventRevision.facts)}});await freezeManually(a.item.id);assert.equal(sends,0);
+});
+test('FREEZE D DIRECT update keeps existing source receipt invariant',async()=>{
+ const a=await make('DIRECT'),item=await asMaterialUpdate(a);assert(eligibleAutomatic(item,a.policy));await freezeManually(item.id);assert.equal(sends,0);
+});
+test('FREEZE E/F blocked head is audited once; valid successor sends once across subsequent/concurrent cycles',async()=>{
+ const a=await make('NORMAL');assert(a.item);
+ const b=await make('NORMAL',{city:'شيراز'});assert(b.item);
+ await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...b.policy,sourceIds:[a.source.id,b.source.id]}}});
+ await db.eventRevision.update({where:{id:a.item.eventRevisionId},data:{facts:jsonValue({...Object(a.item.eventRevision.facts),facts:[]})}});
+ assert(eligibleAutomatic(await db.newsItem.findUniqueOrThrow({where:{id:a.item.id},include}),{...b.policy,sourceIds:[a.source.id,b.source.id]}));
+ await automaticDeliveryCycle(db,env,transport);
+ const blocked=await db.newsItem.findUniqueOrThrow({where:{id:a.item.id}});assert.equal(blocked.status,'NEEDS_REVIEW');assert.equal(blocked.error,'FACT_EVIDENCE_CHANGED');assert.equal(await db.publication.count({where:{newsItemId:a.item.id}}),0);
+ assert.equal(workflowState(blocked),'NEEDS_REVIEW');assert((await newsPage(db,'review',1)).items.some(n=>n.id===a.item!.id));assert(!(await newsPage(db,'approval',1)).items.some(n=>n.id===a.item!.id));const audit=await db.auditLog.findFirstOrThrow({where:{entityId:a.item.id,action:'AUTOMATIC_PUBLICATION_BLOCKED'}});assert.deepEqual(Object(audit.metadata).priorValidationResult,a.item.validationResult);assert.deepEqual(blocked.factualEvidence,a.item.factualEvidence);
+ assert.equal(await db.auditLog.count({where:{entityId:a.item.id,action:'AUTOMATIC_PUBLICATION_BLOCKED'}}),1);await sent(b.item.id);assert.equal(sends,1);
+ await Promise.all([automaticDeliveryCycle(db,env,transport),automaticDeliveryCycle(db,env,transport)]);
+ assert.equal(sends,1);assert.equal(await db.publicationAttempt.count(),1);assert.equal(await db.auditLog.count({where:{entityId:a.item.id,action:'AUTOMATIC_PUBLICATION_BLOCKED'}}),1);
+});
+
+test('FREEZE NORMAL material update follows automatic durable claim once, without human approval',async()=>{
+ const a=await make('NORMAL'),item=await asMaterialUpdate(a);await automaticDeliveryCycle(db,env,transport);const p=await sent(item.id);assert.equal(p.automaticPolicyId,a.policy.id);assert.equal(sends,1);
+ assert.equal((await db.newsItem.findUniqueOrThrow({where:{id:item.id}})).approvedBy,'automatic-telegram-worker');await automaticDeliveryCycle(db,env,transport);assert.equal(sends,1);
 });
