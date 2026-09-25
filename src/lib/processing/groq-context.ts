@@ -20,7 +20,7 @@ export function groqSchema(stage: Stage, contract?: z.ZodType) {
       Object.values(properties).forEach(visit);
       node.required=Object.keys(properties);node.additionalProperties=false;
     }
-    for(const key of ["minLength","maxLength","pattern","format","minimum","maximum","exclusiveMinimum","exclusiveMaximum","multipleOf","minItems","maxItems"])delete node[key];
+    for(const key of ["minLength","maxLength","pattern","format","minimum","maximum","exclusiveMinimum","exclusiveMaximum","multipleOf"])delete node[key];
     for(const [key,child] of Object.entries(node)) {
       if(key === "properties") continue;
       if(key === "$defs" || key === "definitions" || key === "patternProperties") {

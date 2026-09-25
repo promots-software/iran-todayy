@@ -1,7 +1,7 @@
 import {supportedLedger} from './fixtures/fidelity-review';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {unknownProfile,validateUnderstanding} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
 import {publicationUnits} from '../src/lib/processing/direct-publication';
@@ -27,7 +27,7 @@ function setup(source:string,failure?:string){
  });
  return {p,calls,input:{processingMode:'DIRECT' as const,content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet}};
 }
-for(const source of ['افتتح المجلس مدرسة جديدة.','شورای شهر مدرسه جدیدی افتتاح کرد.','The council opened a new school.'])test('DIRECT combined generation + independent review exactly twice: '+source,async()=>{
+for(const source of ['افتتح المجلس مدرسة جديدة.','شورای شهر مدرسه جدیدی افتتاح کرد.','The council opened a new school.','افتتح المجلس مدرسة جديدة.\nThe council has opened a new school.'])test('DIRECT original generation/fidelity stages remain once each (V4.4 mocked separately): '+source,async()=>{
  const {p,calls,input}=setup(source),u=validateUnderstanding(await p.understand(input,signal()),source);
  assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');
  await p.draft({...input,understanding:u},signal());assert.deepEqual(calls,['combined','independent']);
@@ -86,4 +86,22 @@ test('semantic duplicate comparison is included in independent request, with no 
  const entries=directComparisonInputs(u.event,[prior]);
  const receipt={review:[],fullSourceCovered:true,publicationQuality:true,issues:[],comparisons:[{id:directComparisonKey(u.event,prior),decision:{relation:'SAME' as const,newFactIds:['invented'],conflictingFactIds:[],rationale:'غير صالح'}}]};
  assert.throws(()=>validateDirectComparisons(receipt,entries,u),/INVALID_COMPARISON_EVIDENCE/);
+});
+
+for(const defect of ['attribution','purpose'] as const)test('semantic R1 removes only unsupported '+defect+'; V1 passes without R2',async()=>{
+ const source='التقى الوزير الإيراني نظيره البريطاني في نيويورك.';let generation=0,reviews=0;
+ const title='إيران الآن | لقاء الوزير الإيراني ونظيره البريطاني في نيويورك';
+ const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
+  const req=JSON.parse(String(init?.body)),data=JSON.parse(req.contents[0].parts[0].text);
+  if(req.generationConfig.responseJsonSchema.properties.extraction){
+   generation++;const body=generation===1?(defect==='attribution'?'أفادت مصادر ميدانية بأن الوزير الإيراني التقى نظيره البريطاني في نيويورك.':'بحث الوزير الإيراني التعاون الثنائي مع نظيره البريطاني في نيويورك.'):source;
+   if(data.repair){assert.equal(data.repair.cycle,1);assert.deepEqual(data.repair.diagnostics[0].allowedPaths,[['article','body']]);}
+   return response({extraction:{relevance:'POLITICAL_NEWS',contentType:'NEWS',contentTypeEvidence:{excerpt:source,context:source},actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null,kind:'FACT',material:false}],coverage:[{unitId:'u1',nonFactual:false,factIds:['f1']}],safety:{filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false}},article:{title,body,diagnostics:[]}});
+  }
+  reviews++;const ledger=supportedLedger(source,data.publication);
+  if(generation===1){const claim=ledger.claims.find(c=>c.publicationId==='body:1')!;claim.components[0].verdict='UNSUPPORTED';Object.assign(claim,{verdict:'UNSUPPORTED',explanation:defect==='attribution'?'No anonymous source appears in the original.':'The original establishes a meeting, not its agenda.'});}
+  return response({fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[],comparisons:[]});
+ });
+ const u=await provider.understand({processingMode:'DIRECT',content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},signal());
+ assert.equal(generation,2);assert.equal(reviews,2);assert.equal(u.directGeneration?.article.body,source);assert.equal(u.directGeneration?.article.title,title);assert(u.validationHistory?.some(h=>h.cycles?.some(c=>c.cycle===1&&c.decision==='VALIDATED')));
 });

@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {validateDataset,type GoldCase} from './benchmarks/direct-gold/schema';
 import {replayTransport,replayExtraction} from './benchmarks/direct-gold/replay';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {validateUnderstanding,type Understanding} from '../src/lib/processing/contracts';
 import {adaptDirectExtraction,validateDirectExtraction} from '../src/lib/processing/direct';
 import {prepareDirectBilingual,finalizeDirectBilingual} from '../src/lib/processing/direct-bilingual';

@@ -12,7 +12,7 @@ export const minimalExtractionSchema=z.object({
   relevance:understandingSchema.shape.relevance,
   actors:z.array(evidence).max(30),action:evidence.nullable(),object:evidence.nullable(),
   location:evidence.nullable(),event_time:evidence.nullable(),
-  statements:z.array(z.object({evidence:evidence.describe('A complete contiguous verbatim factual assertion from source prose, not merely an actor/action anchor.'),speaker:evidence.nullable().describe('Explicit speaker only; null for unattributed factual narration. No inferred speaker.')}).strict()).max(100).describe('Mandatory factual assertions when safely present in POLITICAL_NEWS, including ordinary narration. Anchors do not satisfy this field. [] only when no safe source assertion exists; completeness validation remains strict.'),
+  statements:z.array(z.object({evidence:evidence.describe('A complete contiguous verbatim factual assertion from source prose, not merely an actor/action anchor.'),speaker:evidence.nullable().describe('Preserve the explicitly attributed person or institution, including a colon heading or speaker continuation governing this statement. Copy its exact source span and context. Null only for genuinely unattributed narration; no inferred speaker, anonymous source or invented relationship.')}).strict()).max(100).describe('Mandatory factual assertions when safely present in POLITICAL_NEWS, including ordinary narration. Anchors do not satisfy this field. [] only when no safe source assertion exists; completeness validation remains strict.'),
 }).strict();
 type Evidence=z.infer<typeof evidenceSchema>;
 export function validateMinimalExtraction(raw:unknown,source:string){

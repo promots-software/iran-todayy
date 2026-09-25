@@ -1,0 +1,44 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import {z} from 'zod';
+import {groqSchema} from '../src/lib/processing/groq-context';
+import {directIndependentSchemaFor} from '../src/lib/processing/direct-two-stage';
+import {validateFidelityLedger,validateFidelityReceipt} from '../src/lib/processing/fidelity-ledger';
+import {supportedLedger} from './fixtures/fidelity-review';
+import {recoverReview} from '../src/lib/processing/review-recovery';
+import {ProcessingError} from '../src/lib/processing/contracts';
+import {failurePolicy} from '../src/lib/processing/failure-policy';
+import {requireArabic,resolveContextEvidence} from '../src/lib/processing/groq-validation';
+import {validateRenderingProposal} from '../src/lib/processing/evidence-rendering';
+import {mergeDiagnosedRepair} from '../src/lib/processing/repair-integrity';
+import {fidelityRepairDiagnostics} from '../src/lib/processing/repair-diagnostics';
+import {fixture} from './fixtures/processing';
+import {normalStage,type StageRepair} from '../src/lib/processing/normal-v2';
+const source='التقى الوزير نظيره في المدينة.';
+const publication=[{id:'title',text:'عقد الوزير لقاءً مع نظيره في المدينة.'}];
+const ledger=()=>supportedLedger(source,publication);
+for(const n of [0,1,5])test('wire preserves request comparison cardinality '+n,()=>{
+ const schema=directIndependentSchemaFor({originalSource:source,publication,comparisons:Array.from({length:n},(_,i)=>({id:'comparison:'+i}))});
+ const wire=groqSchema('understand',schema) as unknown as {properties:{comparisons:{minItems?:number;maxItems?:number}}};
+ assert.equal(wire.properties.comparisons.maxItems,n);if(n)assert.equal(wire.properties.comparisons.minItems,n);
+});
+test('wire and local array minimum agree',()=>{const schema=z.object({rows:z.array(z.string()).min(1).max(3)});const wire=groqSchema('understand',schema) as unknown as {properties:{rows:{minItems:number;maxItems:number}}};assert.equal(wire.properties.rows.minItems,1);assert.equal(wire.properties.rows.maxItems,3);assert.equal(schema.safeParse({rows:[]}).success,false);});
+test('different words and syntax with coherent semantic review pass',()=>{assert.doesNotThrow(()=>validateFidelityLedger(source,publication,ledger()));});
+for(const key of ['time','phase','continuity','certainty'] as const)test('contradictory PRESERVED '+key+' is review integrity, not article diagnosis',()=>{
+ const l=ledger();const t=l.sourceCoverage[0].temporal[0];Object.assign(t.candidateState,{[key]:key==='time'?'PAST':key==='phase'?'COMPLETED':key==='continuity'?'CONTINUING':'POSSIBLE'});
+ assert.throws(()=>validateFidelityLedger(source,publication,l),(e:unknown)=>e instanceof ProcessingError&&e.code==='REVIEW_RECEIPT_INVALID');
+ const f=fixture('scope',source);assert.deepEqual(fidelityRepairDiagnostics(l,source,f.understanding,{article:{title:publication[0].text,body:''}},true),[]);
+});
+for(const [key,before,after] of [['phase','PLANNED','COMPLETED'],['phase','COMPLETED','OCCURRING'],['time','PAST','PRESENT'],['certainty','POSSIBLE','ASSERTED']] as const)test('actual material temporal change blocks '+before+' to '+after,()=>{
+ const l=ledger();Object.assign(l.claims[0],{verdict:'UNSUPPORTED'});l.claims[0].components[0].verdict='UNSUPPORTED';l.claims[0].explanation='The same proposition materially changes the explicitly tested semantic state.';Object.assign(l.sourceCoverage[0].temporal[0],{assessment:'CHANGED',sourceState:{...l.sourceCoverage[0].temporal[0].sourceState,[key]:before},candidateState:{...l.sourceCoverage[0].temporal[0].candidateState,[key]:after}});
+ assert.throws(()=>validateFidelityLedger(source,publication,l),/INDEPENDENT_FIDELITY_FAILED/);
+});
+test('receipt contradiction cannot hide an unsupported meeting agenda',()=>{const l=ledger();l.claims[0].components[0].verdict='UNSUPPORTED';Object.assign(l.claims[0],{verdict:'UNSUPPORTED',explanation:'A meeting is not evidence of a cooperation agenda.'});Object.assign(l.sourceCoverage[0],{disposition:'NON_MATERIAL_PRESENTATION',publicationIds:[],temporal:[]});assert.throws(()=>validateFidelityReceipt(source,publication,l),/REVIEW_RECEIPT_INVALID/);l.sourceCoverage=ledger().sourceCoverage;assert.throws(()=>validateFidelityLedger(source,publication,l),/INDEPENDENT_FIDELITY_FAILED/);});
+test('review correction keeps article unchanged, with no article repair',async()=>{let calls=0,articleRepairs=0;const bad=ledger();Object.assign(bad.sourceCoverage[0],{disposition:'NON_MATERIAL_PRESENTATION'});const before=JSON.stringify(publication);const result=await normalStage('draft',()=>recoverReview(async correction=>{calls++;if(correction){assert.equal(correction.layer,'REVIEW');assert.equal(correction.code,'REVIEW_RECEIPT_INVALID');}return calls===1?bad:ledger();},raw=>validateFidelityReceipt(source,publication,raw),()=>{},()=>true),source,undefined,()=>{articleRepairs++;return true;});assert(result);assert.equal(calls,2);assert.equal(articleRepairs,0);assert.equal(JSON.stringify(publication),before);});
+test('receipt recovery is bounded and preserves both failure diagnostics',async()=>{let calls=0;await assert.rejects(recoverReview(async()=>{calls++;return {};},raw=>validateFidelityReceipt(source,publication,raw),()=>{},()=>true),(e:unknown)=>e instanceof ProcessingError&&!!e.diagnostic&&'initialFailure'in e.diagnostic&&!!e.diagnostic.initialFailure&&!!e.diagnostic.repairFailure);assert.equal(calls,2);});
+test('review recovery does not retry ambiguous provider outcomes',async()=>{let calls=0;await assert.rejects(recoverReview(async()=>{calls++;throw new ProcessingError('GEMINI_TRANSPORT_FAILED');},raw=>raw,()=>{},()=>true),/GEMINI_TRANSPORT_FAILED/);assert.equal(calls,1);});
+for(const code of ['GEMINI_TRANSPORT_FAILED','GROQ_TRANSPORT_FAILED','WORKER_INTERRUPTED','LEASE_EXPIRED'])test('ambiguous checkpoint outcome is never scheduled for replay '+code,()=>{assert.equal(failurePolicy(code,1).retryable,false);assert.equal(failurePolicy(code,1).safeCheckpointRetry,false);});
+for(const code of ['APPLICATION_CONTINUATION_BUDGET','GEMINI_HTTP_503','PROVIDER_COST_WAIT'])test('definite safe continuation remains bounded '+code,()=>{assert(failurePolicy(code,1).retryable);assert(failurePolicy(code,1).safeCheckpointRetry);});
+test('R1 and R2 preserve an unrelated title and fact IDs',()=>{const before={publication:{title:{text:'ثابت',factIds:['f1']},body:[{text:'خطأ',factIds:['f1']}]}};const after=structuredClone(before);after.publication.body[0].text='تصحيح';const path=['publication','body',0,'text'];for(const cycle of [1,2] as const){const repair:StageRepair={stage:'draft',cycle,code:'UNSUPPORTED_ASSERTION',issues:[],instructions:'',diagnostics:[{code:'UNSUPPORTED_ASSERTION',path,current:'خطأ',expected:'supported only',cause:'unsupported attribution',sourceSpans:[{start:0,end:source.length,text:source}],factIds:['f1'],speakerIds:[],occurrenceIds:[],allowedPaths:[path]}]};assert.deepEqual(mergeDiagnosedRepair(before,after,repair),after);const changed=structuredClone(after);changed.publication.title.text='تغيير';assert.throws(()=>mergeDiagnosedRepair(before,changed,repair),/REPAIR_UNDIAGNOSED_CHANGE/);}});
+test('unchanged foreign name may be intermediate; final foreign prose fails with exact path',()=>{const name='ترامپ';assert.doesNotThrow(()=>validateRenderingProposal([{id:'actor:3',role:'actor',evidence:{excerpt:name,start:0,end:name.length}}],{entries:[{id:'actor:3',arabic:name}]}));assert.doesNotThrow(()=>requireArabic('التقى ترامپ المسؤول في المدينة.'));for(const text of ['The council opened a new school.','مردم شهر امروز برای افتتاح مدرسه تازه جمع شدند.'])assert.throws(()=>requireArabic(text,['publication','body']),(e:unknown)=>e instanceof ProcessingError&&e.code==='NON_ARABIC_OUTPUT'&&e.diagnostic&&'issues'in e.diagnostic&&JSON.stringify(e.diagnostic.issues[0].path)==='["publication","body"]');});
+test('exact evidence still rejects splicing and ambiguous occurrences',()=>{assert.throws(()=>resolveContextEvidence({excerpt:'التقى ... المدينة',context:source},source),/INVALID_EVIDENCE/);assert.throws(()=>resolveContextEvidence({excerpt:'نص',context:'نص ثم نص'},'نص ثم نص'),/AMBIGUOUS_EVIDENCE_CONTEXT/);});

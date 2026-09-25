@@ -5,7 +5,7 @@ import {publicationUnits} from '../src/lib/processing/direct-publication';
 import {checkpointProvider,type CheckpointStore} from '../src/worker/checkpoints';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {PrismaClient} from '@prisma/client';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {normalStage} from '../src/lib/processing/normal-v2';
 import {ProcessingError,understandingSchema} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
@@ -18,15 +18,15 @@ import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
 import {outcomePage} from '../src/lib/processing-visibility';
 const signal=()=>new AbortController().signal;
 const envelope=(output:unknown)=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:1,candidatesTokenCount:1}});
-function mock(source:string,options:{promo?:boolean;unrelated?:boolean;uncovered?:boolean;bad?:'rationale'|'emptyFacts'|'unknownFact'|'number'|'unsupported';always?:boolean;body?:string;flash?:boolean}={}){
+function mock(source:string,options:{promo?:boolean;unrelated?:boolean;uncertainContent?:boolean;invalidRendering?:boolean;uncovered?:boolean;bad?:'rationale'|'emptyFacts'|'unknownFact'|'number'|'unsupported';always?:boolean;body?:string;flash?:boolean}={}){
  const calls:string[]=[];let failures=0;
  const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{
   const request=JSON.parse(String(init?.body));const props=request.generationConfig.responseJsonSchema.properties;const data=JSON.parse(request.contents[0].parts[0].text);
   const stage=props.contentType?'extract':props.anchorIds?'classify':props.publication?'draft':props.entries?'render':data.references?'review_rendering':'review';calls.push(stage);
-  if(stage==='extract'){if(data.repair&&options.uncovered){assert.equal(data.repair.stage,'extract');assert(data.repair.issues.some((i:{code:string})=>i.code==='MISSING_MATERIAL_FACT_REFERENCE'));}const excerpt=options.uncovered&&(options.always||calls.filter(s=>s==='extract').length===1)?source.split('— ')[1]:source;return envelope({coverage:publicationUnits(source).map(u=>({unitId:u.id,nonFactual:false,factIds:options.uncovered&&(options.always||calls.filter(s=>s==='extract').length===1)?[]:['f1']})),relevance:options.unrelated?'IRRELEVANT':'POLITICAL_NEWS',contentType:options.promo?'PURE_PROMO':'NEWS',contentTypeEvidence:{excerpt:source,context:source},actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt,context:source},speaker:null}]});}
+  if(stage==='extract'){if(data.repair&&options.uncovered){assert.equal(data.repair.stage,'extract');assert(data.repair.issues.some((i:{code:string})=>i.code==='MISSING_MATERIAL_FACT_REFERENCE'));}const excerpt=options.uncovered&&(options.always||calls.filter(s=>s==='extract').length===1)?source.split('— ')[1]:source;return envelope({coverage:publicationUnits(source).map(u=>({unitId:u.id,nonFactual:false,factIds:options.uncovered&&(options.always||calls.filter(s=>s==='extract').length===1)?[]:['f1']})),relevance:options.unrelated?'IRRELEVANT':'POLITICAL_NEWS',contentType:options.uncertainContent?'UNCERTAIN':options.promo?'PURE_PROMO':'NEWS',contentTypeEvidence:{excerpt:source,context:source},actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt,context:source},speaker:null}]});}
   if(stage==='render'||stage==='review_rendering'){
    assert.equal(request.systemInstruction.parts[0].text.split(editorialContract).length,2);
-   if(stage==='render')return envelope({entries:data.references.map((r:{id:string})=>({id:r.id,arabic:options.body??'افتتح المجلس مدرسة جديدة.'}))});
+   if(stage==='render')return envelope({entries:data.references.map((r:{id:string})=>({id:r.id,arabic:options.invalidRendering?'افتتح المجلس 99 مدرسة جديدة.':options.body??'افتتح المجلس مدرسة جديدة.'}))});
    return envelope({review:data.references.map((r:{id:string})=>({id:r.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]}))});
   }
   const broken=(kind:string)=>options.bad===kind&&(options.always||failures++===0);
@@ -44,7 +44,7 @@ function mock(source:string,options:{promo?:boolean;unrelated?:boolean;uncovered
    if(broken('number'))publication.body[0].text+=' وتضم 99 قاعة.';
    return envelope({coverage:publicationUnits(source).map(u=>({unitId:u.id,factIds:['f1'],nonFactual:false})),publication});
   }
-  const ledger=supportedLedger(source,data.publication);for(const claim of ledger.claims)if(options.bad==='unsupported'||claim.excerpt.includes('99')){claim.verdict='UNSUPPORTED' as 'SUPPORTED';claim.explanation='Unsupported generated assertion/quantity: '+claim.excerpt;}
+  const ledger=supportedLedger(source,data.publication);for(const claim of ledger.claims)if(options.bad==='unsupported'||claim.excerpt.includes('99')){claim.verdict='UNSUPPORTED' as 'SUPPORTED';claim.components[0].verdict='UNSUPPORTED';claim.explanation='Unsupported generated assertion/quantity: '+claim.excerpt;}
   return envelope({fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:options.bad==='unsupported'?'UNSUPPORTED':'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,options.bad!=='unsupported'])),issues:options.bad==='unsupported'?['UNSUPPORTED_FACT']:[]})),fullSourceCovered:true,publicationQuality:true,issues:options.bad==='unsupported'?['UNSUPPORTED_FACT']:[]});
  });return {provider,calls};
 }
@@ -81,7 +81,8 @@ test('NORMAL canonical receipt survives replay; live bypass blocked; OFF/ON publ
  const replay=checkpointProvider(p.provider,store);const savedInput=input(source);const u=understandingSchema.parse(await replay.understand(savedInput,signal()));const draft=await replay.draft({content:source,understanding:u,rules:ruleSet},signal());assert(draft&&typeof draft==='object');assert('normalGeneration' in draft);const before=p.calls.length;
  const reloaded=understandingSchema.parse(await replay.understand(savedInput,signal()));await replay.draft({content:source,understanding:reloaded,rules:ruleSet},signal());assert.equal(p.calls.length,before);
  const bad=await ingest(db,src.id,{externalId:'1',url:src.url+'/1',content:source,publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:bad.id},data:{availableAt:new Date(0)}});const badJob=await claimJob(db,'bad');assert(badJob);
- const bypass={...replay,draft:async()=>{const copy={...draft} as Record<string,unknown>;delete copy.normalGeneration;return copy as unknown as typeof draft;}};
+ const fresh=mock(source,{body:'افتتح المجلس مدرسة جديدة اليوم.'}).provider;
+ const bypass={...replay,understand:fresh.understand.bind(fresh),draft:async()=>{const copy={...draft} as Record<string,unknown>;delete copy.normalGeneration;return copy as unknown as typeof draft;}};
  await processJob(db,badJob,bypass,signal());assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:bad.id}})).error,'AI_CANONICAL_RENDER_REQUIRED');assert.equal(await db.newsItem.count(),0);
  const post=await ingest(db,src.id,{externalId:'2',url:src.url+'/2',content:source,publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:post.id},data:{availableAt:new Date(0)}});const job=await claimJob(db,'normal');assert(job);const outcome=await processJob(db,job,mock(source,{body:'افتتح المجلس مدرسة جديدة اليوم.'}).provider,signal());assert(!('error' in outcome),JSON.stringify(outcome));
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:post.id}}},include:publicationCandidateInclude});assert.equal(item.status,'PENDING_APPROVAL');assert.equal(Object(item.validationResult).editorialEligibility,'READY_TO_PUBLISH');assert.equal(publicationReady(item),true);assert.equal(publicationReady({...item,humanDraft:{id:'edited'} as NonNullable<typeof item.humanDraft>}),false);
@@ -115,3 +116,7 @@ for(const [source,body] of [
 test('source mapping is not a semantic completeness certificate',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{uncovered:true,always:true,bad:'unsupported'});const u=await p.provider.understand(input(source),signal());await assert.rejects(p.provider.draft({content:source,understanding:u,rules:ruleSet},signal()));assert.equal(p.calls.filter(s=>s==='extract').length,1);assert(!u.publicationProposal);});
 
 test('UNRELATED bypasses coverage repair and rendering without changing selection',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{unrelated:true,uncovered:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'UNRELATED_TO_IRAN');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});
+
+test('definite unrelated is filtered despite contentType uncertainty',async()=>{const source='The foreign council has opened a new school.';const p=mock(source,{unrelated:true,uncertainContent:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});
+test('locally invalid translated number stops before independent review',async()=>{const source='The council has opened a new school.';const p=mock(source,{invalidRendering:true});await assert.rejects(p.provider.understand(input(source),signal()),/ARABIC_RENDERING_NUMBER_MISMATCH/);assert.deepEqual(p.calls,['extract','render']);});
+test('mixed source retains original evidence and independent Arabic review',async()=>{const source='افتتح المجلس مدرسة جديدة.\nThe council has opened a new school.';const p=mock(source,{body:'افتتح المجلس مدرسة جديدة.'});const u=await p.provider.understand(input(source),signal());assert.equal(u.language,'mixed');assert.equal(u.event.facts[0].evidence.excerpt,source);const draft=await p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());assert(draft.title);assert.deepEqual(p.calls,['extract','render','review_rendering','classify','draft','review']);});

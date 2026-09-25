@@ -1,3 +1,4 @@
+import {validatePropositionBinding} from './proposition-binding';
 import {validateFidelityLedger} from './fidelity-ledger';
 import {normalizeGeneratedArabic} from './targeted-repair';
 import {structurallyEqual,stableJson} from './structural-integrity';
@@ -8,7 +9,7 @@ import {directArticleSchema,directGenerationSchema,directMatchingReviewSchema} f
 import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
 import {ProcessingError,validateUnderstanding,type Understanding} from './contracts';
 import {validateDirectExtraction} from './direct';
-import {sourceLanguage} from './source-language';
+import {sourceInputLanguage as sourceLanguage} from './source-language';
 import {newsroomPrefix} from './newsroom-format';
 import {finalizeBodyPunctuation} from '../publication-finalization';
 import {renderPublicationText,publicationParts} from '../publication-text';
@@ -41,8 +42,8 @@ export function usableArticle(raw:unknown){
  if(!p.success)throw new ProcessingError('DIRECT_INVALID_ARTICLE_SCHEMA');
  const article=p.data;
  article.title=normalizeGeneratedArabic(article.title.trim());article.body=normalizeGeneratedArabic(article.body.trim());
- if(!article.title||!/[\u0621-\u064a]/u.test(article.title)||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u.test(article.title+article.body))throw new ProcessingError('DIRECT_CORRUPT_ARTICLE');
- if(article.body&&!/[\u0621-\u064a]/u.test(article.body))throw new ProcessingError('DIRECT_CORRUPT_ARTICLE');
+ if(!article.title||/[\u0000-\u0008\u000b\u000c\u000e-\u001f\ufffd]/u.test(article.title+article.body))throw new ProcessingError('DIRECT_CORRUPT_ARTICLE');
+
  while(article.title.startsWith(newsroomPrefix))article.title=article.title.slice(newsroomPrefix.length).trim();
  if(!article.title)throw new ProcessingError('DIRECT_EMPTY_ARTICLE');
  article.body=publicationParts(article.title,article.body).body;
@@ -73,6 +74,7 @@ export function directFinalArticle(source:string,u:Understanding){
  }
  if(r.sourceHash!==digest(source)||r.articleHash!==digest(r.article)||r.eventHash!==eventHash(u,digest)||r.editorialContractHash!==EDITORIAL_CONTRACT_SHA256||!directSourceGrounded(u,source))throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
  const article=usableArticle(r.article);
+ if(r.version==='direct-generation-v3'&&r.propositionReview)validatePropositionBinding(r.propositionReview,source,[{id:'title',text:article.title},...(article.body?[{id:'body:1',text:article.body}]:[])]);
  if(!structurallyEqual(article,r.article))throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
  if(r.version==='direct-generation-v3'&&r.review.fidelityLedger)validateFidelityLedger(source,[{id:'title',text:article.title},...(article.body?[{id:'body:1',text:article.body}]:[])],r.review.fidelityLedger);
  validateObjectiveArticle(source,article.title,article.body,r.version==='direct-generation-v3'?r.review.fidelityLedger:undefined);
@@ -92,7 +94,7 @@ export function completeReviewedDirectGeneration(raw:unknown,source:string,u:Und
  if(review.fidelityLedger)validateFidelityLedger(source,[{id:"title",text:article.title},...(article.body?[{id:"body:1",text:article.body}]:[])],review.fidelityLedger);
  const matchingReview=directMatchingReviewSchema.parse(matchingRaw);
  validateObjectiveArticle(source,article.title,article.body,review.fidelityLedger);
- u.directGeneration={version:'direct-generation-v3',sourceHash:structuralHash(source),articleHash:structuralHash(article),eventHash:eventHash(u,structuralHash),editorialContractHash:EDITORIAL_CONTRACT_SHA256,article,localDiagnostics:[],semanticVerification:'INDEPENDENT',review,reviewHash:structuralHash(review),matchingReview,matchingReviewHash:structuralHash(matchingReview)};
+ u.directGeneration={version:'direct-generation-v3',...(u.propositionReview?{propositionReview:u.propositionReview}:{}),sourceHash:structuralHash(source),articleHash:structuralHash(article),eventHash:eventHash(u,structuralHash),editorialContractHash:EDITORIAL_CONTRACT_SHA256,article,localDiagnostics:[],semanticVerification:'INDEPENDENT',review,reviewHash:structuralHash(review),matchingReview,matchingReviewHash:structuralHash(matchingReview)};
  return directFinalArticle(source,u);
 }
 export function directComparisonKey(incoming:Understanding['event'],existing:Understanding['event']){

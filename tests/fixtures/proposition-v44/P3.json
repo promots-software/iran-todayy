@@ -1,0 +1,119 @@
+{
+  "origin": "Frozen V4.4 provider receipts; no new requests",
+  "source": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "أقر البرلمان القانون في جلسته أمس."
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "prop1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 34,
+            "excerpt": "أقر البرلمان القانون في جلسته أمس."
+          },
+          "actor": "البرلمان",
+          "action": "أقر",
+          "objectContext": "القانون",
+          "speaker": "NARRATOR",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "أمس",
+            "phase": "COMPLETED",
+            "continuity": "BOUNDED",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The Parliament performed the act of approving the law during its session yesterday."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "candidate": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "البرلمان يقر القانون في جلسته أمس"
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "p1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 33,
+            "excerpt": "البرلمان يقر القانون في جلسته أمس"
+          },
+          "actor": "البرلمان",
+          "action": "يقر",
+          "objectContext": "القانون في جلسته أمس",
+          "speaker": "NARRATOR",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "أمس",
+            "phase": "COMPLETED",
+            "continuity": "BOUNDED",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The parliament passed the law in its session yesterday."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "assessor": {
+    "assessments": [
+      {
+        "targetId": "candidate:p:p1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 0,
+          "end": 33,
+          "excerpt": "البرلمان يقر القانون في جلسته أمس"
+        },
+        "state": "SUPPORTED",
+        "sufficientGroups": [
+          [
+            {
+              "kind": "SOURCE_PROPOSITION",
+              "supportId": "source:proposition:0"
+            }
+          ]
+        ],
+        "defects": [],
+        "explanation": "The candidate states that the parliament passes the law yesterday, which semantically matches the source proposition that the parliament approved the law yesterday. The use of the present tense in the candidate is a journalistic convention for describing a completed past event and does not alter the factual event or its reference time."
+      }
+    ]
+  },
+  "comparator": {
+    "judgments": [
+      {
+        "candidateId": "p1",
+        "verdict": "SUPPORTED",
+        "explanation": "The candidate proposition successfully conveys the same event (the parliament approving the law), actor, and temporal context (yesterday) as the source. Per the instructions, the difference in grammatical tense is not grounds for rejection when the semantic event and certainty are preserved.",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ],
+        "issues": []
+      }
+    ],
+    "relationAssessments": [],
+    "overall": "SUPPORTED"
+  }
+}

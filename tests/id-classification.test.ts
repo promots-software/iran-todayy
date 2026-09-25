@@ -96,3 +96,5 @@ test('invalid evidence and unvalidated foreign-language rendering stop before AI
  await assert.rejects(()=>provider.classifyExtracted({content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},foreign,AbortSignal.timeout(5000)),/VALIDATED_ARABIC_RENDERING_REQUIRED/);
  assert.equal(calls,0);
 });
+
+test('topic evidence outside rationale returns precise contract diagnosis without changing IDs',()=>{const {x,c}=sample();const bad={...c,topicEvidenceId:'object'};assert.throws(()=>adaptIdClassification(x,bad,content),(error:unknown)=>{assert(error&&typeof error==='object'&&'diagnostic'in error);const d=error.diagnostic as {issues:{code:string;path:string[]}[]};assert.deepEqual(d.issues,[{code:'TOPIC_EVIDENCE_NOT_IN_RATIONALE_IDS',path:['topicEvidenceId']}]);return true;});assert.deepEqual(bad.rationaleIds,['f1']);assert.doesNotThrow(()=>adaptIdClassification(x,{...bad,rationaleIds:['f1','object']},content));});

@@ -1,0 +1,349 @@
+{
+  "origin": "Frozen V4.4 provider receipts; no new requests",
+  "source": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "قالت وزارة النقل إن اللجنة كانت تدرس مسارات الحافلات العام الماضي."
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "p1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 16,
+            "excerpt": "قالت وزارة النقل"
+          },
+          "actor": "وزارة النقل",
+          "action": "قالت",
+          "objectContext": "إن اللجنة كانت تدرس مسارات الحافلات العام الماضي",
+          "speaker": "UNSPECIFIED",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "قالت",
+            "phase": "COMPLETED",
+            "continuity": "BOUNDED",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [
+            {
+              "id": "r1",
+              "kind": "CONTEXT",
+              "targetIds": [
+                "p2"
+              ],
+              "evidence": {
+                "unitId": "u1",
+                "start": 17,
+                "end": 66,
+                "excerpt": "إن اللجنة كانت تدرس مسارات الحافلات العام الماضي."
+              }
+            }
+          ],
+          "explanation": "The Ministry of Transport reported the committee's past study activity."
+        },
+        {
+          "id": "p2",
+          "evidence": {
+            "unitId": "u1",
+            "start": 20,
+            "end": 36,
+            "excerpt": "اللجنة كانت تدرس"
+          },
+          "actor": "اللجنة",
+          "action": "تدرس",
+          "objectContext": "مسارات الحافلات",
+          "speaker": "وزارة النقل",
+          "attribution": "ATTRIBUTED",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "كانت تدرس",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The committee was engaged in the study of bus routes, an activity contextually bound to the past."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "candidate": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "قالت وزارة الخارجية إن اللجنة تواصل الآن دراسة مسارات الحافلات بهدف خفض تكلفة الوقود."
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "p1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 19,
+            "excerpt": "قالت وزارة الخارجية"
+          },
+          "actor": "وزارة الخارجية",
+          "action": "قالت",
+          "objectContext": "إن اللجنة تواصل الآن دراسة مسارات الحافلات بهدف خفض تكلفة الوقود",
+          "speaker": "وزارة الخارجية",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "قالت",
+            "phase": "COMPLETED",
+            "continuity": "BOUNDED",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The Ministry of Foreign Affairs reported the information regarding the committee's activities."
+        },
+        {
+          "id": "p2",
+          "evidence": {
+            "unitId": "u1",
+            "start": 23,
+            "end": 62,
+            "excerpt": "اللجنة تواصل الآن دراسة مسارات الحافلات"
+          },
+          "actor": "اللجنة",
+          "action": "تواصل دراسة",
+          "objectContext": "مسارات الحافلات",
+          "speaker": "وزارة الخارجية",
+          "attribution": "ATTRIBUTED",
+          "state": {
+            "reference": "CURRENT",
+            "referenceText": "الآن",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [
+            {
+              "id": "r1",
+              "kind": "PURPOSE",
+              "targetIds": [
+                "p3"
+              ],
+              "evidence": {
+                "unitId": "u1",
+                "start": 63,
+                "end": 84,
+                "excerpt": "بهدف خفض تكلفة الوقود"
+              }
+            }
+          ],
+          "explanation": "The committee is currently engaged in studying bus routes."
+        },
+        {
+          "id": "p3",
+          "evidence": {
+            "unitId": "u1",
+            "start": 63,
+            "end": 84,
+            "excerpt": "بهدف خفض تكلفة الوقود"
+          },
+          "actor": "اللجنة",
+          "action": "خفض",
+          "objectContext": "تكلفة الوقود",
+          "speaker": "وزارة الخارجية",
+          "attribution": "ATTRIBUTED",
+          "state": {
+            "reference": "FUTURE",
+            "referenceText": "بهدف",
+            "phase": "PLANNED",
+            "continuity": "UNSPECIFIED",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The objective of the bus route study is to reduce fuel costs."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "assessor": {
+    "assessments": [
+      {
+        "targetId": "candidate:p:p1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 0,
+          "end": 19,
+          "excerpt": "قالت وزارة الخارجية"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "ENTITY",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 5,
+              "end": 19,
+              "excerpt": "وزارة الخارجية"
+            },
+            "explanation": "The source identifies the actor as the Ministry of Transport (وزارة النقل), whereas the candidate identifies it as the Ministry of Foreign Affairs (وزارة الخارجية)."
+          }
+        ],
+        "explanation": "The attribution is incorrect due to a mismatch in the entity (ministry)."
+      },
+      {
+        "targetId": "candidate:p:p2",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 23,
+          "end": 62,
+          "excerpt": "اللجنة تواصل الآن دراسة مسارات الحافلات"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "TEMPORAL",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 30,
+              "end": 40,
+              "excerpt": "تواصل الآن"
+            },
+            "explanation": "The candidate asserts the committee is currently continuing the study, while the source states the activity was in the past ('كانت تدرس' last year)."
+          }
+        ],
+        "explanation": "The temporal state (current/continuing vs. past) is mismatched."
+      },
+      {
+        "targetId": "candidate:r:p2:r1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 63,
+          "end": 84,
+          "excerpt": "بهدف خفض تكلفة الوقود"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "OTHER",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 63,
+              "end": 84,
+              "excerpt": "بهدف خفض تكلفة الوقود"
+            },
+            "explanation": "The source document does not mention any purpose or objective regarding the reduction of fuel costs."
+          }
+        ],
+        "explanation": "There is no supporting evidence for the purpose relation."
+      },
+      {
+        "targetId": "candidate:p:p3",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 63,
+          "end": 84,
+          "excerpt": "بهدف خفض تكلفة الوقود"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "OTHER",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 63,
+              "end": 84,
+              "excerpt": "بهدف خفض تكلفة الوقود"
+            },
+            "explanation": "The information about the objective (reducing fuel costs) is not present in the source text."
+          }
+        ],
+        "explanation": "The proposition regarding the purpose is not supported."
+      }
+    ]
+  },
+  "comparator": {
+    "judgments": [
+      {
+        "candidateId": "p1",
+        "verdict": "UNSUPPORTED",
+        "explanation": "The source identifies the source of the statement as the Ministry of Transport, whereas the candidate identifies the Ministry of Foreign Affairs. This is a factual entity mismatch.",
+        "sourceSupports": [],
+        "issues": [
+          {
+            "kind": "ATTRIBUTION",
+            "candidateRelationId": null,
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 0,
+              "end": 19,
+              "excerpt": "قالت وزارة الخارجية"
+            },
+            "explanation": "The speaker/attribute entity does not match the source.",
+            "sourceSupports": []
+          }
+        ]
+      },
+      {
+        "candidateId": "p2",
+        "verdict": "UNSUPPORTED",
+        "explanation": "The candidate claims the study is currently continuing, while the source explicitly states it was a past activity occurring last year.",
+        "sourceSupports": [],
+        "issues": [
+          {
+            "kind": "PHASE",
+            "candidateRelationId": null,
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 23,
+              "end": 62,
+              "excerpt": "اللجنة تواصل الآن دراسة مسارات الحافلات"
+            },
+            "explanation": "The candidate asserts a current, ongoing phase, contradicting the source's bound past phase.",
+            "sourceSupports": []
+          }
+        ]
+      },
+      {
+        "candidateId": "p3",
+        "verdict": "UNSUPPORTED",
+        "explanation": "There is no source evidence supporting the purpose of reducing fuel costs.",
+        "sourceSupports": [],
+        "issues": [
+          {
+            "kind": "MISSING_SUPPORT",
+            "candidateRelationId": null,
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 63,
+              "end": 84,
+              "excerpt": "بهدف خفض تكلفة الوقود"
+            },
+            "explanation": "The source document contains no information regarding the motivation for the study.",
+            "sourceSupports": []
+          }
+        ]
+      }
+    ],
+    "relationAssessments": [
+      {
+        "candidateRelationId": "r1",
+        "verdict": "UNSUPPORTED",
+        "sourceSupports": []
+      }
+    ],
+    "overall": "UNSUPPORTED"
+  }
+}

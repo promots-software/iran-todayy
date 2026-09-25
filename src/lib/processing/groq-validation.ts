@@ -3,10 +3,12 @@ import { ProcessingError, type Understanding } from './contracts';
 import {validateSpeakerEvidence} from './speaker-evidence';
 import {resolveRendering} from './evidence-rendering';
 
-import {sourceLanguage} from './source-language';
-export {sourceLanguage} from './source-language';
-export function requireArabic(text:string) {
-  if(!/[\u0621-\u064a]/u.test(text) || /[پچژگکی]/u.test(text) || /(?:^|\s)(?:که|را|شده|بودند|گفته|است)(?:\s|$)/u.test(text))throw new ProcessingError('NON_ARABIC_OUTPUT');
+import {detectSourceLanguage,sourceInputLanguage as sourceLanguage} from './source-language';
+export {sourceInputLanguage as sourceLanguage} from './source-language';
+export function requireArabic(text:string,path:(string|number)[]=['publication']) {
+  // Branding is not evidence that the article itself is Arabic.
+  text=text.replace(/^إيران الآن\s*\|\s*/u,'');
+  if(!/[\u0621-\u064a]/u.test(text) || ['fa','en','mixed'].includes(detectSourceLanguage(text)) || /(?:^|\s)(?:که|را|شده|بودند|گفته|است)(?:\s|$)/u.test(text))throw new ProcessingError('NON_ARABIC_OUTPUT',false,{stage:'language',issues:[{code:'NON_ARABIC_OUTPUT',path}]});
 }
 /** Exact UTF-16 ranges take precedence; otherwise require one exact contextual
  * occurrence. No layout rewriting, lexical inference or arbitrary first match. */
@@ -72,7 +74,7 @@ export function validateExtractionLanguageAndSpeakers(u:Pick<Understanding,'lang
     // Verbatim source evidence is not final generated Arabic. Its language is
     // determined independently from the complete source; offsets are validated
     // by validateUnderstanding. Translated/generated values remain strict.
-    if(language!=='ar'||item.arabic!==item.evidence.excerpt)requireArabic(item.arabic);
+    if(item.arabic!==item.evidence.excerpt)requireArabic(item.arabic,['event','arabic']);
   }
   if(e.summary!==null)requireArabic(e.summary);
   const renderingRefs=e.facts.flatMap(f=>[

@@ -1,3 +1,4 @@
+import {geminiWireSchema} from './gemini-wire-schema';
 import {GroqLanguageProvider} from './groq';
 import {failurePolicy,retryAfter} from './failure-policy';
 import {ProcessingError,type LanguageProvider} from './contracts';
@@ -6,13 +7,14 @@ export {readLocalGeminiKey} from './gemini-key';
 export type GeminiUsage={stage:string;attempt:number;httpStatus:number|null;inputTokens:number|null;outputTokens:number|null;thinkingTokens:number|null;estimatedCostUsd:number|null;replayed?:boolean;durationMs?:number};
 /** Native Gemini transport, shared extraction/classification/atom validators. No fallback provider. */
 export class GeminiLanguageProvider implements LanguageProvider{
- readonly id='gemini:gemini-3.1-flash-lite:semantic-integrity-v3';readonly live=true;readonly draftOnlyAccepted=true;readonly constrainedRewrite=true;
+ readonly id='gemini:gemini-3.1-flash-lite:semantic-integrity-v4.4';readonly live=true;readonly draftOnlyAccepted=true;readonly constrainedRewrite=true;
  private delegate:GroqLanguageProvider;
  constructor(key:string,transport:typeof fetch=fetch,log:(u:GeminiUsage)=>void|Promise<void>=()=>{}){
   if(!key)throw new ProcessingError('GEMINI_API_KEY_REQUIRED');
   this.delegate=new GroqLanguageProvider('injected-gemini-transport',async(_url,init)=>{
    const req=JSON.parse(String(init?.body));
-   const body={systemInstruction:{parts:[{text:req.messages[0].content}]},contents:[{role:'user',parts:[{text:req.messages[1].content}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:req.response_format.json_schema.schema,maxOutputTokens:req.max_completion_tokens,candidateCount:1,thinkingConfig:{thinkingBudget:0}}};
+   const proposition=/^iran_today_proposition_(source|candidate|assessor|comparator)$/.test(req.response_format.json_schema.name);
+   const body={systemInstruction:{parts:[{text:req.messages[0].content}]},contents:[{role:'user',parts:[{text:req.messages[1].content}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:geminiWireSchema(req.response_format.json_schema.schema),maxOutputTokens:req.max_completion_tokens,candidateCount:1,thinkingConfig:proposition?{thinkingLevel:'high' as const}:{thinkingBudget:0}}};
    for(let attempt=1;attempt<=1;attempt++){
     const started=Date.now();
     const record:GeminiUsage={stage:req.response_format.json_schema.name,attempt,httpStatus:null,inputTokens:null,outputTokens:null,thinkingTokens:null,estimatedCostUsd:null};
@@ -30,7 +32,7 @@ export class GeminiLanguageProvider implements LanguageProvider{
       record.inputTokens=usage.promptTokenCount;record.outputTokens=usage.candidatesTokenCount;record.thinkingTokens=usage.thoughtsTokenCount??0;
       record.estimatedCostUsd=(record.inputTokens!*0.25+(record.outputTokens!+record.thinkingTokens!)*1.5)/1e6;
      }
-     if(envelope.candidates?.length!==1||envelope.candidates[0].finishReason!=='STOP'||(usage?.thoughtsTokenCount??0)>0)throw new ProcessingError('GEMINI_INCOMPLETE');
+     if(envelope.candidates?.length!==1||envelope.candidates[0].finishReason!=='STOP'||(!proposition&&(usage?.thoughtsTokenCount??0)>0))throw new ProcessingError('GEMINI_INCOMPLETE');
      const content=envelope.candidates[0].content?.parts?.filter((p:{text?:string;thought?:boolean})=>typeof p.text==='string'&&!p.thought).map((p:{text:string})=>p.text).join('');
      if(!content)throw new ProcessingError('GEMINI_INVALID_RESPONSE');
      return Response.json({choices:[{finish_reason:'stop',message:{content}}]},{headers:{'x-worker-checkpoint-replayed':record.replayed?'true':'false'}});

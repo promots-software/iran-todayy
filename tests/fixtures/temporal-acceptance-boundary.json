@@ -1,0 +1,591 @@
+{
+  "description": "Immutable replay input and established expected truth; no generation. Recovery artifacts are exact parsed saved model responses.",
+  "semanticExpected": "UNSUPPORTED",
+  "input": {
+    "originalSource": "إيران الآن| المتحدث باسم الخارجية الإيرانية: جرت أمس جولة تبادل رسائل وتوضيحها مع الولايات المتحدة عبر الوسيط القطري.\n\n- تبادل الرسائل استغرق ساعتين تم فيهما نقل شروطنا لإحياء التفاوض إلى الأمريكيين.\n\n- جولة أمس لتبادل الرسائل جاءت في إطار المحادثات التي كانت تتم عبر الوسطاء\n\n- شروطنا تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات",
+    "sourceUnits": [
+      {
+        "id": "u1",
+        "start": 0,
+        "end": 117,
+        "text": "إيران الآن| المتحدث باسم الخارجية الإيرانية: جرت أمس جولة تبادل رسائل وتوضيحها مع الولايات المتحدة عبر الوسيط القطري.",
+        "kind": "CONTENT"
+      },
+      {
+        "id": "u3",
+        "start": 119,
+        "end": 199,
+        "text": "- تبادل الرسائل استغرق ساعتين تم فيهما نقل شروطنا لإحياء التفاوض إلى الأمريكيين.",
+        "kind": "CONTENT"
+      },
+      {
+        "id": "u5",
+        "start": 201,
+        "end": 275,
+        "text": "- جولة أمس لتبادل الرسائل جاءت في إطار المحادثات التي كانت تتم عبر الوسطاء",
+        "kind": "CONTENT"
+      },
+      {
+        "id": "u7",
+        "start": 277,
+        "end": 356,
+        "text": "- شروطنا تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات",
+        "kind": "CONTENT"
+      }
+    ],
+    "facts": [],
+    "coverage": [],
+    "publication": [
+      {
+        "id": "title",
+        "text": "الخارجية الإيرانية: تبادلنا الرسائل مع واشنطن عبر الوسيط القطري لإحياء التفاوض"
+      },
+      {
+        "id": "body:1",
+        "text": "أعلن المتحدث باسم وزارة الخارجية الإيرانية أن طهران أجرت أمس جولة تبادل رسائل مع الولايات المتحدة عبر الوسيط القطري، وذلك في إطار المحادثات المستمرة التي تجري عبر الوسطاء."
+      },
+      {
+        "id": "body:2",
+        "text": "وأوضح المتحدث أن تبادل الرسائل استمر لمدة ساعتين، جرى خلالهما نقل الشروط الإيرانية لإحياء مسار التفاوض إلى الجانب الأميركي."
+      },
+      {
+        "id": "body:3",
+        "text": "وأشار إلى أن الشروط الإيرانية تتضمن وقف إجراءات أمريكا العدوانية وحصارها وإنهاء الحرب على كل الجبهات."
+      }
+    ]
+  },
+  "responseSHA256": "6016a3f4b6b7a99b9c6d7105a7c13b5cabbfbe114bbd2be8e586e71947ec8db8",
+  "recoveries": [
+    {
+      "id": "date-changed",
+      "input": {
+        "originalSource": "الموعد في إيران 12 أكتوبر 2025.",
+        "sourceUnits": [
+          {
+            "id": "u1",
+            "start": 0,
+            "end": 31,
+            "text": "الموعد في إيران 12 أكتوبر 2025.",
+            "kind": "CONTENT"
+          }
+        ],
+        "facts": [],
+        "coverage": [],
+        "publication": [
+          {
+            "id": "title",
+            "text": "الموعد في إيران 13 أكتوبر 2025."
+          }
+        ]
+      },
+      "initial": {
+        "fidelityLedger": {
+          "sourceCoverage": [
+            {
+              "unitId": "u1",
+              "publicationIds": [
+                "title"
+              ],
+              "temporal": [
+                {
+                  "publicationId": "title",
+                  "sourceExcerpt": "12 أكتوبر 2025",
+                  "candidateExcerpt": "13 أكتوبر 2025",
+                  "explanation": "Source specifies the date as October 12, 2025, whereas the candidate incorrectly states October 13, 2025.",
+                  "sourceState": {
+                    "time": "FUTURE",
+                    "phase": "PLANNED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "candidateState": {
+                    "time": "FUTURE",
+                    "phase": "PLANNED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "assessment": "CHANGED"
+                }
+              ],
+              "disposition": "PRESERVED",
+              "explanation": "The source unit content is addressed, but contains a factual error regarding the date."
+            }
+          ],
+          "claims": [
+            {
+              "components": [
+                {
+                  "id": "c1",
+                  "excerpt": "13 أكتوبر 2025",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "UNSUPPORTED",
+                  "explanation": "Source text states October 12, 2025, not 13."
+                }
+              ],
+              "publicationId": "title",
+              "excerpt": "الموعد في إيران 13 أكتوبر 2025.",
+              "sourceUnitIds": [
+                "u1"
+              ],
+              "verdict": "UNSUPPORTED",
+              "explanation": "The date assertion conflicts with the source material."
+            }
+          ]
+        },
+        "review": [
+          {
+            "id": "title",
+            "verdict": "UNSUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": false,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": [
+              "تاريخ غير دقيق"
+            ]
+          }
+        ],
+        "fullSourceCovered": true,
+        "publicationQuality": false,
+        "issues": [
+          "تاريخ غير دقيق"
+        ]
+      },
+      "corrected": {
+        "fidelityLedger": {
+          "sourceCoverage": [
+            {
+              "unitId": "u1",
+              "publicationIds": [
+                "title"
+              ],
+              "temporal": [
+                {
+                  "publicationId": "title",
+                  "sourceExcerpt": "12 أكتوبر 2025",
+                  "candidateExcerpt": "13 أكتوبر 2025",
+                  "explanation": "The source identifies the event date as October 12, 2025. The candidate incorrectly asserts the date as October 13, 2025.",
+                  "sourceState": {
+                    "time": "FUTURE",
+                    "phase": "PLANNED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "candidateState": {
+                    "time": "FUTURE",
+                    "phase": "PLANNED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "assessment": "CHANGED"
+                }
+              ],
+              "disposition": "PRESERVED",
+              "explanation": "The source unit provides a specific future event date. The candidate reproduces the event context but alters the specific date."
+            }
+          ],
+          "claims": [
+            {
+              "components": [
+                {
+                  "id": "c1",
+                  "excerpt": "الموعد في إيران",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "This portion of the statement aligns with the source event context."
+                },
+                {
+                  "id": "c2",
+                  "excerpt": "13 أكتوبر 2025",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "UNSUPPORTED",
+                  "explanation": "The source specifies the date as October 12, 2025, contradicting the candidate's claim of October 13."
+                }
+              ],
+              "publicationId": "title",
+              "excerpt": "الموعد في إيران 13 أكتوبر 2025.",
+              "sourceUnitIds": [
+                "u1"
+              ],
+              "verdict": "UNSUPPORTED",
+              "explanation": "The candidate asserts an incorrect date for the event."
+            }
+          ]
+        },
+        "review": [
+          {
+            "id": "title",
+            "verdict": "UNSUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": false,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": [
+              "تاريخ غير دقيق"
+            ]
+          }
+        ],
+        "fullSourceCovered": true,
+        "publicationQuality": false,
+        "issues": [
+          "تاريخ غير دقيق"
+        ]
+      }
+    },
+    {
+      "id": "restructured",
+      "input": {
+        "originalSource": "بالفيديو | حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، في الدورة الأولى للتدريب العسكري للوحدات الشعبية «جانفدا» في ساحة الإمام الحسين (ع) في العاصمة طهران.",
+        "sourceUnits": [
+          {
+            "id": "u1",
+            "start": 0,
+            "end": 165,
+            "text": "بالفيديو | حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، في الدورة الأولى للتدريب العسكري للوحدات الشعبية «جانفدا» في ساحة الإمام الحسين (ع) في العاصمة طهران.",
+            "kind": "CONTENT"
+          }
+        ],
+        "facts": [],
+        "coverage": [],
+        "publication": [
+          {
+            "id": "title",
+            "text": "إيران الآن | حضور حجة الإسلام طائب في تدريبات «جانفدا» بطهران"
+          },
+          {
+            "id": "body:1",
+            "text": "إيران الآن | فيديو | شهدت العاصمة طهران حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، وذلك في الدورة الأولى للتدريب العسكري للوحدات الشعبية التي تحمل اسم «جانفدا» في ساحة الإمام الحسين (ع)."
+          }
+        ]
+      },
+      "initial": {
+        "fidelityLedger": {
+          "sourceCoverage": [
+            {
+              "unitId": "u1",
+              "publicationIds": [
+                "title",
+                "body:1"
+              ],
+              "temporal": [
+                {
+                  "publicationId": "body:1",
+                  "sourceExcerpt": "حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، في الدورة الأولى للتدريب العسكري للوحدات الشعبية «جانفدا»",
+                  "candidateExcerpt": "شهدت العاصمة طهران حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، وذلك في الدورة الأولى للتدريب العسكري للوحدات الشعبية التي تحمل اسم «جانفدا»",
+                  "explanation": "The source reports the attendance of Hojjat al-Islam Taeb at the military training session as an established event. The candidate reports the same event, framing it as having occurred in Tehran at the specified session. Both represent a completed past event reported in the present.",
+                  "sourceState": {
+                    "time": "PRESENT",
+                    "phase": "COMPLETED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "candidateState": {
+                    "time": "PRESENT",
+                    "phase": "COMPLETED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "assessment": "PRESERVED"
+                }
+              ],
+              "disposition": "PRESERVED",
+              "explanation": "The source unit provides the core facts regarding the attendee, the training event, and the location. All these elements are preserved in the publication."
+            }
+          ],
+          "claims": [
+            {
+              "components": [
+                {
+                  "id": "c1",
+                  "excerpt": "حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The individual and his title are correctly stated."
+                },
+                {
+                  "id": "c2",
+                  "excerpt": "الدورة الأولى للتدريب العسكري للوحدات الشعبية التي تحمل اسم «جانفدا»",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The event name and description are accurately reflected."
+                },
+                {
+                  "id": "c3",
+                  "excerpt": "ساحة الإمام الحسين (ع) في العاصمة طهران",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The location is accurately reported."
+                }
+              ],
+              "publicationId": "body:1",
+              "excerpt": "شهدت العاصمة طهران حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، وذلك في الدورة الأولى للتدريب العسكري للوحدات الشعبية التي تحمل اسم «جانفدا» في ساحة الإمام الحسين (ع).",
+              "sourceUnitIds": [
+                "u1"
+              ],
+              "verdict": "SUPPORTED",
+              "explanation": "The body text accurately conveys all information provided in the source."
+            },
+            {
+              "components": [
+                {
+                  "id": "c4",
+                  "excerpt": "حضور حجة الإسلام طائب في تدريبات «جانفدا» بطهران",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The title concisely summarizes the main event."
+                }
+              ],
+              "publicationId": "title",
+              "excerpt": "إيران الآن | حضور حجة الإسلام طائب في تدريبات «جانفدا» بطهران",
+              "sourceUnitIds": [
+                "u1"
+              ],
+              "verdict": "SUPPORTED",
+              "explanation": "The title is accurate."
+            }
+          ]
+        },
+        "review": [
+          {
+            "id": "title",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          },
+          {
+            "id": "body:1",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          }
+        ],
+        "fullSourceCovered": true,
+        "publicationQuality": true,
+        "issues": []
+      },
+      "corrected": {
+        "fidelityLedger": {
+          "sourceCoverage": [
+            {
+              "unitId": "u1",
+              "publicationIds": [
+                "title",
+                "body:1"
+              ],
+              "temporal": [
+                {
+                  "publicationId": "body:1",
+                  "sourceExcerpt": "حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، في الدورة الأولى للتدريب العسكري للوحدات الشعبية «جانفدا»",
+                  "candidateExcerpt": "شهدت العاصمة طهران حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، وذلك في الدورة الأولى للتدريب العسكري للوحدات الشعبية التي تحمل اسم «جانفدا»",
+                  "explanation": "The source reports on the attendance of Hojjat al-Islam Taeb at the training as a completed event. The candidate reports the same event as having occurred.",
+                  "sourceState": {
+                    "time": "PAST",
+                    "phase": "COMPLETED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "candidateState": {
+                    "time": "PAST",
+                    "phase": "COMPLETED",
+                    "continuity": "BOUNDED",
+                    "certainty": "ASSERTED"
+                  },
+                  "assessment": "PRESERVED"
+                }
+              ],
+              "disposition": "PRESERVED",
+              "explanation": "The source unit provides the core facts regarding the attendee, the training event, and the location. All these elements are preserved in the publication."
+            }
+          ],
+          "claims": [
+            {
+              "components": [
+                {
+                  "id": "c1",
+                  "excerpt": "حضور حجة الإسلام طائب",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The event of the attendance is supported."
+                },
+                {
+                  "id": "c2",
+                  "excerpt": "رئيس منظمة البسيج للمستضعفين",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The title is supported by the source."
+                },
+                {
+                  "id": "c3",
+                  "excerpt": "الدورة الأولى للتدريب العسكري للوحدات الشعبية",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The description of the training event is supported."
+                },
+                {
+                  "id": "c4",
+                  "excerpt": "تحمل اسم «جانفدا»",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The name of the training is supported."
+                },
+                {
+                  "id": "c5",
+                  "excerpt": "ساحة الإمام الحسين (ع)",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The location is supported."
+                },
+                {
+                  "id": "c6",
+                  "excerpt": "العاصمة طهران",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The city is supported."
+                },
+                {
+                  "id": "c7",
+                  "excerpt": "فيديو",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The format matches the source 'بالفيديو'."
+                }
+              ],
+              "publicationId": "body:1",
+              "excerpt": "إيران الآن | فيديو | شهدت العاصمة طهران حضور حجة الإسلام طائب، رئيس منظمة البسيج للمستضعفين، وذلك في الدورة الأولى للتدريب العسكري للوحدات الشعبية التي تحمل اسم «جانفدا» في ساحة الإمام الحسين (ع).",
+              "sourceUnitIds": [
+                "u1"
+              ],
+              "verdict": "SUPPORTED",
+              "explanation": "The body accurately conveys all information provided in the source."
+            },
+            {
+              "components": [
+                {
+                  "id": "c8",
+                  "excerpt": "حضور حجة الإسلام طائب",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The attendance event is included."
+                },
+                {
+                  "id": "c9",
+                  "excerpt": "تدريبات «جانفدا»",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The event name is included."
+                },
+                {
+                  "id": "c10",
+                  "excerpt": "بطهران",
+                  "sourceUnitIds": [
+                    "u1"
+                  ],
+                  "verdict": "SUPPORTED",
+                  "explanation": "The location is included."
+                }
+              ],
+              "publicationId": "title",
+              "excerpt": "إيران الآن | حضور حجة الإسلام طائب في تدريبات «جانفدا» بطهران",
+              "sourceUnitIds": [
+                "u1"
+              ],
+              "verdict": "SUPPORTED",
+              "explanation": "The title concisely summarizes the main event."
+            }
+          ]
+        },
+        "review": [
+          {
+            "id": "title",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          },
+          {
+            "id": "body:1",
+            "verdict": "SUPPORTED",
+            "checks": {
+              "scope": true,
+              "entitiesAndRelationships": true,
+              "namesAndTitles": true,
+              "numbers": true,
+              "attribution": true,
+              "negationAndModality": true,
+              "literalQuotes": true
+            },
+            "issues": []
+          }
+        ],
+        "fullSourceCovered": true,
+        "publicationQuality": true,
+        "issues": []
+      }
+    }
+  ]
+}

@@ -35,8 +35,9 @@ test('exact evidence range tolerates only layout differences in context',()=>{
 test('repeated evidence without a unique context is still rejected',()=>{
  assert.throws(()=>resolveContextEvidence({excerpt:'نيويورك',context:'نيويورك ثم نيويورك',startOffset:1,endOffset:8},'نيويورك ثم نيويورك'),/AMBIGUOUS/);
 });
-test('final generated Arabic requirements are unchanged',()=>{
- assert.throws(()=>requireArabic('تلمیذا وتلمیذة'),/NON_ARABIC_OUTPUT/);
+test('Arabic glyph variants do not constitute Persian prose',()=>{
+ assert.doesNotThrow(()=>requireArabic('تلمیذا وتلمیذة'));
+ assert.throws(()=>requireArabic('مردم شهر امروز برای افتتاح مدرسه تازه جمع شدند.'),/NON_ARABIC_OUTPUT/);
  assert.doesNotThrow(()=>requireArabic('تلميذا وتلميذة'));
 });
 
@@ -60,7 +61,7 @@ test('extraction repair preserves occurrence identities across array reordering 
 test('repair outside first diagnosed field is not replaced with stale unsupported prose',()=>{
  const previous={publication:{title:{text:'عنوان',factIds:['f1']},body:[{text:'خطأ اقتباس',factIds:['f1']},{text:'إضافة غير مسندة',factIds:['f1']}]}};
  const candidate={publication:{title:previous.publication.title,body:[{text:'الاقتباس الصحيح',factIds:['f1']},{text:'النص المسند',factIds:['f1']}]}};
- assert.deepEqual(mergeDiagnosedRepair(previous,candidate,{stage:'draft',code:'QUOTE',issues:[{path:['publication','body',0]}],instructions:''}),candidate);
+ assert.throws(()=>mergeDiagnosedRepair(previous,candidate,{stage:'draft',code:'QUOTE',issues:[{path:['publication','body',0]}],instructions:''}),/REPAIR_UNDIAGNOSED_CHANGE/);
 });
 test('quote delimiters may change; source literal words cannot change',()=>{
  assert.deepEqual(unsupportedQuotes('قال: “لن نتراجع”.','قال: «لن نتراجع».'),[]);
@@ -83,10 +84,10 @@ test('written compound ordinals compare with digits without authorizing a change
  assert.equal(numericTokens('القرن').length,0);
 });
 
-test('Arabic source quotation retains source glyphs, generated prose cannot borrow that exception',()=>{
+test('Arabic glyph variants are language-neutral but quotes remain exact',()=>{
  const source='قال المسؤول إن العمل مستمر: «ستبدأ الشرکة العمل غداً». وأكد استمرار الاستعدادات لاستقبال المواطنين.';
  assert.doesNotThrow(()=>validateObjectiveArticle(source,'المسؤول يعلن استمرار العمل','قال المسؤول: «ستبدأ الشرکة العمل غداً».'));
- assert.throws(()=>validateObjectiveArticle(source,'المسؤول يعلن استمرار العمل','ستبدأ الشرکة العمل غداً.'),/NON_ARABIC_OUTPUT/);
+ assert.doesNotThrow(()=>validateObjectiveArticle(source,'المسؤول يعلن استمرار العمل','ستبدأ الشرکة العمل غداً.'));
  assert.throws(()=>validateObjectiveArticle(source,'المسؤول يعلن استمرار العمل','قال المسؤول: «أنهت الشرکة العمل».'));
 });
 test('quoted initialisms require literal source initials, never invented entity aliases',()=>{

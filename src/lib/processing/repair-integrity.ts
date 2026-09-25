@@ -65,7 +65,7 @@ export function preserveGroundedExtraction(previous:unknown,candidate:unknown,so
  * never restore stale prose merely because a different field failed first.
  * Immutable evidence is supplied separately by the caller, not this object. */
 export function mergeDiagnosedRepair(previous:unknown,candidate:unknown,repair:StageRepair){
- if(repair.cycle===2&&!scopePreserved(previous,candidate,repair.diagnostics??[]))throw new ProcessingError('REPAIR_UNDIAGNOSED_CHANGE');
+ if(!scopePreserved(previous,candidate,repair.diagnostics??[]))throw new ProcessingError('REPAIR_UNDIAGNOSED_CHANGE');
  if(repair.stage!=='draft')throw new ProcessingError('REPAIR_SCOPE_UNRESOLVED');
  return clone(candidate);
 }

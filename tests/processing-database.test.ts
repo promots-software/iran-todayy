@@ -64,7 +64,7 @@ test("Phase2 database pipeline: concurrency, multilingual identity, update, revi
     const staleResult = await processJob(db,stale,provider,signal);
     assert.ok("error" in staleResult);assert.equal(staleResult.error,"STALE_CLAIM");
     assert.equal((await db.processingJob.findUniqueOrThrow({where:{id:recovered.id}})).lockedBy,recovered.lockedBy);
-    const transient={...provider,id:"failure",live:false,understand:async()=>{throw new ProcessingError("TRANSIENT",true);},draft:provider.draft.bind(provider),compare:provider.compare.bind(provider)};
+    const transient={...provider,id:"failure",live:false,understand:async()=>{throw new ProcessingError("GEMINI_HTTP_503",true);},draft:provider.draft.bind(provider),compare:provider.compare.bind(provider)};
     await processJob(db,recovered,transient,signal);
     const retryJob=await db.processingJob.findUniqueOrThrow({where:{id:recovered.id}});assert.equal(retryJob.status,"RETRY");assert.ok(retryJob.availableAt>new Date());
     await db.processingJob.update({where:{id:retryJob.id},data:{availableAt:new Date(0)}});

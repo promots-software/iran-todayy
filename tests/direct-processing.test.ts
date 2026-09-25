@@ -1,5 +1,4 @@
-import {bilingualFixture,passingReview} from './fixtures/direct-bilingual';
-import {prepareDirectBilingual} from '../src/lib/processing/direct-bilingual';
+import {combinedFixture,reviewedFixture} from './fixtures/current-direct';
 import {publishReadyDirect,assertDirectAutoEnabled,eligibleDirectPublication} from '../src/lib/telegram/direct-auto';
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -7,11 +6,10 @@ import {readFileSync} from 'node:fs';
 import {PrismaClient} from '@prisma/client';
 import {saveSource,changeSourceProcessingMode} from '../src/lib/source-service';
 import {sourceSchema} from '../src/lib/domain';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {validateDirectExtraction,adaptDirectExtraction} from '../src/lib/processing/direct';
 import {unknownProfile,validateUnderstanding,ProcessingError} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
-import {finalizeConstrainedDraft} from '../src/lib/processing/local-finalization';
 import {editorialDecision} from '../src/lib/processing/editorial-eligibility';
 import {ingest as realIngest,claimJob,processJob} from '../src/lib/processing/engine';
 import {assertRole} from '../src/lib/dashboard-permissions';
@@ -21,7 +19,6 @@ const source='افتتح المجلس مدرسة جديدة في العاصمة.
 const ev=(excerpt:string,context=source)=>({excerpt,context});
 const safety={filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false};
 const raw=()=>({actors:[ev('المجلس')],action:ev('افتتح'),object:ev('مدرسة جديدة'),location:ev('العاصمة'),event_time:null,statements:[{evidence:ev(source),speaker:null,kind:'FACT',material:false}],safety});
-const publicationRaw=()=>({...raw(),coverage:[{unitId:'u1',factIds:['f1'],nonFactual:false}],publication:{title:{text:source.slice(0,-1),factIds:['f1']},body:[]}});
 const input=(content=source)=>({content,processingMode:'DIRECT' as const,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet});
 const signal=()=>new AbortController().signal;
 const response=(output:unknown)=>Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:100,candidatesTokenCount:100,thoughtsTokenCount:0}});
@@ -33,23 +30,14 @@ test('source mode defaults NORMAL, accepts explicit modes only, ADMIN server act
  const ui=readFileSync('src/components/source-processing-mode.tsx','utf8');for(const text of ['طريقة المعالجة','المعالجة العادية','المعالجة المباشرة','name="processingMode"'])assert.ok(ui.includes(text));
  const migration=readFileSync('prisma/migrations/20260921160000_source_processing_mode/migration.sql','utf8');assert.match(migration,/DEFAULT 'NORMAL'/);assert.doesNotMatch(migration,/DROP|DELETE|UPDATE /);
 });
-test('Arabic DIRECT one factual request, no relevance/topic decision, local grounded draft',async()=>{
- let calls=0;const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{calls++;const req=JSON.parse(String(init?.body));const schema=req.generationConfig.responseJsonSchema;assert.equal(schema.properties.relevance,undefined);assert.equal(schema.properties.topic,undefined);assert.ok(!req.systemInstruction.parts[0].text.includes('six-geographies-v1'));return response(publicationRaw());});
- const u=validateUnderstanding(await provider.understand(input(),signal()),source);
- assert.equal(u.relevance,'POLITICAL_NEWS');assert.equal(u.topic,'UNKNOWN');
- const draft=await provider.draft({content:source,understanding:u,rules:ruleSet},signal());
- const final=finalizeConstrainedDraft(draft,source,u,unknownProfile);assert.ok(final.title.includes('مدرسة'));assert.ok(!final.review.some(r=>r.code==='UNSUPPORTED_OUTPUT'));assert.equal(calls,1);
-});
-test('Persian DIRECT extraction uses combined generation and independent review',async()=>{
- const {source:fa,raw}=bilingualFixture();let calls=0;
- const provider=new GeminiLanguageProvider('offline',async()=>{calls++;if(calls===1)return response(raw);if(calls===2)return response(passingReview(fa,prepareDirectBilingual(raw,fa)));throw Error('UNEXPECTED_CALL');});
- const u=validateUnderstanding(await provider.understand(input(fa),signal()),fa);assert.equal(u.language,'fa');assert.equal(u.event.facts[0].arabic,raw.statements[0].evidence.arabic);assert.equal(calls,2);
- assert.ok(u.rendering);assert.equal(calls,2);
+for(const [language,original,arabic] of [['ar','افتتح المجلس الإيراني 12 مدرسة جديدة في طهران.','افتتح المجلس الإيراني 12 مدرسة جديدة في طهران.'],['fa','شورای ایران ۱۲ مدرسه جدید در تهران افتتاح کرد.','افتتح المجلس الإيراني 12 مدرسة جديدة في طهران.']] as const)test(language+' DIRECT current generation and independent review',async()=>{
+ const stages:string[]=[];const provider=new GeminiLanguageProvider('offline',async(_url,init)=>{const req=JSON.parse(String(init?.body)),data=JSON.parse(req.contents[0].parts[0].text);if(req.generationConfig.responseJsonSchema.properties.extraction){stages.push('combined');return response(combinedFixture(original,arabic));}assert(req.generationConfig.responseJsonSchema.properties.comparisons);stages.push('review');assert.equal(data.originalSource,original);assert.equal(data.validatedEvidence.facts[0].evidence.excerpt,original);return response(reviewedFixture(original,data.publication));});
+ const u=validateUnderstanding(await provider.understand(input(original),signal()),original);assert.equal(u.language,language);assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');const draft=await provider.draft({processingMode:'DIRECT',content:original,understanding:u,rules:ruleSet},signal());assert.equal(draft.body,arabic);assert.deepEqual(stages,['combined','review']);
 });
 
 test('strict completeness, speaker, reference and Arabic validators remain fail-closed',()=>{
  assert.throws(()=>validateDirectExtraction({...raw(),statements:[]},source),/INCOMPLETE_EXTRACTION/);
- assert.throws(()=>validateDirectExtraction({...raw(),action:ev('معلومة غير موجودة')},source),/AMBIGUOUS_EVIDENCE_CONTEXT/);
+ assert.throws(()=>validateDirectExtraction({...raw(),action:ev('معلومة غير موجودة')},source),/INVALID_EVIDENCE/);
  const speech=raw();speech.statements[0].kind='STATEMENT';assert.throws(()=>adaptDirectExtraction(validateDirectExtraction(speech,source),source),/INVALID_ID_CLASSIFICATION|INVALID_DIRECT_EXTRACTION_SCHEMA/);
  assert.throws(()=>validateDirectExtraction({...raw(),relevance:'IRRELEVANT'},source),/INVALID_DIRECT_EXTRACTION_SCHEMA/);
  const english='The council opened a new school in the capital.';const x={...raw(),actors:[ev('council',english)],action:ev('opened',english),object:null,location:null,statements:[{evidence:ev(english,english),speaker:null,kind:'FACT',material:false}]};
@@ -87,9 +75,9 @@ test('DIRECT full local pipeline bypasses selection-only P4/filter labels, guard
  const p=await ingest(db,src.id,{externalId:'a',url:src.url+'/a',content:source,publishedAt:new Date()});
  const other=await db.processingJob.findMany({where:{sourcePostId:{not:p.id}},select:{sourcePostId:true}});
  const job=await claimJob(db,'complete',new Date(),false,other.map(j=>j.sourcePostId));assert.ok(job);
- let ai=0;await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{ai++;return response({...publicationRaw(),safety:{...safety,priority:'P4',filterReason:'ADVERTISING'}});}),signal());
+ let ai=0;await processJob(db,job,new GeminiLanguageProvider('offline',async(_url,init)=>{ai++;const req=JSON.parse(String(init?.body)),data=JSON.parse(req.contents[0].parts[0].text);const combined=combinedFixture(source);combined.extraction.safety.priority='P4';combined.extraction.safety.filterReason='ADVERTISING';return response(req.generationConfig.responseJsonSchema.properties.extraction?combined:reviewedFixture(source,data.publication));}),signal());
  const item=await db.newsItem.findFirstOrThrow({where:{evidence:{some:{sourcePostId:p.id}}}});
- assert.equal(item.validationStatus,'PASSED');assert.equal(item.status,'PENDING_APPROVAL');assert.equal(ai,1);
+ assert.equal(item.validationStatus,'PASSED');assert.equal(item.status,'PENDING_APPROVAL');assert.equal(ai,2);
  const eligible=await db.newsItem.findUniqueOrThrow({where:{id:item.id},include:{humanDraft:true,publication:true,eventRevision:true,evidence:{include:{sourcePost:{include:{source:true,jobs:true,matches:true,humanDraft:true}}}}}});
  assert.equal(eligibleDirectPublication(eligible),true);
  assert.equal(eligibleDirectPublication({...eligible,humanDraft:{id:'human'} as NonNullable<typeof eligible.humanDraft>}),false);
@@ -119,13 +107,14 @@ test('empty DIRECT skips AI; a mode change during processing cannot commit a sta
  const db=new PrismaClient({datasourceUrl:process.env.TEST_DATABASE_URL});
  try{
  const src=await saveSource(db,{platform:'TELEGRAM',handle:'directrace',name:'offline',processingMode:'DIRECT'},'user:admin');
- const empty=await ingest(db,src.id,{externalId:'empty',url:src.url+'/empty',content:'',publishedAt:new Date(),metadata:{transport:'telegram-shadow-v1',messageKind:'EMPTY'}});
+ await db.source.update({where:{id:src.id},data:{cursor:{kind:'telegram-shadow-v1',channelId:'1',lastId:0,baselineId:0,baselinePending:false}}});
+ const empty=await ingest(db,src.id,{externalId:'1',url:src.url+'/empty',content:'',publishedAt:new Date(),metadata:{transport:'telegram-shadow-v1',messageKind:'EMPTY'}});
  async function claim(id:string){const others=await db.processingJob.findMany({where:{sourcePostId:{not:id}},select:{sourcePostId:true}});const job=await claimJob(db,'race',new Date(),false,others.map(j=>j.sourcePostId));assert.ok(job);return job;}
  let calls=0;await processJob(db,await claim(empty.id),new GeminiLanguageProvider('offline',async()=>{calls++;throw Error('NO_NETWORK');}),signal());assert.equal(calls,0);assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:empty.id}})).error,'SOURCE_TEXT_REQUIRED');
  const p=await ingest(db,src.id,{externalId:'race',url:src.url+'/race',content:'افتتح المجلس مكتبة عامة في العاصمة.',publishedAt:new Date()});
- const text=p.originalContent,x={...raw(),actors:[ev('المجلس',text)],action:ev('افتتح',text),object:ev('مكتبة عامة',text),location:ev('العاصمة',text),statements:[{evidence:ev(text,text),speaker:null,kind:'FACT',material:false}]};
+ const text=p.originalContent;
  const job=await claim(p.id);
- await processJob(db,job,new GeminiLanguageProvider('offline',async()=>{await changeSourceProcessingMode(db,src.id,'NORMAL','user:admin');return response({...x,coverage:[{unitId:"u1",factIds:["f1"],nonFactual:false}],publication:{title:{text:text.slice(0,-1),factIds:["f1"]},body:[]}});}),signal());
+ await processJob(db,job,new GeminiLanguageProvider('offline',async(_url,init)=>{const req=JSON.parse(String(init?.body)),data=JSON.parse(req.contents[0].parts[0].text);if(req.generationConfig.responseJsonSchema.properties.extraction){await changeSourceProcessingMode(db,src.id,'NORMAL','user:admin');return response(combinedFixture(text));}return response(reviewedFixture(text,data.publication));}),signal());
  const stored=await db.sourcePost.findUniqueOrThrow({where:{id:p.id}});assert.equal(stored.error,'SOURCE_PROCESSING_MODE_CHANGED');assert.equal(await db.newsItem.count({where:{evidence:{some:{sourcePostId:p.id}}}}),0);assert.equal((await db.processingJob.findUniqueOrThrow({where:{id:job.id}})).status,'RETRY');
  }finally{await db.$disconnect();}
 });

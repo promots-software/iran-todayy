@@ -107,11 +107,10 @@ test('extraction repair cannot silently delete grounded statements or speakers',
  const next={actors:[],action:e('افتتحنا'),statements:[{evidence:e('أعلن موعداً جديداً'),speaker:null}]};
  assert.throws(()=>preserveGroundedExtraction(previous,next,source),/REPAIR_GROUNDED_IDENTITY_CHANGED/);
 });
-test('draft repair returns the complete untrusted proposal for full revalidation',()=>{
+test('draft repair cannot mutate unrelated title or fact IDs without diagnosis',()=>{
  const before={publication:{title:{text:'عنوان صحيح',factIds:['f1']},body:[{text:'نص غير صحيح',factIds:['f1']}]}};
  const next={publication:{title:{text:'تغيير غير مطلوب',factIds:['f2']},body:[{text:'النص المصحح',factIds:['f1']}]}};
- const merged=mergeDiagnosedRepair(before,next,{stage:'draft',code:'INVALID',issues:[{code:'INVALID',path:['publication','body',0,'text']}],instructions:''}) as typeof before;
- assert.deepEqual(merged,next);assert.equal(before.publication.body[0].text,'نص غير صحيح');
+ assert.throws(()=>mergeDiagnosedRepair(before,next,{stage:'draft',code:'INVALID',issues:[{code:'INVALID',path:['publication','body',0,'text']}],instructions:''}),/REPAIR_UNDIAGNOSED_CHANGE/);assert.equal(before.publication.body[0].text,'نص غير صحيح');
 });
 const repairSource='أعلنت الوزارة افتتاح 8 مدارس.';
 function repairFailure(){const text='افتتاح 9 مدارس';return new ProcessingError('DIRECT_PUBLICATION_NUMBER_MISMATCH',false,{stage:'draft',issues:[{code:'DIRECT_PUBLICATION_NUMBER_MISMATCH',path:['publication','title','text']}],output:{publication:{title:{text,factIds:['f1']}}},repairDiagnostics:[{code:'DIRECT_PUBLICATION_NUMBER_MISMATCH',path:['publication','title','text'],current:text,expected:'8 schools',cause:'Wrong quantity',sourceSpans:[{start:0,end:repairSource.length,text:repairSource}],factIds:['f1'],speakerIds:[],occurrenceIds:['0:'+repairSource.length],allowedPaths:[['publication','title','text']]}]});}

@@ -1,0 +1,220 @@
+{
+  "origin": "Frozen successful V4.3 assessor projected to V4.4 ID-only wire (catalog evidence redundant); unchanged V4.4 comparator",
+  "source": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "المحادثات التي كانت تتم عبر الوسطاء"
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "prop1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 35,
+            "excerpt": "المحادثات التي كانت تتم عبر الوسطاء"
+          },
+          "actor": "المحادثات",
+          "action": "تتم",
+          "objectContext": "عبر الوسطاء",
+          "speaker": "NARRATOR",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "كانت",
+            "phase": "OCCURRING",
+            "continuity": "UNSPECIFIED",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The proposition identifies conversations as the subject, described as occurring in the past via mediators."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "candidate": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "المحادثات التي كانت تجري بوساطة الوسطاء"
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "p1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 24,
+            "excerpt": "المحادثات التي كانت تجري"
+          },
+          "actor": "المحادثات",
+          "action": "تجري",
+          "objectContext": "المحادثات",
+          "speaker": "NONE",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "كانت",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [
+            {
+              "id": "r1",
+              "kind": "CONTEXT",
+              "targetIds": [
+                "p2"
+              ],
+              "evidence": {
+                "unitId": "u1",
+                "start": 25,
+                "end": 39,
+                "excerpt": "بوساطة الوسطاء"
+              }
+            }
+          ],
+          "explanation": "The talks were in a state of occurrence in the past."
+        },
+        {
+          "id": "p2",
+          "evidence": {
+            "unitId": "u1",
+            "start": 25,
+            "end": 39,
+            "excerpt": "بوساطة الوسطاء"
+          },
+          "actor": "الوسطاء",
+          "action": "الوساطة",
+          "objectContext": "المحادثات",
+          "speaker": "NONE",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "كانت",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The mediators were providing mediation for the talks."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "assessor": {
+    "assessments": [
+      {
+        "targetId": "candidate:p:p1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 0,
+          "end": 24,
+          "excerpt": "المحادثات التي كانت تجري"
+        },
+        "state": "SUPPORTED",
+        "sufficientGroups": [
+          [
+            {
+              "kind": "SOURCE_PROPOSITION",
+              "supportId": "source:proposition:0"
+            }
+          ]
+        ],
+        "defects": [],
+        "explanation": "The source proposition confirms that the conversations were occurring in the past, matching the candidate's core assertion."
+      },
+      {
+        "targetId": "candidate:r:p1:r1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 25,
+          "end": 39,
+          "excerpt": "بوساطة الوسطاء"
+        },
+        "state": "SUPPORTED",
+        "sufficientGroups": [
+          [
+            {
+              "kind": "SOURCE_PROPOSITION",
+              "supportId": "source:proposition:0"
+            }
+          ]
+        ],
+        "defects": [],
+        "explanation": "The source proposition explicitly supports the context of the conversations being conducted via mediators."
+      },
+      {
+        "targetId": "candidate:p:p2",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 25,
+          "end": 39,
+          "excerpt": "بوساطة الوسطاء"
+        },
+        "state": "SUPPORTED",
+        "sufficientGroups": [
+          [
+            {
+              "kind": "SOURCE_PROPOSITION",
+              "supportId": "source:proposition:0"
+            }
+          ]
+        ],
+        "defects": [],
+        "explanation": "The source proposition confirms the involvement of mediators in the conversation process."
+      }
+    ]
+  },
+  "comparator": {
+    "judgments": [
+      {
+        "candidateId": "p1",
+        "verdict": "SUPPORTED",
+        "explanation": "The proposition that the conversations were occurring is semantically supported by the source proposition stating the conversations were taking place.",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ],
+        "issues": []
+      },
+      {
+        "candidateId": "p2",
+        "verdict": "SUPPORTED",
+        "explanation": "The proposition regarding the presence of mediators is semantically supported by the source text identifying that the conversations occurred via mediators.",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ],
+        "issues": []
+      }
+    ],
+    "relationAssessments": [
+      {
+        "candidateRelationId": "r1",
+        "verdict": "SUPPORTED",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ]
+      }
+    ],
+    "overall": "SUPPORTED"
+  }
+}

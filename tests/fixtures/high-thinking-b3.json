@@ -1,0 +1,152 @@
+{
+  "fidelityLedger": {
+    "sourceCoverage": [
+      {
+        "unitId": "u1",
+        "publicationIds": [
+          "title",
+          "body:1"
+        ],
+        "temporal": [
+          {
+            "publicationId": "title",
+            "sourceExcerpt": "أقر البرلمان الإيراني قانوناً جديداً لتنظيم النقل العام",
+            "candidateExcerpt": "البرلمان الإيراني يقر قانوناً جديداً لتنظيم النقل العام",
+            "explanation": "The source states the event in the past. The candidate title uses a journalistic present which refers to the same completed event. Semantic time and phase match.",
+            "sourceState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "candidateState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "assessment": "PRESERVED"
+          },
+          {
+            "publicationId": "body:1",
+            "sourceExcerpt": "أقر البرلمان الإيراني قانوناً جديداً لتنظيم النقل العام",
+            "candidateExcerpt": "أقر البرلمان الإيراني قانوناً جديداً يهدف إلى تنظيم وتطوير قطاع النقل العام",
+            "explanation": "The candidate adds 'تطوير' (development) which is not present in the source. This is a material addition, changing the scope of the law.",
+            "sourceState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "candidateState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "assessment": "CHANGED"
+          }
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "The title is fully preserved. The body text includes an unauthorized addition of 'development'."
+      }
+    ],
+    "claims": [
+      {
+        "components": [
+          {
+            "id": "c1",
+            "excerpt": "البرلمان الإيراني يقر قانوناً جديداً لتنظيم النقل العام",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "The title accurately reflects the core fact."
+          }
+        ],
+        "publicationId": "title",
+        "excerpt": "البرلمان الإيراني يقر قانوناً جديداً لتنظيم النقل العام",
+        "sourceUnitIds": [
+          "u1"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "The title is supported by the source."
+      },
+      {
+        "components": [
+          {
+            "id": "c2",
+            "excerpt": "أقر البرلمان الإيراني قانوناً جديداً",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "The enactment of the law is supported."
+          },
+          {
+            "id": "c3",
+            "excerpt": "يهدف إلى تنظيم",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "The purpose of regulation is supported."
+          },
+          {
+            "id": "c4",
+            "excerpt": "وتطوير",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "UNSUPPORTED",
+            "explanation": "The source does not mention 'development' (تطوير)."
+          }
+        ],
+        "publicationId": "body:1",
+        "excerpt": "أقر البرلمان الإيراني قانوناً جديداً يهدف إلى تنظيم وتطوير قطاع النقل العام في البلاد.",
+        "sourceUnitIds": [
+          "u1"
+        ],
+        "verdict": "UNSUPPORTED",
+        "explanation": "The claim contains an unsupported addition ('تطوير')."
+      }
+    ]
+  },
+  "review": [
+    {
+      "id": "title",
+      "verdict": "SUPPORTED",
+      "checks": {
+        "scope": true,
+        "entitiesAndRelationships": true,
+        "namesAndTitles": true,
+        "numbers": true,
+        "attribution": true,
+        "negationAndModality": true,
+        "literalQuotes": true
+      },
+      "issues": []
+    },
+    {
+      "id": "body:1",
+      "verdict": "UNSUPPORTED",
+      "checks": {
+        "scope": false,
+        "entitiesAndRelationships": true,
+        "namesAndTitles": true,
+        "numbers": true,
+        "attribution": true,
+        "negationAndModality": true,
+        "literalQuotes": true
+      },
+      "issues": [
+        "Added unauthorized information not present in source: تطوير"
+      ]
+    }
+  ],
+  "fullSourceCovered": true,
+  "publicationQuality": false,
+  "issues": [
+    "UNSUPPORTED_OUTPUT"
+  ]
+}

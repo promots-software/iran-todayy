@@ -1,0 +1,268 @@
+{
+  "origin": "Offline ID-only projection of frozen N1 V4.1 / exactly-once V4.2 normalized comparator; NOT a V4.4 live retest",
+  "source": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "المحادثات التي كانت تتم عبر الوسطاء"
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "p1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 35,
+            "excerpt": "المحادثات التي كانت تتم عبر الوسطاء"
+          },
+          "actor": "المحادثات",
+          "action": "تتم",
+          "objectContext": "عبر الوسطاء",
+          "speaker": "NARRATOR",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "PAST_CONTEXT",
+            "referenceText": "كانت",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "The text describes the process of talks occurring in the past through intermediaries."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "candidate": {
+    "units": [
+      {
+        "id": "u1",
+        "text": "المحادثات المستمرة التي تجري عبر الوسطاء"
+      }
+    ],
+    "inventory": {
+      "propositions": [
+        {
+          "id": "p1",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 18,
+            "excerpt": "المحادثات المستمرة"
+          },
+          "actor": "المحادثات",
+          "action": "استمرار",
+          "objectContext": "none",
+          "speaker": "NONE",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "CURRENT",
+            "referenceText": "المستمرة",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [],
+          "explanation": "المحادثات توصف بأنها مستمرة."
+        },
+        {
+          "id": "p2",
+          "evidence": {
+            "unitId": "u1",
+            "start": 0,
+            "end": 40,
+            "excerpt": "المحادثات المستمرة التي تجري عبر الوسطاء"
+          },
+          "actor": "المحادثات",
+          "action": "تجري",
+          "objectContext": "عبر الوسطاء",
+          "speaker": "NONE",
+          "attribution": "NARRATOR",
+          "state": {
+            "reference": "CURRENT",
+            "referenceText": "تجري",
+            "phase": "OCCURRING",
+            "continuity": "CONTINUING",
+            "certainty": "ASSERTED",
+            "polarity": "POSITIVE"
+          },
+          "relations": [
+            {
+              "id": "r1",
+              "kind": "CONTEXT",
+              "targetIds": [
+                "p1"
+              ],
+              "evidence": {
+                "unitId": "u1",
+                "start": 19,
+                "end": 40,
+                "excerpt": "التي تجري عبر الوسطاء"
+              }
+            }
+          ],
+          "explanation": "توصيف آلية إجراء المحادثات المستمرة."
+        }
+      ],
+      "unresolved": []
+    }
+  },
+  "assessor": {
+    "assessments": [
+      {
+        "targetId": "candidate:p:p1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 0,
+          "end": 18,
+          "excerpt": "المحادثات المستمرة"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "TEMPORAL",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 0,
+              "end": 18,
+              "excerpt": "المحادثات المستمرة"
+            },
+            "explanation": "The source specifies the talks occurred in the past, while the candidate describes them as ongoing."
+          }
+        ],
+        "explanation": "The candidate asserts the talks are ongoing, which is not supported by the source stating the talks were in the past."
+      },
+      {
+        "targetId": "candidate:p:p2",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 0,
+          "end": 40,
+          "excerpt": "المحادثات المستمرة التي تجري عبر الوسطاء"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "TEMPORAL",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 0,
+              "end": 40,
+              "excerpt": "المحادثات المستمرة التي تجري عبر الوسطاء"
+            },
+            "explanation": "The source specifies the talks occurred in the past, while the candidate describes them as ongoing."
+          }
+        ],
+        "explanation": "The candidate asserts the talks are ongoing, which is not supported by the source stating the talks were in the past."
+      },
+      {
+        "targetId": "candidate:r:p2:r1",
+        "candidateEvidence": {
+          "unitId": "u1",
+          "start": 19,
+          "end": 40,
+          "excerpt": "التي تجري عبر الوسطاء"
+        },
+        "state": "UNSUPPORTED",
+        "sufficientGroups": [],
+        "defects": [
+          {
+            "kind": "TEMPORAL",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 19,
+              "end": 40,
+              "excerpt": "التي تجري عبر الوسطاء"
+            },
+            "explanation": "The source describes the talks as having occurred in the past, while the candidate describes them as currently occurring."
+          }
+        ],
+        "explanation": "The candidate asserts the mechanism of taking place via intermediaries is currently occurring, which is not supported by the source stating it happened in the past."
+      }
+    ]
+  },
+  "comparator": {
+    "judgments": [
+      {
+        "candidateId": "p1",
+        "verdict": "UNSUPPORTED",
+        "explanation": "The source proposition specifies that the talks were happening in the past ('كانت تتم'), whereas the candidate proposition identifies the talks as current or ongoing ('المستمرة').",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ],
+        "issues": [
+          {
+            "kind": "PHASE",
+            "candidateRelationId": null,
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 0,
+              "end": 18,
+              "excerpt": "المحادثات المستمرة"
+            },
+            "explanation": "The source reports talks as a past event, whereas the candidate incorrectly characterizes them as ongoing/current.",
+            "sourceSupports": [
+              {
+                "kind": "SOURCE_PROPOSITION",
+                "supportId": "source:proposition:0"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "candidateId": "p2",
+        "verdict": "UNSUPPORTED",
+        "explanation": "The source proposition specifies that the talks were happening in the past ('كانت تتم'), whereas the candidate proposition identifies the talks as current or ongoing ('تجري').",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ],
+        "issues": [
+          {
+            "kind": "PHASE",
+            "candidateRelationId": "r1",
+            "candidateEvidence": {
+              "unitId": "u1",
+              "start": 0,
+              "end": 40,
+              "excerpt": "المحادثات المستمرة التي تجري عبر الوسطاء"
+            },
+            "explanation": "The source reports talks as a past event, whereas the candidate incorrectly characterizes them as ongoing/current.",
+            "sourceSupports": [
+              {
+                "kind": "SOURCE_PROPOSITION",
+                "supportId": "source:proposition:0"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "relationAssessments": [
+      {
+        "candidateRelationId": "r1",
+        "verdict": "UNSUPPORTED",
+        "sourceSupports": [
+          {
+            "kind": "SOURCE_PROPOSITION",
+            "supportId": "source:proposition:0"
+          }
+        ]
+      }
+    ],
+    "overall": "UNSUPPORTED"
+  }
+}

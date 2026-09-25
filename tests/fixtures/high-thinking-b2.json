@@ -1,0 +1,133 @@
+{
+  "fidelityLedger": {
+    "sourceCoverage": [
+      {
+        "unitId": "u1",
+        "publicationIds": [
+          "title",
+          "body:1"
+        ],
+        "temporal": [
+          {
+            "publicationId": "title",
+            "sourceExcerpt": "أقر البرلمان",
+            "candidateExcerpt": "البرلمان الإيراني يقر",
+            "explanation": "المصدر يؤكد حدثاً ماضياً. العنوان يعرضه بأسلوب إخباري.",
+            "sourceState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "candidateState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "assessment": "PRESERVED"
+          }
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "المصدر يشير إلى إقرار قانون، وهو ما تم حفظه في العنوان والمتن، مع ملاحظة إضافة غير مسندة في المتن."
+      }
+    ],
+    "claims": [
+      {
+        "components": [
+          {
+            "id": "c1",
+            "excerpt": "البرلمان الإيراني يقر قانوناً جديداً لتنظيم النقل العام",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "العنوان يعكس محتوى المصدر بشكل دقيق."
+          }
+        ],
+        "publicationId": "title",
+        "excerpt": "البرلمان الإيراني يقر قانوناً جديداً لتنظيم النقل العام",
+        "sourceUnitIds": [
+          "u1"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "العنوان يعكس جوهر الخبر المذكور في المصدر."
+      },
+      {
+        "components": [
+          {
+            "id": "c2",
+            "excerpt": "أقر البرلمان الإيراني قانوناً جديداً",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "مطابقة لحقيقة إقرار القانون."
+          },
+          {
+            "id": "c3",
+            "excerpt": "يهدف إلى تنظيم",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "SUPPORTED",
+            "explanation": "تعبر عن الغرض المذكور في المصدر (لتنظيم)."
+          },
+          {
+            "id": "c4",
+            "excerpt": "وتطوير",
+            "sourceUnitIds": [
+              "u1"
+            ],
+            "verdict": "UNSUPPORTED",
+            "explanation": "المصدر لا يذكر تطوير قطاع النقل، بل التنظيم فقط."
+          }
+        ],
+        "publicationId": "body:1",
+        "excerpt": "أقر البرلمان الإيراني قانوناً جديداً يهدف إلى تنظيم وتطوير قطاع النقل العام في البلاد.",
+        "sourceUnitIds": [
+          "u1"
+        ],
+        "verdict": "UNSUPPORTED",
+        "explanation": "يتضمن النص إضافة (تطوير) غير مسندة إلى المصدر."
+      }
+    ]
+  },
+  "review": [
+    {
+      "id": "title",
+      "verdict": "SUPPORTED",
+      "checks": {
+        "scope": true,
+        "entitiesAndRelationships": true,
+        "namesAndTitles": true,
+        "numbers": true,
+        "attribution": true,
+        "negationAndModality": true,
+        "literalQuotes": true
+      },
+      "issues": []
+    },
+    {
+      "id": "body:1",
+      "verdict": "UNSUPPORTED",
+      "checks": {
+        "scope": false,
+        "entitiesAndRelationships": false,
+        "namesAndTitles": true,
+        "numbers": true,
+        "attribution": true,
+        "negationAndModality": true,
+        "literalQuotes": true
+      },
+      "issues": [
+        "إضافة غير مسندة في المتن: \"وتطوير\""
+      ]
+    }
+  ],
+  "fullSourceCovered": true,
+  "publicationQuality": false,
+  "issues": [
+    "المتن يحتوي على إضافة غير مسندة إلى المصدر."
+  ]
+}

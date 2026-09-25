@@ -38,16 +38,16 @@ export function observedCost(envelope:unknown){
  return (u!.promptTokenCount!*0.25+(u!.totalTokenCount!-u!.promptTokenCount!)*1.5)/1e6;
 }
 type Reservation={at:number;usd:number};
-export function budgetRetryDelay(reservations:Reservation[],bytes:number,now:number,outputTokens:number=limits.outputTokens){
- if(budgetDecision(reservations,bytes,now,outputTokens).allowed)return 0;
+export function budgetRetryDelay(reservations:Reservation[],bytes:number,now:number,outputTokens:number=limits.outputTokens,outputCeiling:number=limits.outputTokens){
+ if(budgetDecision(reservations,bytes,now,outputTokens,outputCeiling).allowed)return 0;
  const boundaries=[...new Set(reservations.map(r=>r.at+86400000))].filter(t=>t>now).sort((a,b)=>a-b);
- const available=boundaries.find(t=>budgetDecision(reservations,bytes,t,outputTokens).allowed);
+ const available=boundaries.find(t=>budgetDecision(reservations,bytes,t,outputTokens,outputCeiling).allowed);
  return available===undefined?86400000:Math.max(1000,available-now);
 }
-export function budgetDecision(reservations:Reservation[],bytes:number,now:number,outputTokens:number=limits.outputTokens){
+export function budgetDecision(reservations:Reservation[],bytes:number,now:number,outputTokens:number=limits.outputTokens,outputCeiling:number=limits.outputTokens){
  const cost=(bytes*0.25+outputTokens*1.5)/1e6;
  const day=reservations.filter(r=>r.at>now-86400000);
- const invalid=!Number.isSafeInteger(bytes)||bytes<0||!Number.isSafeInteger(outputTokens)||outputTokens<0||outputTokens>limits.outputTokens||reservations.some(r=>!Number.isFinite(r.usd)||r.usd<0||!Number.isFinite(r.at))||bytes>limits.requestBytes;
+ const invalid=!Number.isSafeInteger(bytes)||bytes<0||!Number.isSafeInteger(outputTokens)||outputTokens<0||outputTokens>outputCeiling||![4096,8192].includes(outputCeiling)||reservations.some(r=>!Number.isFinite(r.usd)||r.usd<0||!Number.isFinite(r.at))||bytes>limits.requestBytes;
  const reason=invalid?'PROVIDER_INPUT_LIMIT':day.reduce((s,r)=>s+r.usd,0)+cost>limits.dayReservedUsd?'PROVIDER_COST_WAIT':null;
  return {allowed:reason===null,reservedUsd:cost,reason};
 }
@@ -78,7 +78,7 @@ export async function providerCapacitySnapshot(db:PrismaClient,now=Date.now()){
  * this snapshot cannot churn against the same observation. */
 export function costWaitRecheckBefore(snapshot:Awaited<ReturnType<typeof providerCapacitySnapshot>>|null,now=Date.now()){
  if(!snapshot||snapshot.state!=='AVAILABLE'||snapshot.quotas.reason||snapshot.observedAt>now||now-snapshot.observedAt>60000)return undefined;
- const maximumReservation=(limits.requestBytes*.25+limits.outputTokens*1.5)/1e6;
+ const maximumReservation=(limits.requestBytes*.25+8192*1.5)/1e6;
  if(snapshot.costRolling24hUsd+maximumReservation>limits.dayReservedUsd)return undefined;
  return new Date(snapshot.observedAt);
 }
@@ -108,8 +108,11 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
    }
    let reservationId:string|undefined,requestStartedAt=0,operationAttempt=0;
    const bytes=Buffer.byteLength(body,'utf8');
-   let outputTokens:number;
-   try{outputTokens=Number(JSON.parse(body).generationConfig?.maxOutputTokens??limits.outputTokens);}catch{throw new ProcessingError('PROVIDER_INPUT_LIMIT');}
+   let outputTokens:number,outputCeiling:number=limits.outputTokens;
+   try{const payload=JSON.parse(body);outputTokens=Number(payload.generationConfig?.maxOutputTokens??limits.outputTokens);
+    const input=JSON.parse(payload.contents?.[0]?.parts?.[0]?.text??'{}');
+    if(input.version==='proposition-support-v4.4'&&payload.generationConfig?.thinkingConfig?.thinkingLevel==='high'&&payload.generationConfig?.candidateCount===1)outputCeiling=8192;
+   }catch{throw new ProcessingError('PROVIDER_INPUT_LIMIT');}
    await db.$transaction(async tx=>{
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(20916012)`;
     const [{now}]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() as now`;
@@ -127,8 +130,8 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     const quota=quotaDecision(quotaReservations(rows),bytes,nowMs);
     if(quota.reason)throw new ProcessingError(quota.reason,quota.waitMs>0,undefined,quota.waitMs);
     const reservations=accountedReservations(rows);
-    const decision=budgetDecision(reservations,bytes,nowMs,outputTokens);
-    if(!decision.allowed)throw new ProcessingError(decision.reason!,decision.reason!=='PROVIDER_INPUT_LIMIT',undefined,budgetRetryDelay(reservations,bytes,nowMs,outputTokens));
+    const decision=budgetDecision(reservations,bytes,nowMs,outputTokens,outputCeiling);
+    if(!decision.allowed)throw new ProcessingError(decision.reason!,decision.reason!=='PROVIDER_INPUT_LIMIT',undefined,budgetRetryDelay(reservations,bytes,nowMs,outputTokens,outputCeiling));
     if(capacity.probe)await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_CAPACITY_PROBE',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'One bounded recovery request for this model resource',metadata:json({resource,until:nowMs+65000})}});
     reservationId=(await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_RESERVED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Conservative actual-request budget; no credentials',metadata:json({usd:decision.reservedUsd,bytes,inputTokens:bytes,outputTokens,resource,postId,key,operationAttempt})}})).id;
    });

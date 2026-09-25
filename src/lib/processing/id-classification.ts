@@ -46,7 +46,7 @@ export function idClassificationInput(x:GroundedExtraction,profile:SourceProfile
 /** Classifier output cannot supply any text to these local factual copies. */
 function copy(id:string,e:Evidence|null,translations:Map<string,string>|null){
  if(!e)return null;
- const arabic=translations?.get(id)??e.excerpt;if(translations)requireArabic(arabic);
+ const arabic=translations?.get(id)??e.excerpt;if(translations&&arabic!==e.excerpt)requireArabic(arabic,['references',id,'arabic']);
  const label={key:e.excerpt.normalize('NFKC').toLowerCase().trim(),arabic};
  return {key:label.key,arabic,evidence:{...e}};
 }
@@ -61,14 +61,16 @@ export function preflightIdClassification(x:GroundedExtraction,source:string,ren
 export function adaptIdClassification(x:GroundedExtraction,raw:unknown,source:string,rendering?:RenderingReceipt):Understanding{
  const translations=preflightIdClassification(x,source,rendering);
  const parsed=idClassificationSchema(x).safeParse(raw);
- if(!parsed.success)throw new ProcessingError('INVALID_ID_CLASSIFICATION');
+ if(!parsed.success)throw new ProcessingError('INVALID_ID_CLASSIFICATION',false,{stage:'classify',issues:parsed.error.issues.map(i=>({code:i.code,path:i.path.map(p=>typeof p==='symbol'?String(p):p)})),output:raw});
  const c=parsed.data,refs=classificationReferences(x);
  const sameIds=(actual:string[],required:string[])=>actual.length===required.length&&new Set(actual).size===required.length&&required.every(id=>actual.includes(id));
- if(!sameIds(c.anchorIds,refs.requiredAnchorIds)||!sameIds(c.factLabels.map(f=>f.id),refs.requiredFactIds))throw new ProcessingError('CLASSIFICATION_EVIDENCE_MISMATCH');
- if(new Set(c.rationaleIds).size!==c.rationaleIds.length)throw new ProcessingError('INVALID_CLASSIFICATION_RATIONALE_IDS');
- if(c.topicEvidenceId&&!c.rationaleIds.includes(c.topicEvidenceId))throw new ProcessingError('INVALID_CLASSIFICATION_RATIONALE_IDS');
+ const fail=(code:string,path:(string|number)[],cause=code):never=>{throw new ProcessingError(code,false,{stage:'classify',issues:[{code:cause,path}],output:raw});};
+ if(!sameIds(c.anchorIds,refs.requiredAnchorIds))fail('CLASSIFICATION_EVIDENCE_MISMATCH',['anchorIds']);
+ if(!sameIds(c.factLabels.map(f=>f.id),refs.requiredFactIds))fail('CLASSIFICATION_EVIDENCE_MISMATCH',['factLabels']);
+ if(new Set(c.rationaleIds).size!==c.rationaleIds.length)fail('INVALID_CLASSIFICATION_RATIONALE_IDS',['rationaleIds'],'DUPLICATE_RATIONALE_ID');
+ if(c.topicEvidenceId&&!c.rationaleIds.includes(c.topicEvidenceId))fail('INVALID_CLASSIFICATION_RATIONALE_IDS',['topicEvidenceId'],'TOPIC_EVIDENCE_NOT_IN_RATIONALE_IDS');
  const selected=refs.entries.find(e=>e.id===c.topicEvidenceId);
- if(c.topic!=='UNKNOWN'&&!selected)throw new ProcessingError('CLASSIFICATION_TOPIC_EVIDENCE_INVALID');
+ if(c.topic!=='UNKNOWN'&&!selected)fail('CLASSIFICATION_TOPIC_EVIDENCE_INVALID',['topicEvidenceId']);
  const rationale=c.topic==='UNKNOWN'
   ?`لم يثبت موضوع محدد من الأدلة المعتمدة؛ المراجع: ${c.rationaleIds.join('، ')}`
   :`التصنيف مستند إلى الأدلة المعتمدة في المراجع: ${c.rationaleIds.join('، ')}`;

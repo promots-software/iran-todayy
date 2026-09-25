@@ -3,7 +3,7 @@ import {reviewedResponse} from './fixtures/direct-reviewed';
 import {directFinalArticle} from '../src/lib/processing/direct-generation';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {ProcessingError,unknownProfile,validateUnderstanding} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
 import {resolveContextEvidence} from '../src/lib/processing/groq-validation';

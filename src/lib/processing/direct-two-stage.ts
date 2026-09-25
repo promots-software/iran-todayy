@@ -1,6 +1,6 @@
 import {eventIdentitySchema,eventIdentityInstructions} from './event-identity';
 import {fidelityLedgerSchemaFor} from './fidelity-ledger';
-import {normalSelection,normalExtractionSchema} from './normal-v2';
+import {normalSelection,normalExtractionSchema,newsworthinessInstructions} from './normal-v2';
 import {z} from 'zod';
 import {directExtractionSchema,directInstructions} from './direct';
 import {directArticleSchema} from './direct-generation-contract';
@@ -12,7 +12,7 @@ import {publicationReviewInstructions,publicationUnits} from './direct-publicati
 import {sameValidatedEvent} from './matcher';
 
 export const directCombinedSchema=z.object({extraction:directExtractionSchema.extend({coverage:directCoverageSchema,relevance:normalExtractionSchema.shape.relevance,contentType:normalExtractionSchema.shape.contentType,contentTypeEvidence:normalExtractionSchema.shape.contentTypeEvidence}),article:directArticleSchema.nullable()}).strict();
-export const directCombinedInstructions=directInstructions.replace('Do not generate summary, translations, invented factual prose, IDs, keys or verification.','Evidence fields remain verbatim original-language spans. Arabic article prose belongs exclusively in the separate article object.')+' In this ONE response decide semantic Iran relevance/content type and return extraction AND article for accepted news. For IRRELEVANT, PURE_PROMO or UNCERTAIN return article=null, without generating publication copy. They are untrusted proposals, not a review. '+directArticleInstructions;
+export const directCombinedInstructions=directInstructions.replace('Do not generate summary, translations, invented factual prose, IDs, keys or verification.','Evidence fields remain verbatim original-language spans. Arabic article prose belongs exclusively in the separate article object.')+' '+newsworthinessInstructions+' In this ONE response decide semantic Iran relevance/content type and return extraction AND article for accepted news. For IRRELEVANT, PURE_PROMO or UNCERTAIN return article=null, without generating publication copy. They are untrusted proposals, not a review. '+directArticleInstructions;
 export const directIndependentSchema=directPublicationReviewSchema.extend({comparisons:z.array(z.object({id:z.string().min(1),decision:comparisonSchema}).strict()).max(1000)}).strict();
 export const directIndependentInstructions=publicationReviewInstructions+' '+eventIdentityInstructions+' Independently review the complete canonical article, including translation equivalence for non-Arabic sources. Review title and body:1 (when body exists). Coverage must account for the FULL original source, not only extracted excerpts. Reject missing material assertions or invented background/padding. Do not rewrite. Independently compare incoming evidence with each supplied existing event for deduplication; return exactly its supplied comparison id and SAME/DIFFERENT/UNCERTAIN with incoming fact IDs. Event comparison never certifies truth or overrides the factual article review. Return no comparisons when none are supplied.';
 

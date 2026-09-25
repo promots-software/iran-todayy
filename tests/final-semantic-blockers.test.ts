@@ -1,3 +1,4 @@
+import {componentFixture} from './fixtures/fidelity-review';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -12,7 +13,7 @@ import oldFalseAccept from './fixtures/replay-temporal-false-accept.json';
 import actualTemporalReview from './fixtures/final-temporal-review.json';
 import faithfulControl from './fixtures/final-temporal-control.json';
 import displayAccounting from './fixtures/final-display-accounting.json';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {ruleSet} from '../src/lib/processing/rules';
 import {fixture} from './fixtures/processing';
 const state=(changes:Partial<ReturnType<typeof temporalStateSchema.parse>>={})=>temporalStateSchema.parse({time:'UNSPECIFIED',phase:'UNSPECIFIED',continuity:'UNSPECIFIED',certainty:'ASSERTED',...changes});
@@ -26,7 +27,7 @@ const pairs=[
 for(const c of pairs)test('semantic contrast: '+c.name+' fails even with a blanket SUPPORTED verdict',()=>{
  const p=[{id:'title',text:c.candidate}],l=fidelityLedgerSchema.parse(supportedLedger(c.source,p));
  Object.assign(l.sourceCoverage[0].temporal[0],{sourceState:c.a,candidateState:c.b,assessment:'PRESERVED'});
- assert.throws(()=>validateFidelityLedger(c.source,p,l),e=>{assert(e instanceof Error);assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE/);return true;});
+ assert.throws(()=>validateFidelityLedger(c.source,p,l),e=>{assert(e instanceof Error);assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE|INCONSISTENT_TEMPORAL_ASSESSMENT/);return true;});
 });
 test('conceptual rewrite and journalistic present retain the same event time meaning',()=>{
  const source='أنجز المجلس المشروع أمس.';const p=[{id:'title',text:'المجلس يتم مشروعه الذي أُنجز أمس'}];
@@ -41,7 +42,7 @@ test('no temporal result / uncertain result / unreviewed candidate words cannot 
  l.sourceCoverage[0].temporal[0].assessment='UNCERTAIN';assert.throws(()=>validateFidelityLedger(source,p,l));
  const f=fixture('u',source);assert.deepEqual(fidelityRepairDiagnostics(l,source,f.understanding,{}),[]);
  l.sourceCoverage[0].temporal[0].assessment='PRESERVED';l.claims[0].excerpt=source;
- assert.throws(()=>validateFidelityLedger(source,p,l),/FIDELITY/);
+ assert.throws(()=>validateFidelityLedger(source,p,l),/FIDELITY|REVIEW_RECEIPT_INVALID/);
 });
 test('temporal annotations must refer to actual persisted source and actual candidate',()=>{
  const source='افتتح المجلس المدرسة.';const p=[{id:'title',text:source}],l=fidelityLedgerSchema.parse(supportedLedger(source,p));
@@ -60,7 +61,7 @@ test('case305 canonical display prefixes are accounting-only; factual wording st
  const combined=r.outputs.filter(o=>'article' in o).at(-1) as {article:{title:string;body:string}};
  const p=[{id:'title',text:combined.article.title},{id:'body:1',text:combined.article.body}];
  const l=fidelityLedgerSchema.parse(supportedLedger(r.sourceText,p));
- for(const c of l.claims){const n=canonicalPresentationPrefixLength(r.sourceText,c.excerpt);c.excerpt=c.excerpt.slice(n);for(const row of l.sourceCoverage)for(const t of row.temporal)if(t.publicationId===c.publicationId)t.candidateExcerpt=c.excerpt;}
+ for(const c of l.claims){const n=canonicalPresentationPrefixLength(r.sourceText,c.excerpt);c.excerpt=c.excerpt.slice(n);c.components[0].excerpt=c.excerpt;for(const row of l.sourceCoverage)for(const t of row.temporal)if(t.publicationId===c.publicationId)t.candidateExcerpt=c.excerpt;}
  assert.doesNotThrow(()=>validateFidelityLedger(r.sourceText,p,l));
  assert.throws(()=>validateFidelityLedger(r.sourceText,[p[0],{...p[1],text:p[1].text+' وأعلن إنشاء جامعة.'}],l));
  assert.equal(canonicalPresentationPrefixLength('افتتح المجلس مدرسة.','فيديو | افتتح المجلس مدرسة.'),0);
@@ -87,12 +88,12 @@ test('every preserved source context requires its own temporal comparison',()=>{
  const ledger=supportedLedger(source,publication);
  assert(ledger.sourceCoverage.length>1);
  ledger.sourceCoverage.at(-1)!.temporal=[];
- assert.throws(()=>validateFidelityLedger(source,publication,ledger),/FIDELITY/);
+ assert.throws(()=>validateFidelityLedger(source,publication,ledger),/FIDELITY|REVIEW_RECEIPT_INVALID/);
 });
 
 test('actual targeted review rejects case261 on semantic time-state mismatch, not schema incompleteness',()=>{
- assert.throws(()=>validateFidelityLedger(actualTemporalReview.source,actualTemporalReview.publication,actualTemporalReview.review.fidelityLedger),e=>{
-  assert(e instanceof Error);assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE/);return true;
+ assert.throws(()=>validateFidelityLedger(actualTemporalReview.source,actualTemporalReview.publication,componentFixture(actualTemporalReview.review.fidelityLedger)),e=>{
+  assert(e instanceof Error);assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE|INCONSISTENT_TEMPORAL_ASSESSMENT/);return true;
  });
  const row=actualTemporalReview.review.fidelityLedger.sourceCoverage.find(r=>r.unitId===actualTemporalReview.expected.unitId)!;
  assert(row.temporal.some(t=>t.sourceState.time==='PAST'&&t.candidateState.time==='PRESENT'));
@@ -106,7 +107,7 @@ test('temporal comparison need not repeat non-temporal reporting connectors alre
 });
 
 test('actual faithful control with invented ellipses in review evidence fails closed',()=>{
- assert.throws(()=>validateFidelityLedger(faithfulControl.source,faithfulControl.publication,faithfulControl.review.fidelityLedger),e=>{
+ assert.throws(()=>validateFidelityLedger(faithfulControl.source,faithfulControl.publication,componentFixture(faithfulControl.review.fidelityLedger)),e=>{
   assert(e instanceof Error);assert.match(JSON.stringify(e),/INVALID_TEMPORAL_SOURCE/);return true;
  });
 });

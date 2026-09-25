@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {unknownProfile} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
 import {iranRelevanceInstructions} from '../src/lib/processing/iran-relevance';

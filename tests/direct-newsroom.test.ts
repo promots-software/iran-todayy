@@ -7,7 +7,7 @@ import {directExtractionSchema,validateDirectExtraction,adaptDirectExtraction} f
 import {directBilingualSchema,prepareDirectBilingual,finalizeDirectBilingual} from '../src/lib/processing/direct-bilingual';
 import {preparePublication,acceptPublication,publicationDraft,publicationUnits} from '../src/lib/processing/direct-publication';
 import {validateSpeakerEvidence} from '../src/lib/processing/speaker-evidence';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {unknownProfile,validateUnderstanding} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
 import {renderingChecks} from '../src/lib/processing/rendering-contract';

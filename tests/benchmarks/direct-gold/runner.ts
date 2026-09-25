@@ -1,11 +1,11 @@
+import {AssumedPropositionGemini} from '../../fixtures/proposition-mock';
 import {GeminiLanguageProvider,type GeminiUsage} from '../../../src/lib/processing/gemini';
 import {unknownProfile,validateUnderstanding,type Understanding,ProcessingError} from '../../../src/lib/processing/contracts';
 import {ruleSet} from '../../../src/lib/processing/rules';
-import {finalizeConstrainedDraft} from '../../../src/lib/processing/local-finalization';
+import {directFinalArticle} from '../../../src/lib/processing/direct-generation';
 import {matchEvent,type Candidate} from '../../../src/lib/processing/matcher';
 import {editorialDecision} from '../../../src/lib/processing/editorial-eligibility';
 import {sourceLanguage} from '../../../src/lib/processing/source-language';
-import {assertDirectFullCoverage} from '../../../src/lib/processing/direct-bilingual';
 import {evaluate,type Observation} from './evaluate';
 import {replayTransport} from './replay';
 import type {GoldCase} from './schema';
@@ -23,18 +23,18 @@ export async function runCases(cases:GoldCase[],adapter:Adapter={mode:'replay',k
    // Mirrors the exact-original zero-call early duplicate guard; never reads DB.
    if(c.relation.previousCaseId&&originals.get(c.relation.previousCaseId)===c.sourceText&&prior){o={...o,disposition:'DUPLICATE',relation:'DUPLICATE'};}
    else{
-    const provider=new GeminiLanguageProvider(adapter.key,adapter.transport(c),u=>{usage.push(u);});
+    const provider=new (adapter.mode==='replay'?AssumedPropositionGemini:GeminiLanguageProvider)(adapter.key,adapter.transport(c),u=>{usage.push(u);});
     const profile={...unknownProfile,verified:true,flagged:c.replay.flagged,classification:'NEUTRAL' as const,authority:'AGENCY' as const};
     const signal=AbortSignal.timeout(180000);
-    understanding=validateUnderstanding(await provider.understand({content:c.sourceText,publishedAt:date,profile,rules:ruleSet,processingMode:'DIRECT'},signal),c.sourceText);
-    assertDirectFullCoverage(c.sourceText,understanding);
-    const match=await matchEvent(understanding.event,date,prior?[prior]:[],provider,signal,{source:c.sourceText,understanding});
+    understanding=validateUnderstanding(await provider.understand({content:c.sourceText,publishedAt:date,profile,rules:ruleSet,processingMode:'DIRECT',comparisonCandidates:prior?[prior.data]:[]},signal),c.sourceText);
+    directFinalArticle(c.sourceText,understanding);
+    const match=await matchEvent(understanding.event,date,prior?[prior]:[],provider,signal,{source:c.sourceText,understanding,processingMode:'DIRECT'});
     o.relation=match.classification;o.facts=understanding.event.facts.map(f=>({id:f.id,excerpt:f.evidence.excerpt}));
     if(match.classification==='DUPLICATE')o.disposition='DUPLICATE';
     else if(match.classification==='UNCERTAIN_MATCH'){o.disposition='NEEDS_REVIEW';o.review=['UNCERTAIN_MATCH'];}
     else{
-     const raw=await provider.draft({content:c.sourceText,understanding,rules:ruleSet},signal);
-     const d=finalizeConstrainedDraft(raw,c.sourceText,understanding,profile);
+     await provider.draft({processingMode:'DIRECT',content:c.sourceText,understanding,rules:ruleSet},signal);
+     const d=directFinalArticle(c.sourceText,understanding);
      const decision=editorialDecision({validated:true,review:d.review},safeFlags);
      o={title:d.title,body:d.body,sentences:d.sentenceEvidence,facts:o.facts,disposition:decision.editorialEligibility,relation:match.classification,delivery:decision.deliveryDecision,review:d.review.map(r=>r.code+(r.detail?': '+r.detail:''))};
     }

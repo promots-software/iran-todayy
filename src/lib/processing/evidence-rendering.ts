@@ -12,7 +12,8 @@ const sourceHash=(source:string)=>createHash('sha256').update(source).digest('he
 const exactIds=(actual:string[],expected:string[])=>actual.length===expected.length&&new Set(actual).size===expected.length&&expected.every(id=>actual.includes(id));
 const digits=(text:string)=>numericTokens(text).sort();
 function validateEntry(ref:RenderingReference,arabic:string){
- requireArabic(arabic);
+ // An unchanged grounded name is an intermediate identity, not publication prose.
+ if(!(['actor','speaker','location'].includes(ref.role)&&arabic===ref.evidence.excerpt))requireArabic(arabic,['entries',ref.id,'arabic']);
  // Calendar metadata may not introduce a factual country/entity relationship.
  validateMonthRendering(ref.evidence.excerpt,arabic);
  if(JSON.stringify(digits(arabic))!==JSON.stringify(digits(ref.evidence.excerpt)))throw new ProcessingError('ARABIC_RENDERING_NUMBER_MISMATCH');

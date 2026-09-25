@@ -1,0 +1,108 @@
+{
+  "fidelityLedger": {
+    "sourceCoverage": [
+      {
+        "unitId": "u1",
+        "publicationIds": [
+          "title",
+          "body:1"
+        ],
+        "temporal": [
+          {
+            "publicationId": "title",
+            "sourceExcerpt": "أقر البرلمان الإيراني قانوناً جديداً",
+            "candidateExcerpt": "البرلمان الإيراني يقر قانوناً جديداً",
+            "explanation": "The source establishes the passage of the law in the past. The candidate title uses a journalistic-present tense to report the same completed legislative event.",
+            "sourceState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "candidateState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "assessment": "PRESERVED"
+          },
+          {
+            "publicationId": "body:1",
+            "sourceExcerpt": "أقر البرلمان الإيراني قانوناً جديداً",
+            "candidateExcerpt": "أقر البرلمان الإيراني قانوناً جديداً",
+            "explanation": "The source establishes the passage of the law. The candidate body text reports the same completed event.",
+            "sourceState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "candidateState": {
+              "time": "PAST",
+              "phase": "COMPLETED",
+              "continuity": "BOUNDED",
+              "certainty": "ASSERTED"
+            },
+            "assessment": "PRESERVED"
+          }
+        ],
+        "disposition": "PRESERVED",
+        "explanation": "The core fact of the Iranian Parliament passing a new law regarding public transport is preserved in both the title and body."
+      }
+    ],
+    "claims": [
+      {
+        "publicationId": "title",
+        "excerpt": "البرلمان الإيراني يقر قانوناً جديداً لتنظيم النقل العام",
+        "sourceUnitIds": [
+          "u1"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "The title accurately reflects the core legislative event described in the source."
+      },
+      {
+        "publicationId": "body:1",
+        "excerpt": "أقر البرلمان الإيراني قانوناً جديداً يهدف إلى تنظيم وتطوير قطاع النقل العام في البلاد.",
+        "sourceUnitIds": [
+          "u1"
+        ],
+        "verdict": "SUPPORTED",
+        "explanation": "The body text accurately reports the passage of the law, including its stated purpose."
+      }
+    ]
+  },
+  "review": [
+    {
+      "id": "title",
+      "verdict": "SUPPORTED",
+      "checks": {
+        "scope": true,
+        "entitiesAndRelationships": true,
+        "namesAndTitles": true,
+        "numbers": true,
+        "attribution": true,
+        "negationAndModality": true,
+        "literalQuotes": true
+      },
+      "issues": []
+    },
+    {
+      "id": "body:1",
+      "verdict": "SUPPORTED",
+      "checks": {
+        "scope": true,
+        "entitiesAndRelationships": true,
+        "namesAndTitles": true,
+        "numbers": true,
+        "attribution": true,
+        "negationAndModality": true,
+        "literalQuotes": true
+      },
+      "issues": []
+    }
+  ],
+  "fullSourceCovered": true,
+  "publicationQuality": true,
+  "issues": []
+}

@@ -69,18 +69,21 @@ test('all 50 run through actual pure DIRECT validators with network globally pro
   const report=await runCases(dataset.cases);assert.equal(report.networkRequests,0);assert.equal(report.caseCount,50);assert.equal(report.estimatedCostUsd,0);assert.equal(report.qualification,'NOT_LAUNCH_QUALIFIED');
   assert(report.results.every(r=>r.observation.delivery==='HOLD'));assert(!report.results.flatMap(r=>r.usage).some(u=>u.stage.includes('classify')));
   assert.equal(report.results.find(r=>r.id==='D42')!.simulatedRequests,0);
-  // Two extraction/translation calls plus final article generation under the full contract.
-  for(const id of ['D37','D38','D39','D40','D41'])assert.equal(report.results.find(r=>r.id===id)!.simulatedRequests,3);
+  // Combined generation and separate independent review under the full contract.
+  for(const id of ['D37','D38','D39','D40','D41'])assert.equal(report.results.find(r=>r.id===id)!.simulatedRequests,6);
   assert.equal(report.results.find(r=>r.id==='D45')!.observation.disposition,'READY_TO_PUBLISH');
   // Findings are deliberately not converted into a passing launch gate.
   const update=report.results.find(r=>r.id==='D44')!;assert.equal(update.findings.some(f=>f.code==='DUPLICATE_UPDATE_DECISION'),update.observation.relation!=='MATERIAL_UPDATE');
  }finally{globalThis.fetch=old;}
 });
-test('invalid provider fixture fails closed through real DIRECT validation, no live fallback',async()=>{
- process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';
- const report=await runCases([get('D23')],{mode:'replay',key:'offline',transport:c=>async(url,init)=>{const r=await replayTransport(c)(url,init),e=await r.json();const raw=JSON.parse(e.candidates[0].content.parts[0].text);raw.publication.title.text=raw.publication.title.text.replace('12','99');e.candidates[0].content.parts[0].text=JSON.stringify(raw);return Response.json(e);}});
- assert.equal(report.networkRequests,0);assert.notEqual(report.results[0].observation.disposition,'READY_TO_PUBLISH');assert.equal(report.results[0].observation.error,'DIRECT_PUBLICATION_NUMBER_MISMATCH');
+for(const repaired of [false,true])test('current invalid number fixture blocks or repairs without live fallback '+repaired,async()=>{
+ process.env.SHADOW_MODE='true';process.env.REQUIRE_APPROVAL='true';let generation=0,reviews=0;
+ const report=await runCases([get('D23')],{mode:'replay',key:'offline',transport:c=>{const base=replayTransport(c);return async(url,init)=>{const request=JSON.parse(String(init?.body));const r=await base(url,init),e=await r.json();const raw=JSON.parse(e.candidates[0].content.parts[0].text);if(request.generationConfig.responseJsonSchema.properties.extraction){generation++;if(!repaired||generation===1)raw.article.title=raw.article.title.replace('12','99');}else reviews++;e.candidates[0].content.parts[0].text=JSON.stringify(raw);return Response.json(e);};}});
+ assert.equal(report.networkRequests,0);assert.equal(report.results[0].observation.error===undefined,repaired);
+ if(repaired){assert.equal(generation,2);assert.equal(reviews,1);assert(!report.results[0].observation.title.includes('99'));}
+ else {assert.equal(reviews,0);assert(generation<=3);assert.match(report.results[0].observation.error!,/NUMBER_MISMATCH|SCHEMA_REPAIR_FAILED/);}
 });
+
 test('live mode rejects production environment, remote DB, absent key and uncapped spend offline',()=>{
  const env={BENCHMARK_ISOLATED_PROJECT:'CONFIRMED',BENCHMARK_GEMINI_KEY:'offline-placeholder',BENCHMARK_DATABASE_URL:'postgresql://test:test@127.0.0.1/iran_today_benchmark_gold'};
  assert.match(validateLiveEnvironment(env,60,1),/127.0.0.1/);

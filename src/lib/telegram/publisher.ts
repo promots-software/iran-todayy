@@ -1,3 +1,5 @@
+import {assertStagingDestination} from './staging-guard';
+import {processingSource} from '../processing/processing-source';
 import {normalMaterialUpdateFacts} from './material-update-evidence';
 import {requireAutoPolicy} from './auto-policy';
 import {eligibleAutomatic,publicationCandidateInclude} from './publication-policy';
@@ -38,6 +40,7 @@ export function publicationBodyForProvenance(body:string){
  return /^#[\p{L}\p{N}_]+(?: #[\p{L}\p{N}_]+){0,4}$/u.test(suffix)?body.slice(0,split):body;
 }
 export function readPublisherEnv(env:Record<string,string|undefined>=process.env){
+ assertStagingDestination(env);
  const token=env.TELEGRAM_BOT_TOKEN,chatId=env.TELEGRAM_CHAT_ID;
  if(!token||!/^\d+:[A-Za-z0-9_-]+$/.test(token)||!chatId||!/^-[1-9]\d*$/.test(chatId))throw new ProcessingError('TELEGRAM_PUBLISH_CONFIG_REQUIRED');
  return {token,chatId};
@@ -83,8 +86,8 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
    if(!current.length||current.some(f=>!event.facts.some(e=>isDeepStrictEqual(e,f))))throw new ProcessingError('FACT_EVIDENCE_CHANGED');
    const source=item.evidence.find(e=>e.sourcePostId===current[0].evidence.sourcePostId)?.sourcePost;
    if(!source)throw new ProcessingError('SOURCE_PROVENANCE_REQUIRED');
-   const u=validateUnderstanding((source.processingResult as {extraction?:unknown})?.extraction,source.originalContent);
-   const article=directFinalArticle(source.originalContent,u);
+   const u=validateUnderstanding((source.processingResult as {extraction?:unknown})?.extraction,processingSource(source));
+   const article=directFinalArticle(processingSource(source),u);
    if(u.directGeneration?.version!==generationContract||!isDeepStrictEqual(current,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent)throw new ProcessingError('DIRECT_GENERATION_RECEIPT_CHANGED');
    event.facts=current;
   }
@@ -92,8 +95,8 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   for(const fact of event.facts){
    const source=item.evidence.find(e=>e.sourcePostId===fact.evidence.sourcePostId)?.sourcePost;
    if(!source)throw new ProcessingError('SOURCE_PROVENANCE_REQUIRED');
-   checkEvidence(source.originalContent,fact.evidence);
-   if(fact.speaker)checkEvidence(source.originalContent,fact.speaker.evidence);
+   checkEvidence(processingSource(source),fact.evidence);
+   if(fact.speaker)checkEvidence(processingSource(source),fact.speaker.evidence);
   }
   const content=publicationText(item),sentences=validation.sentenceEvidence;
   if(!sentences.some(s=>s.text===item.title))throw new ProcessingError('TITLE_PROVENANCE_REQUIRED');

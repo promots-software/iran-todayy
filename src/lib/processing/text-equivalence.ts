@@ -20,7 +20,12 @@ const monthPattern=new RegExp('(?<![\\p{L}])('+[...months.keys()].sort((a,b)=>b.
 export function dateTokens(text:string){
  const normalized=orthography(digits(text));
  const calendar=/بالتقويم (?:الايراني|الفارسي)|هجري شمسي/u.test(normalized)?'solar-hijri':/هجري/u.test(normalized)?'hijri':'source-calendar';
- const monthTokens=[...normalized.matchAll(monthPattern)].map(m=>`${calendar}:month:${months.get(m[1])}`);
+ const monthTokens=[...normalized.matchAll(monthPattern)].flatMap(m=>{
+  const month=months.get(m[1])!,before=normalized.slice(0,m.index),after=normalized.slice(m.index!+m[0].length);
+  const day=before.match(/(?<![0-9])([0-9]{1,2})\s*$/u)?.[1],year=after.match(/^\s+([0-9]{4})(?![0-9])/u)?.[1];
+  // Known month synonyms only. Never infer missing components/calendar conversion.
+  return [calendar+':month:'+month,...(day?[calendar+':date:'+String(Number(day))+':'+month+':'+(year??'unspecified')]:[])];
+ });
  const temporal=normalized.match(/(?<![\p{L}\p{M}])(?:الاثنين|الثلاثاء|الاربعاء|الخميس|الجمعة|السبت|الاحد|غدا|امس|اليوم)(?![\p{L}\p{M}])/gu)??[];
  return [...monthTokens,...temporal];
 }
@@ -35,7 +40,7 @@ export function layoutProjection(text:string){
  * a comparison view only, not a quantity/entity/relationship equivalence claim.
  * Restrict to complete definite ordinal constructions, never ordinary nouns. */
 export function numericTokens(text:string):string[]{
- const value=orthography(digits(text));
+ const value=orthography(digits(text)).replace(/٫/gu,'.').replace(/(?<=\d)٬(?=\d{3}(?:\D|$))/gu,'');
  const ones:Record<string,number>={'الحادي':1,'الحادية':1,'الثاني':2,'الثانية':2,'الثالث':3,'الثالثة':3,'الرابع':4,'الرابعة':4,'الخامس':5,'الخامسة':5,'السادس':6,'السادسة':6,'السابع':7,'السابعة':7,'الثامن':8,'الثامنة':8,'التاسع':9,'التاسعة':9};
  const tens:Record<string,number>={'العشرون':20,'العشرين':20,'الثلاثون':30,'الثلاثين':30,'الاربعون':40,'الاربعين':40,'الخمسون':50,'الخمسين':50,'الستون':60,'الستين':60,'السبعون':70,'السبعين':70,'الثمانون':80,'الثمانين':80,'التسعون':90,'التسعين':90};
  const pattern=new RegExp('(?<![\\p{L}\\p{N}])('+Object.keys(ones).join('|')+')\\s+و('+Object.keys(tens).join('|')+')(?![\\p{L}\\p{N}])','gu');
@@ -43,5 +48,18 @@ export function numericTokens(text:string):string[]{
  const persianTens:Record<string,number>={'بیست':20,'سی':30,'چهل':40,'پنجاه':50,'شصت':60,'هفتاد':70,'هشتاد':80,'نود':90};
  const persianPattern=new RegExp('(?<![\\p{L}\\p{N}])('+Object.keys(persianTens).join('|')+')\\s+و\\s+('+Object.keys(persianOnes).sort((a,b)=>b.length-a.length).join('|')+')(?![\\p{L}\\p{N}])','gu');
  // Parse explicit compound values only; no guessed number/entity relationship.
- return [...(value.match(/[0-9]+(?:[.,][0-9]+)*/gu)??[]),...[...value.matchAll(pattern)].map(m=>String(ones[m[1]]+tens[m[2]])),...[...digits(text).matchAll(persianPattern)].map(m=>String(persianTens[m[1]]+persianOnes[m[2]]))];
+ return [...(value.match(/[0-9]+(?:[.,][0-9]+)*/gu)??[]).map(n=>/^\d+\.\d+$/u.test(n)?n.replace(/0+$/u,'').replace(/\.$/u,''):n),...[...value.matchAll(pattern)].map(m=>String(ones[m[1]]+tens[m[2]])),...[...digits(text).matchAll(persianPattern)].map(m=>String(persianTens[m[1]]+persianOnes[m[2]]))];
+}
+
+/** Exact original regions. A dot inside a digit token is not a sentence break:
+ * decimals, dotted dates and grouped numeric values stay indivisible. Other
+ * numeric punctuation (Arabic decimal/group separator, colon, slash, hyphen)
+ * is not a sentence boundary. Preserve all bytes for repair-integrity checks. */
+export function repairTextRegions(text:string):string[]{
+ const regions:string[]=[];let start=0;
+ for(let i=0;i<text.length;i++){
+  const numericDot=text[i]==='.'&&/\p{N}/u.test(text[i-1]??'')&&/\p{N}/u.test(text[i+1]??'');
+  if(/[.!؟\n]/u.test(text[i])&&!numericDot){regions.push(text.slice(start,i+1));start=i+1;}
+ }
+ if(start<text.length)regions.push(text.slice(start));return regions;
 }

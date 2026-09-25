@@ -1,3 +1,4 @@
+import {processingSource} from '../processing/processing-source';
 import {normalMaterialUpdateFacts} from './material-update-evidence';
 import {isDeepStrictEqual} from 'node:util';
 import {directFinalArticle} from '../processing/direct-generation';
@@ -33,12 +34,12 @@ export function publicationReady(item:PublicationCandidate,frozen=false){
   if(post.source.processingMode!==mode||!post.source.enabled||post.source.deletedAt||post.source.platform!=='TELEGRAM'||post.humanDraft||post.status!=='PENDING_APPROVAL'||post.error||post.rejectionReason||!clean(result,mode))return false;
   if(!post.jobs.length||post.jobs.some(j=>j.status!=='COMPLETED')||result.eventRevisionId!==item.eventRevisionId||!['NEW_EVENT','MATERIAL_UPDATE'].includes(String(result.classification))||!post.matches.some(m=>m.eventRevisionId===item.eventRevisionId&&['NEW_EVENT','MATERIAL_UPDATE'].includes(m.classification))||post.matches.some(m=>['UNCERTAIN','UNCERTAIN_MATCH'].includes(m.classification)))return false;
   try{
-   const u=validateUnderstanding(result.extraction,post.originalContent);
+   const u=validateUnderstanding(result.extraction,processingSource(post));
    if(mode==='DIRECT'){
     if(result.generationContract==='direct-generation-v2'||result.generationContract==='direct-generation-v3'){
-     const article=directFinalArticle(post.originalContent,u);
+     const article=directFinalArticle(processingSource(post),u);
      if(u.directGeneration?.version!==result.generationContract||!isDeepStrictEqual(item.factualEvidence,u.event.facts)||article.title!==item.title||article.body!==item.arabicContent||record(item.validationResult).generationContract!==result.generationContract)return false;
-    }else assertDirectFullCoverage(post.originalContent,u);
+    }else assertDirectFullCoverage(processingSource(post),u);
    }
    else {
     const acceptance=record(result.acceptance);

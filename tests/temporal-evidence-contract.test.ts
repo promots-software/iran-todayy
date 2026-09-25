@@ -1,3 +1,4 @@
+import {componentFixture} from './fixtures/fidelity-review';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {supportedLedger} from './fixtures/fidelity-review';
@@ -29,12 +30,12 @@ test('short exact evidence accepts a conceptual temporal-equivalent rewrite',()=
 });
 test('source/candidate evidence cannot be swapped or paraphrased as evidence',()=>{
  const l=faithful(),t=l.sourceCoverage[0].temporal[0];[t.sourceExcerpt,t.candidateExcerpt]=[t.candidateExcerpt,t.sourceExcerpt];
- assert.throws(()=>validateFidelityLedger(source,publication,l),/FIDELITY/);
+ assert.throws(()=>validateFidelityLedger(source,publication,l),/FIDELITY|REVIEW_RECEIPT_INVALID/);
 });
 test('SUPPORTED/PRESERVED cannot override a structured temporal contradiction',()=>{
  const l=faithful();Object.assign(l.sourceCoverage[0].temporal[0].candidateState,{time:'PRESENT',phase:'OCCURRING'});
  assert.equal(l.claims[0].verdict,'SUPPORTED');assert.equal(l.sourceCoverage[0].temporal[0].assessment,'PRESERVED');
- assert.throws(()=>validateFidelityLedger(source,publication,l),e=>{assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE/);return true;});
+ assert.throws(()=>validateFidelityLedger(source,publication,l),e=>{assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE|INCONSISTENT_TEMPORAL_ASSESSMENT/);return true;});
 });
 test('evidence instructions distinguish exact copied spans from semantic explanation',()=>{
  for(const key of ['sourceExcerpt','candidateExcerpt'] as const){
@@ -52,9 +53,9 @@ for(const control of providerControls)test('actual Gemini '+control.control+' co
   assert(control.publication.find(p=>p.id===t.publicationId)!.text.includes(t.candidateExcerpt));
  }
  if(control.control==='negative'){
-  assert.throws(()=>validateFidelityLedger(control.source,control.publication,control.review.fidelityLedger),e=>{assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE/);return true;});
+  assert.throws(()=>validateFidelityLedger(control.source,control.publication,componentFixture(control.review.fidelityLedger)),e=>{assert.match(JSON.stringify(e),/TEMPORAL_SCOPE_CHANGE|INCONSISTENT_TEMPORAL_ASSESSMENT/);return true;});
  }else{
   assert(control.review.fidelityLedger.sourceCoverage.some(row=>row.temporal.some(t=>t.sourceExcerpt!==t.candidateExcerpt)));
-  assert.doesNotThrow(()=>validateFidelityLedger(control.source,control.publication,control.review.fidelityLedger));
+  assert.doesNotThrow(()=>validateFidelityLedger(control.source,control.publication,componentFixture(control.review.fidelityLedger)));
  }
 });

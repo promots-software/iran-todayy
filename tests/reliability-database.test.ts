@@ -13,15 +13,15 @@ test('offline database: bounded retry preserves source and audits; later success
  const f=fixture('retry','افتتاح المستشفى الجديد في طهران','ar','افتتاح المستشفى الجديد في طهران');
  const provider=fixtureProvider([f]);let calls=0;
  const failed:LanguageProvider={id:'offline',live:false,understand:async()=>{calls++;throw new ProcessingError('GEMINI_HTTP_429');},compare:async()=>null,draft:async()=>null};
- const make=async(id:string,text:string)=>ingest(db,source.id,{externalId:id,url:'https://t.me/offline/1',content:text,publishedAt:new Date(),metadata:{}});
+ // This test concerns eligible work, not DB/application clock precision.
+ const make=async(id:string,text:string)=>{const p=await ingest(db,source.id,{externalId:id,url:'https://t.me/offline/1',content:text,publishedAt:new Date(),metadata:{}});await db.processingJob.updateMany({where:{sourcePostId:p.id},data:{availableAt:new Date(0)}});return p;};
  const post=await make('one',f.content);
  const job=await claimJob(db,'offline');assert.ok(job);await processJob(db,job,failed,signal);
  let stored=await db.sourcePost.findUniqueOrThrow({where:{id:post.id}});assert.equal(stored.originalContent,f.content);assert.equal(stored.status,'FAILED');assert.equal(stored.error,'GEMINI_HTTP_429');
  assert.equal((await db.processingJob.findUniqueOrThrow({where:{id:job.id}})).status,'RETRY');
- // An unrelated locally decidable story is not blocked by the first job.
- const outside=await make('outside','زلزال في فرنسا');const next=await claimJob(db,'other');assert.ok(next);assert.equal(next.sourcePostId,outside.id);await processJob(db,next,failed,signal);assert.equal(calls,1);
- const held=await make('uncertain','أعلنت اللجنة عن افتتاح المدرسة الجديدة');const holdJob=await claimJob(db,'hold');assert.ok(holdJob);await processJob(db,holdJob,failed,signal);assert.equal(calls,1);
- assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:outside.id}})).rejectionReason,'OUTSIDE_EDITORIAL_SCOPE');assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:held.id}})).error,'UNCERTAIN_SCOPE');
+ // Independent semantic intake is claimable despite the first job's provider failure.
+ const outside=await make('outside','زلزال في فرنسا');const next=await claimJob(db,'other');assert.ok(next);assert.equal(next.sourcePostId,outside.id);const irrelevant:LanguageProvider={...failed,understand:async()=>{calls++;return {...f.understanding,relevance:'IRRELEVANT',filterReason:'UNRELATED_TO_IRAN',names:[],topic:'UNKNOWN',event:{...f.understanding.event,actors:[],action:null,object:null,location:null,facts:[],summary:null}};}};await processJob(db,next,irrelevant,signal);assert.equal(calls,2);
+ assert.equal((await db.sourcePost.findUniqueOrThrow({where:{id:outside.id}})).status,'FILTERED');assert.equal(await db.newsItem.count(),0);assert.equal(await db.canonicalEvent.count(),0);assert.equal(await db.publication.count(),0);
  await db.processingJob.update({where:{id:job.id},data:{availableAt:new Date(0)}});
  const retry=await claimJob(db,'retry');assert.ok(retry);await processJob(db,retry,provider,signal);
  const counts=async()=>[await db.canonicalEvent.count(),await db.newsItem.count(),await db.publication.count()];const before=await counts();

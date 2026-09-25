@@ -3,7 +3,7 @@ import {coverageInstructions} from './editorial-scope';
 // Local transport metadata only. Never sent as a header or provider payload.
 export const checkpointAliases=Symbol('compatible-request-bodies');
 export type CheckpointRequestInit=RequestInit&{[checkpointAliases]?:string[]};
-export type GeminiRequest={systemInstruction:{parts:{text:string}[]};contents:{role:string;parts:{text:string}[]}[];generationConfig:{responseMimeType:string;responseJsonSchema:unknown;maxOutputTokens:number;candidateCount:number;thinkingConfig:{thinkingBudget:number}}};
+export type GeminiRequest={systemInstruction:{parts:{text:string}[]};contents:{role:string;parts:{text:string}[]}[];generationConfig:{responseMimeType:string;responseJsonSchema:unknown;maxOutputTokens:number;candidateCount:number;thinkingConfig:{thinkingBudget:number}|{thinkingLevel:'high'}}};
 
 /** Remove exact duplication only; every operative instruction and schema field
  * remains supplied. Keep the legacy body available for checkpoint lookup. */

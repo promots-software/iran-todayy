@@ -91,3 +91,15 @@ export function detectSourceLanguage(original:string):SourceLanguage|'mixed'{
  const confident=new Set(parts.map(sourceLanguage).filter(l=>l!=='unknown'));
  return confident.size>1?'mixed':'unknown';
 }
+
+/** Input admission is not language certification. Shared-script short prose may
+ * be processable without enough evidence to label Arabic versus Persian.
+ * 'und' MUST take the independently reviewed multilingual rendering route;
+ * never treat it as Arabic or change the persisted source to improve confidence.
+ * Only currently supported Arabic/Latin scripts are admitted provisionally. */
+export function sourceInputLanguage(original:string):SourceLanguage|'mixed'|'und'{
+ const language=detectSourceLanguage(original);if(language!=='unknown')return language;
+ const text=original.replace(/https?:\/\/\S+|@[\p{L}\p{N}_]+/gu,' ');
+ const letters=text.match(/\p{L}/gu)??[];
+ return letters.length>0&&letters.every(c=>/\p{Script=Arabic}|[A-Za-z]/u.test(c))?'und':'unknown';
+}

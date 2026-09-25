@@ -1,3 +1,4 @@
+import {propositionReceiptSchema} from './proposition-receipt';
 import {eventIdentitySchema} from './event-identity';
 import {repairTraceSchema,type RepairDiagnostic,type RepairTrace} from './repair-contract';
 import { z } from "zod";
@@ -38,6 +39,7 @@ export const eventSchema = z.object({
 export type EventData = z.infer<typeof eventSchema>;
 export const validationHistorySchema=z.array(z.object({stage:z.string(),initialCode:z.string(),initialIssues:z.array(z.object({code:z.string(),path:z.array(z.union([z.string(),z.number()]))})),repairCode:z.string().nullable(),cycles:z.array(repairTraceSchema).max(3).optional()}).strict()).max(16);
 export const understandingSchema = z.object({
+  propositionReview:propositionReceiptSchema.optional(),
   validationHistory:validationHistorySchema.optional(),
   semanticCoverage:directCoverageSchema.optional(),
   normalContentType:z.enum(["NEWS","PURE_PROMO","UNCERTAIN"]).optional(),

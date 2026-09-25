@@ -14,7 +14,7 @@ test('Persian is independently identified and rejected as Arabic prose',()=>{
  assert.equal(sourceLanguage('یکی از نظامیان به سی‌بی‌اس نیوز گفته که آسیب وارد شده'),'fa');
  assert.throws(()=>requireArabic('نظامیانی که در خدمت بودند'),/NON_ARABIC/);
  requireArabic('قال أحد العسكريين إن أضرارا لحقت بالقواعد.');
- assert.equal(sourceLanguage('short'),'unknown');
+ assert.equal(sourceLanguage('short'),'und');
 });
 test('singular speaker must come from same claim paragraph and retain grounded translation',()=>{
  const source='یکی از نظامیان گفته که آسیب به پایگاه وارد شده';

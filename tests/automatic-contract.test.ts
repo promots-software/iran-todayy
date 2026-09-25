@@ -13,7 +13,7 @@ import {publishReadyDirect} from '../src/lib/telegram/direct-auto';
 import {approvalDigest,freezeValidatedPublication,publishOne,publicationText} from '../src/lib/telegram/publisher';
 import {fixture,official} from './fixtures/processing';
 import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {ProcessingError} from '../src/lib/processing/contracts';
 import {editorialDecision} from '../src/lib/processing/editorial-eligibility';
 import {saveHumanDraft,approveHumanDraft} from '../src/lib/human-editorial';

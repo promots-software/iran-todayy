@@ -26,7 +26,7 @@ test('stale V0 diagnostic does not authorize R2',()=>{assert.equal(secondRepairD
 test('R2 runs complete validation and rejects newly introduced defect',async()=>{let checks=0;const s=await sequence([failure('9',[d('9')]),failure('10',[d('10')]),new ProcessingError('UNSUPPORTED_OUTPUT')]);try{await s.promise;}catch(e){checks++;assert.match(String(e),/UNSUPPORTED_OUTPUT/);}assert.equal(checks,1);assert.equal(s.calls(),3);});
 test('transport/cost waits never become a repair request',async()=>{for(const code of ['PROVIDER_COST_WAIT','GEMINI_HTTP_429','GEMINI_HTTP_503']){const s=await sequence([new ProcessingError(code,true)]);await assert.rejects(s.promise,new RegExp(code));assert.equal(s.repairs.length,0);}});
 
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {unknownProfile,validateUnderstanding} from '../src/lib/processing/contracts';
 import {ruleSet} from '../src/lib/processing/rules';
 import {renderingChecks} from '../src/lib/processing/rendering-contract';
@@ -39,11 +39,12 @@ for(const repairs of [0,1,2] as const)test(`actual DIRECT request path: ${repair
    generation++;const n=generation<=repairs?String(8+generation):'8';
    if(generation===3){assert.equal(data.repair.cycle,2);assert.match(data.repair.previousOutput.article.title,/10/);}
    value={extraction:{relevance:'POLITICAL_NEWS',contentType:'NEWS',contentTypeEvidence:{excerpt:source,context:source},actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence:{excerpt:source,context:source},speaker:null,kind:'FACT',material:false}],coverage:[{unitId:'u1',nonFactual:false,factIds:['f1']}],safety:{filterReason:'NONE',priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false}},article:{title:'افتتاح '+n+' مدارس',body:source,diagnostics:[]}};
-  }else{review++;const ledger=supportedLedger(source,data.publication);if(generation<=repairs){ledger.claims[0].verdict='UNSUPPORTED' as 'SUPPORTED';ledger.claims[0].explanation='Wrong quantity '+(8+generation)+'; source establishes 8.';}value={fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[],comparisons:[]};}
+  }else{review++;const ledger=supportedLedger(source,data.publication);if(generation<=repairs){ledger.claims[0].verdict='UNSUPPORTED' as 'SUPPORTED';ledger.claims[0].components[0].verdict='UNSUPPORTED';ledger.claims[0].explanation='Wrong quantity '+(8+generation)+'; source establishes 8.';}value={fidelityLedger:ledger,review:data.publication.map((p:{id:string})=>({id:p.id,verdict:'SUPPORTED',checks:Object.fromEntries(renderingChecks.map(k=>[k,true])),issues:[]})),fullSourceCovered:true,publicationQuality:true,issues:[],comparisons:[]};}
   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(value)}]}}]});
  });
  const u=validateUnderstanding(await provider.understand({processingMode:'DIRECT',content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},new AbortController().signal),source);
- assert.equal(generation,1+repairs);assert.equal(review,1+repairs);assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');
+ assert.equal(generation,1+repairs);assert.equal(review,1); // Invalid numbers are rejected locally before paid review.
+ assert.equal(u.directGeneration?.semanticVerification,'INDEPENDENT');
 });
 
 import {preparePublication} from '../src/lib/processing/direct-publication';

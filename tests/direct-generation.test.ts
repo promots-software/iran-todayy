@@ -10,7 +10,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {PrismaClient} from '@prisma/client';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 import {directMatchingUnderstanding,completeDirectGeneration,directFinalArticle} from '../src/lib/processing/direct-generation';
 import {editorialContract,EDITORIAL_CONTRACT_SHA256} from '../src/lib/processing/editorial-contract';
 import {unknownProfile,validateUnderstanding} from '../src/lib/processing/contracts';
@@ -47,7 +47,7 @@ test('DIRECT material update freezes only current evidence; uncertain match and 
   const post=await ingest(db,src.id,{externalId:String(Date.now()),url:src.url+'/1',content,publishedAt:new Date()});await db.processingJob.updateMany({where:{sourcePostId:post.id},data:{availableAt:new Date(0)}});
   const job=await claimJob(db,'update',new Date(),false,(await db.processingJob.findMany({where:{sourcePostId:{not:post.id}},select:{sourcePostId:true}})).map(j=>j.sourcePostId));assert.ok(job);
   const e=(excerpt:string)=>({excerpt,context:content});const raw={...extraction(content),actors:[e('اللجنة')],action:e('افتتحت'),object:e('مدرسة'),statements:[{evidence:e(content),speaker:null,kind:'DECISION',material:true}]};
-  const p=new GeminiLanguageProvider('offline',async(_url,init)=>{const request=JSON.parse(String(init?.body)),schema=request.generationConfig.responseJsonSchema,data=JSON.parse(request.contents[0].parts[0].text);return envelope(schema.properties.extraction?{extraction:raw,article:{title:'إيران الآن | '+content,body:'',diagnostics:[]}}:{...reviewed({body:''}),comparisons:data.comparisons.map((c:{id:string})=>({id:c.id,decision:{relation:uncertain?'UNCERTAIN':'SAME',newFactIds:['f1'],conflictingFactIds:[],rationale:'تحديث في الخبر'}}))});});
+  const p=new GeminiLanguageProvider('offline',async(_url,init)=>{const request=JSON.parse(String(init?.body)),schema=request.generationConfig.responseJsonSchema,data=JSON.parse(request.contents[0].parts[0].text);return envelope(schema.properties.extraction?{extraction:{...raw,relevance:'POLITICAL_NEWS',contentType:'NEWS',contentTypeEvidence:e(content)},article:{title:'إيران الآن | '+content,body:'',diagnostics:[]}}:{...reviewed({body:''}),fidelityLedger:supportedLedger(content,data.publication),comparisons:data.comparisons.map((c:{id:string;existing:{facts:{id:string}[]}})=>({id:c.id,decision:{relation:uncertain?'UNCERTAIN':'SAME',newFactIds:['f1'],conflictingFactIds:[],rationale:'تحديث في الخبر',identity:{basis:uncertain?'UNRESOLVED':'SAME_OCCURRENCE',incomingFactIds:['f1'],existingFactIds:c.existing.facts.map(f=>f.id),explanation:'Explicit offline identity verdict'}}}))});});
   p.compare=async()=>{throw new Error('UNEXPECTED_THIRD_CALL');};
   await processJob(db,job,p,signal());return post;
  }

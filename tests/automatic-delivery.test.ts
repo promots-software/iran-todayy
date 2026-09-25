@@ -8,7 +8,7 @@ import {armAutomaticPolicy} from '../src/lib/telegram/auto-authorization';
 import type {AutoPolicy} from '../src/lib/telegram/auto-policy';
 import {fixture,official} from './fixtures/processing';
 import {ingest,claimJob,processJob} from '../src/lib/processing/engine';
-import {GeminiLanguageProvider} from '../src/lib/processing/gemini';
+import {AssumedPropositionGemini as GeminiLanguageProvider} from './fixtures/proposition-mock';
 const env={AUTO_PUBLISH:'true',SHADOW_MODE:'false',REQUIRE_APPROVAL:'true',TELEGRAM_PUBLISH_ENABLED:'true',TELEGRAM_BOT_TOKEN:'123:offline',TELEGRAM_CHAT_ID:'-100123'};
 const include={humanDraft:true,publication:true,eventRevision:true,evidence:{include:{sourcePost:{include:{source:true,jobs:true,matches:true,humanDraft:true}}}}} as const;
 for(const mode of ['NORMAL','DIRECT'] as const)test(mode+' canary gates, human safety, concurrency, journal and restart',{skip:!process.env.TEST_DATABASE_URL},async()=>{
