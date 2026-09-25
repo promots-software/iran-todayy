@@ -15,4 +15,4 @@ RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-cert
 COPY --from=build --chown=node:node /app /app
 USER node
 EXPOSE 3000
-CMD ["npm", "start"]
+CMD ["npm", "run", "worker:production"]
