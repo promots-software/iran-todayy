@@ -8,7 +8,7 @@ import {publicationCandidateInclude,publicationReady,eligibleAutomatic} from '..
 import {automaticDeliveryCycle} from '../src/lib/telegram/automatic-delivery';
 import type {AutoPolicy} from '../src/lib/telegram/auto-policy';
 import {assertStagingDestination} from '../src/lib/telegram/staging-guard';
-const check=(fail=false)=>({sections:Object.fromEntries(Array.from({length:40},(_,i)=>[String(i+1),{status:fail&&i===33?'FAIL':'PASS',defects:fail&&i===33?[{defect:'معلومة غير مدعومة',correction:'احذف الإضافة'}]:[]}]))});
+const check=(fail=false)=>({sections:Object.fromEntries(Array.from({length:40},(_,i)=>[String(i+1),{status:fail&&i===33?'FAIL':'PASS',defects:fail&&i===33?[{defect:'معلومة غير مدعومة',correction:'احذف الإضافة',sourceQuote:null,articleQuote:'إيران الآن |'}]:[]}]))});
 
 test('canonical staging DB: approved -> dedup -> unchanged manual/automatic freeze boundaries',{skip:!process.env.TEST_DATABASE_URL},async()=>{
  const url=new URL(process.env.TEST_DATABASE_URL!);assert.equal(url.hostname,'127.0.0.1');const db=new PrismaClient({datasourceUrl:url.href});const old=process.env.IRAN_TODAY_ENVIRONMENT;process.env.IRAN_TODAY_ENVIRONMENT='staging';

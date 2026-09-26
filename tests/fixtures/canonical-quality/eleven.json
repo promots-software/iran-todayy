@@ -1,0 +1,2547 @@
+[
+  {
+    "id": "cmuhc3v1900aym71a8afnzwey",
+    "post": "mayadeenchannel/80186",
+    "mode": "NORMAL",
+    "source": "#فلسطين تلخّص التاريخ كلّه؛ فلسطين هي الديانات السماوية كلّها، وفلسطين هي الاستعمار بكل أشكاله. فلسطين شيء آخر؛ إذا خسرت نخسر كل شيء.\n\n\nرئيس الوزراء العراقي الأسبق عادل عبد المهدي لـ #الميادين \n\n#السيد_الأمة_السيد_الدائم",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The source identifies the speaker as Adel Abdul Mahdi, former Prime Minister of Iraq, who is a well-known political figure with deep historical and strategic ties to the Iranian government and its regional alliance networks."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "FAIL",
+              "defects": [
+                {
+                  "defect": "The article uses 'عاجل' implicitly by including it in the title logic, but the contract strictly forbids it unless requested by the user. Furthermore, the mandatory opening 'إيران الآن |' is used, but the headline includes 'عاجل' which was explicitly forbidden.",
+                  "correction": "Remove 'عاجل' from the headline. The headline should be: 'إيران الآن | عادل عبد المهدي: فلسطين تختصر التاريخ ونخسر كل شيء بخسارتها'."
+                }
+              ]
+            },
+            "3": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "12": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "13": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "أكد رئيس الوزراء العراقي الأسبق عادل عبد المهدي، في تصريحات لقناة الميادين، أن قضية فلسطين تختصر التاريخ بكامله، مشدداً على أنها تمثل جوهر الديانات السماوية، وتجسد في الوقت نفسه واقع الاستعمار بكل أشكاله. واعتبر عبد المهدي أن فلسطين تمثل حالة استثنائية، محذراً من أن خسارة هذه القضية تعني خسارة كل شيء.",
+          "title": "إيران الآن | عادل عبد المهدي للميادين: فلسطين تختصر التاريخ ونخسر كل شيء بخسارتها"
+        }
+      },
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "12": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "13": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "17": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "27": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 1,
+        "article": {
+          "body": "أكد رئيس الوزراء العراقي الأسبق عادل عبد المهدي، في تصريحات لقناة الميادين، أن قضية فلسطين تختصر التاريخ بكامله، مشدداً على أنها تمثل جوهر الديانات السماوية، وتجسد في الوقت نفسه واقع الاستعمار بكل أشكاله. واعتبر عبد المهدي أن فلسطين تمثل حالة استثنائية، محذراً من أن خسارة هذه القضية تعني خسارة كل شيء.",
+          "title": "إيران الآن | عادل عبد المهدي: فلسطين تختصر التاريخ ونخسر كل شيء بخسارتها"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": false,
+      "truth": "FALSE_APPROVAL",
+      "sections": [],
+      "why": "No material Iran connection in source. Intake supplied external political biography. V0 checker falsely accused an absent عاجل; original headline has none.",
+      "expectedDecision": "FILTERED",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmuhcandq00b2m71at8voaa8m",
+    "post": "khabarfouri/566115",
+    "mode": "DIRECT",
+    "source": "توقیف ۴ تانکر عراقی حامل بنزین قاچاق در مرز باشماق\n\nمدیرکل گمرک باشماق کردستان: ۴ دستگاه کامیون تانکر با پلاک کشور عراق که حامل مقادیر زیادی بنزین قاچاق بودند، توقیف شدند.\n\n@khabarfouri",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The source explicitly reports on the seizure of fuel-smuggling trucks at the Bashmaq border crossing in Iranian Kurdistan, involving Iranian customs authority actions."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "FAIL",
+              "defects": [
+                {
+                  "defect": "Article body does not begin with 'إيران الآن |'",
+                  "correction": "Prepend 'إيران الآن | ' to the opening of the body or include it in the article structure as instructed."
+                }
+              ]
+            },
+            "3": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "4": {
+              "status": "PASS",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "أعلن مدير عام جمارك باشماق في محافظة كردستان الإيرانية عن ضبط 4 شاحنات صهريج تحمل لوحات تسجيل عراقية، وذلك لمحاولتها تهريب كميات كبيرة من مادة البنزين عبر الحدود. وأكدت السلطات الجمركية توقيف الشاحنات المذكورة واتخاذ الإجراءات القانونية اللازمة بحقها.",
+          "title": "إيران الآن | توقيف 4 صهاريج وقود عراقية مهربة عند معبر باشماق"
+        }
+      },
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "PASS",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "PASS",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "PASS",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 1,
+        "article": {
+          "body": "إيران الآن | أعلن مدير عام جمارك باشماق في محافظة كردستان الإيرانية عن ضبط 4 شاحنات صهريج تحمل لوحات تسجيل عراقية، وذلك لمحاولتها تهريب كميات كبيرة من مادة البنزين عبر الحدود. وأكدت السلطات الجمركية توقيف الشاحنات المذكورة واتخاذ الإجراءات القانونية اللازمة بحقها.",
+          "title": "إيران الآن | توقيف 4 صهاريج وقود عراقية مهربة عند معبر باشماق"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        1,
+        20,
+        34,
+        40
+      ],
+      "quote": "واتخاذ الإجراءات القانونية اللازمة بحقها",
+      "why": "Legal procedures do not appear in source. R1 also duplicates branding after checker incorrectly demanded body opening.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmuhcgr7900b6m71apc5t8nhu",
+    "post": "mayadeenchannel/80187",
+    "mode": "NORMAL",
+    "source": "مصادر مطلعة لوكالة \"فارس\":\n\n أنباء أكسيوس وقناة خليجية عن جولة محادثات جديدة وإرسال خبراء إيرانيين إلى نيويورك كاذبة\n\n#الميادين",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The text discusses Iranian officials and media sources regarding diplomatic communications and the presence of Iranian experts in New York."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "PASS",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "PASS",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "PASS",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "نفت مصادر مطلعة لوكالة «فارس» للأنباء صحة الأنباء التي تداولتها منصة «أكسيوس» وقناة خليجية حول بدء جولة جديدة من المحادثات، أو إرسال خبراء إيرانيين إلى نيويورك. وأكدت المصادر أن هذه التقارير كاذبة ولا أساس لها من الصحة.",
+          "title": "إيران الآن | طهران تنفي تقارير إجراء محادثات جديدة في نيويورك"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        5,
+        10,
+        19,
+        24,
+        34,
+        40
+      ],
+      "quote": "طهران تنفي تقارير إجراء محادثات جديدة في نيويورك",
+      "why": "Headline upgrades unnamed Fars sources to Tehran and attaches New York to talks although source attaches it to sending experts.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui8x5wv0156nz1ayllm6see",
+    "post": "mayadeenchannel/80249",
+    "mode": "NORMAL",
+    "source": "من الذخائر والقواعد العسكرية إلى ارتفاع الأسعار على المستهلك الأميركي، كيف تتراكم التكلفة الحقيقية للحرب على #إيران؟ \n\nhttps://www.instagram.com/p/Ddv0BmbjeXr/?utm_source=ig_web_copy_link&stkn=MzRlODBiNWFlZA==\n\n#الميادين",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The source explicitly discusses the costs of war on Iran, thereby establishing a material connection to the country."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "PASS",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "PASS",
+              "defects": []
+            },
+            "23": {
+              "status": "PASS",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "PASS",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "PASS",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "PASS",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "تناول تقرير لقناة الميادين التداعيات الاقتصادية المترتبة على الحروب، مسلطاً الضوء على التكاليف الباهظة التي تتراكم نتيجة استنزاف الذخائر وتوسيع القواعد العسكرية. وأشار التقرير إلى أن هذه النفقات العسكرية لا تقتصر على الجوانب الميدانية فحسب، بل تمتد لتلقي بظلالها على الداخل الأميركي، مما يؤدي إلى ارتفاع الأسعار وتزايد الأعباء المالية على المستهلك في الولايات المتحدة.",
+          "title": "إيران الآن | تقرير: التكلفة الحقيقية للحرب وانعكاساتها على الاقتصاد الأميركي"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        1,
+        10,
+        20,
+        22,
+        34,
+        40
+      ],
+      "quote": "استنزاف الذخائر وتوسيع القواعد العسكرية",
+      "why": "Caption asks about cost of war on Iran. Article invents base expansion/report findings and removes the Iran war scope; unseen linked media is not evidence.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui92enu015anz1a8kyhbpsm",
+    "post": "khabarfouri/566226",
+    "mode": "DIRECT",
+    "source": "پزشکیان در گفتگو با الجزیره: دیگر به مذاکرات با واشنگتن اعتماد نداریم/ بستن تنگه هرمز یک اقدام طبیعی است برای زمانی که راه‌ها برای ايران مسدود شود\n\nرئیس جمهور:\nما دیگر به مذاکرات با واشنگتن اعتماد نداریم، زیرا حملات و تحریم‌های مکرر آن پس از هر مذاکره ادامه دارد\nقطر و پاکستان در حال حاضر بین ایران و آمریکا میانجیگری می‌کنند و پیام‌های ما را به واشنگتن منتقل می‌کنند.\nمذاکرات ما با واشنگتن بر اساس یادداشت تفاهم قبلی است و آمریکایی ها باید موضع خود را در مورد آن مشخص کنند.\nامنیت منطقه با همکاری کشورهای آن قابل دستیابی است. ما نیازی به یک حاکم برای منطقه نداریم.\n\n@khabarfouri",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The source features statements by the President of Iran regarding the country's foreign policy, specifically concerning negotiations with the United States and the geopolitical situation in the Strait of Hormuz."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "PASS",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "أكد الرئيس الإيراني مسعود بزشكيان في مقابلة مع قناة الجزيرة أن طهران لم تعد تثق في المفاوضات مع واشنطن، مشيراً إلى أن الولايات المتحدة تواصل فرض العقوبات وشن الهجمات حتى بعد التوصل إلى تفاهمات. وأوضح بزشكيان أن أي تفاوض مع الجانب الأميركي حالياً يستند إلى مذكرات تفاهم سابقة، مطالباً واشنطن بتوضيح موقفها منها بشكل حاسم.\n\nوفيما يتعلق بالوساطة الدولية، كشف الرئيس الإيراني أن كلاً من قطر وباكستان تقومان حالياً بدور الوسيط بين طهران وواشنطن لنقل الرسائل المتبادلة. وبشأن التهديدات الأمنية، شدد بزشكيان على أن أمن المنطقة لا يتحقق إلا عبر التعاون بين دولها، مؤكداً رفض إيران لوجود أي طرف خارجي يحاول فرض هيمنته على المنطقة.\n\nوحول ملف مضيق هرمز، أوضح بزشكيان أن اتخاذ قرار بإغلاق المضيق يعد إجراءً طبيعياً ومنطقياً تلجأ إليه إيران في حال أُغلقت أمامها كافة السبل والخيارات الاقتصادية والسياسية.",
+          "title": "إيران الآن | بزشكيان: لم نعد نثق بالتفاوض مع واشنطن وإغلاق مضيق هرمز خيار طبيعي"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        1,
+        10,
+        28,
+        34,
+        40
+      ],
+      "quote": "حتى بعد التوصل إلى تفاهمات",
+      "why": "After every negotiation becomes after reaching understandings. Our messages becomes exchanged messages. Article further specifies absent economic/political alternatives.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui95sj8015enz1anl2fznsw",
+    "post": "irna_ar/19822",
+    "mode": "NORMAL",
+    "source": "وزير العلوم: أكثر من 50 ألف طالب عراقي يدرسون حالياً في الجامعات الإيرانية\n\nطهران/ 26 ایلول/ سبتمبر/ إرنا-  أعلن وزير العلوم والبحوث والتكنولوجيا الإيراني \"حسين سيمايي\"، أن أكثر من 50 ألف طالب عراقي يدرسون حالياً في الجامعات الإيرانية، مؤكداً أن المشكلات التي واجهت حركة التنقل بين إيران والعراق في طريقها للحل القريب، وأن الطلاب العراقيين سيعودون قريباً إلى مقاعدهم الدراسية في هذه الجامعات.\n\nوأفادت \"إرنا\"، بأن وزير العلوم الإيراني أشار خلال لقائه سفير جمهورية العراق لدى إيران ياسر عبد الزهراء الحجاج إلى وجود محاولات لتعكير صفو العلاقات العلمية بين إيران والعراق، مؤكداً ترحيب الشعب الإيراني بالطلاب العراقيين.\n​\nكما أعرب عن ارتياحه لتنامي التعاون العلمي والجامعي، معلناً استعداد إيران لتبادل الأساتذة والطلاب، وتنظيم برامج مشتركة لتطوير القدرات الأكاديمية والبحثية لدى الطرفين.\n​\nوفيما يتعلق بالتحديات الأخيرة التي واجهت حركة التنقل بين البلدين، أوضح وزير العلوم أن هذه المشكلات «في طريقها للحل القريب»، مشدداً على أن الطلاب العراقيين سيعودون قريباً إلى مقاعدهم الدراسية في الجامعات الإيرانية.\n\n@Irna_ar​",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The source text directly concerns Iranian government officials discussing educational policies, student migration to Iranian universities, and bilateral relations between Iran and Iraq."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "FAIL",
+              "defects": [
+                {
+                  "defect": "Missing required opening: إيران الآن |",
+                  "correction": "Start the article with: إيران الآن | وزير العلوم: أكثر من 50 ألف طالب عراقي يدرسون في الجامعات الإيرانية"
+                }
+              ]
+            },
+            "3": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "12": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "13": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "26": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "27": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "أعلن وزير العلوم والبحوث والتكنولوجيا الإيراني، حسين سيمايي، أن الجامعات الإيرانية تستضيف حالياً أكثر من 50 ألف طالب عراقي، مؤكداً عمق العلاقات العلمية والأكاديمية بين البلدين. وأشار الوزير خلال استقباله السفير العراقي في طهران، ياسر عبد الزهراء الحجاج، إلى وجود محاولات تهدف لتعكير صفو هذه العلاقات، مشدداً على ترحيب الشعب الإيراني بالطلاب العراقيين.\n\nوفي سياق متصل، طمأن سيمايي الطلاب العراقيين بشأن التحديات الأخيرة التي واجهت حركة التنقل بين البلدين، مؤكداً أن هذه المشكلات في طريقها للحل القريب، وأنهم سيعودون قريباً إلى مقاعدهم الدراسية. كما أعرب الوزير عن استعداد طهران لتعزيز التعاون العلمي مع بغداد من خلال تبادل الأساتذة والطلاب وإطلاق برامج بحثية مشتركة لتطوير القدرات الأكاديمية لدى الطرفين.",
+          "title": "إيران الآن | وزير العلوم: أكثر من 50 ألف طالب عراقي يدرسون في الجامعات الإيرانية"
+        }
+      },
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "PASS",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "PASS",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "PASS",
+              "defects": []
+            },
+            "23": {
+              "status": "PASS",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "PASS",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "PASS",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "PASS",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 1,
+        "article": {
+          "body": "إيران الآن | أعلن وزير العلوم والبحوث والتكنولوجيا الإيراني، حسين سيمايي، أن الجامعات الإيرانية تستضيف حالياً أكثر من 50 ألف طالب عراقي، مؤكداً عمق العلاقات العلمية والأكاديمية بين البلدين. وأشار الوزير خلال استقباله السفير العراقي في طهران، ياسر عبد الزهراء الحجاج، إلى وجود محاولات تهدف لتعكير صفو هذه العلاقات، مشدداً على ترحيب الشعب الإيراني بالطلاب العراقيين.\n\nوفي سياق متصل، طمأن سيمايي الطلاب العراقيين بشأن التحديات الأخيرة التي واجهت حركة التنقل بين البلدين، مؤكداً أن هذه المشكلات في طريقها للحل القريب، وأنهم سيعودون قريباً إلى مقاعدهم الدراسية. كما أعرب الوزير عن استعداد طهران لتعزيز التعاون العلمي مع بغداد من خلال تبادل الأساتذة والطلاب وإطلاق برامج بحثية مشتركة لتطوير القدرات الأكاديمية لدى الطرفين.",
+          "title": "إيران الآن | وزير العلوم: أكثر من 50 ألف طالب عراقي يدرسون في الجامعات الإيرانية"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        19,
+        34,
+        40
+      ],
+      "quote": "خلال استقباله السفير العراقي في طهران",
+      "why": "Dateline Tehran does not establish meeting location; source says meeting, not necessarily hosting. Otherwise main number and cooperation facts are preserved.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui97o1e015inz1ayi9bke3t",
+    "post": "mayadeenchannel/80250",
+    "mode": "NORMAL",
+    "source": "رئيس الجمهورية السابق إميل لحود في ذكرى ارتقاء السيد الأمة: \n\nنستذكر سيرة سيّد الأمة الحافلة بالمحطات التاريخية والمفصلية، وقد اختار الشهادة إلى جانب المقاومين، على الرغم مما توفّر له من سبلٍ للبقاء على قيد الحياة بعيدًا عن أرضه\n\nيبقى سيّد الأمة حاضرًا بيننا عبر الحافز الذي يملكه المقاومون، والصلابة التي يتمتّع بها جمهوره، والحرص على عدم الانجرار نحو الفتنة الداخلية التي ضحّى من أجلها مرات\n\n#الميادين_لبنان",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The text refers to the late Hezbollah leader Hassan Nasrallah, an entity deeply integrated with and supported by the Iranian state, identifying him as the leader for whom his followers hold reverence."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "12": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "13": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "17": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "27": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "استذكر رئيس الجمهورية اللبنانية الأسبق، إميل لحود، سيرة الأمين العام الراحل لحزب الله، مشيراً إلى أنها حافلة بالمحطات التاريخية والمفصلية. وأكد لحود أن الراحل اختار طريق الشهادة إلى جانب المقاومين، رغم ما توفر له من خيارات للبقاء بعيداً عن أرض المعركة.\n\nواعتبر لحود أن حضور السيد نصرالله لا يزال يتجسد في الحافز الذي يمتلكه المقاومون، وفي الصلابة التي يتمتع بها جمهوره، مشدداً على أهمية الحرص على عدم الانجرار نحو الفتنة الداخلية، وهي القضية التي طالما ضحى الراحل من أجل تجنيب لبنان تداعياتها.",
+          "title": "إيران الآن | إميل لحود: السيد نصرالله اختار الشهادة وفاءً للمقاومة"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": false,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        1,
+        15,
+        34,
+        40
+      ],
+      "quote": "السيد نصرالله",
+      "why": "Intake invents Iran connection via remembered Hezbollah ties. Supplied text does not name Nasrallah; role/name completion was outside source.",
+      "expectedDecision": "FILTERED",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui9jwi30002qo1a4xke2jkw",
+    "post": "khabarfouri/566227",
+    "mode": "DIRECT",
+    "source": "ارزیابی اطلاعاتی آمریکا: عربستان سعودی احتمال توسعه سلاح هسته‌ای را منتفی نکرده است.\n\nبر اساس یک ارزیابی محرمانه اطلاعاتی آمریکا، ریاض احتمال دنبال کردن یک برنامه تسلیحات هسته‌ای را کنار نگذاشته است؛ این موضوع در حالی مطرح می‌شود که کنگره آمریکا توافق هسته‌ای غیرنظامی با عربستان را بررسی می‌کند.\nاین توافق در نهایت می‌تواند امکان غنی‌سازی اورانیوم تا سطح ۲۰ درصد را برای عربستان فراهم کند.\n\n@khabarfouri",
+    "intake": {
+      "iranRelated": false,
+      "rationale": "The text discusses US intelligence assessments regarding Saudi Arabia's potential nuclear program and uranium enrichment negotiations with the US Congress; it does not establish a material connection to Iran despite mentioning a regional actor."
+    },
+    "cycles": [],
+    "originalStatus": "FILTERED",
+    "audit": {
+      "related": false,
+      "truth": "CORRECT_FILTER",
+      "sections": [],
+      "why": "Saudi/US nuclear-program report establishes no material Iran connection.",
+      "expectedDecision": "FILTERED",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "No demonstrated defect",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui9jzhj0006qo1aq9suusw0",
+    "post": "irna_ar/19823",
+    "mode": "NORMAL",
+    "source": "مسؤول: إنتاج النفط والغاز مستمر رغم الظروف الحربية\n\nطهران/ 26 ایلول/ سبتمبر/ إرنا- أعلن المدير التنفيذي لشركة النفط الوطنية الإيرانية \"حميد بورد\"عن مواصلة إنتاج النفط رغم الظروف الحربية، مؤكداً أن قطاع النفط، بصفته جزءاً لا يتجزأ من الاقتصاد الوطني، نجح في جميع المنعطفات التاريخية في أداء دوره الاستراتيجي على أكمل وجه.\n\nوأفادت “إرنا” بأن “بورد” قال في حديث مع الصحفيين: إن صناعة النفط تخوض اليوم حرباً غير متكافئة؛ وكما يستهدف العدو البنى التحتية العسكرية والمدنية، فقد خطط - بناءً على المعلومات المتاحة - لتوجيه ضربات للمنشآت النفطية أيضاً، سواء بالقصف أو بالعقوبات الجائرة أو بالحصار البحري. غير أن أبناءنا الغيارى في شركة النفط الوطنية الإيرانية يواصلون أنشطتهم الجهادية والتقنية بصورة مشرقة.\n​\nوأضاف: على الرغم من كل هذه الصعوبات، سعى زملاؤنا في قطاع النفط إلى الحفاظ على معدلات الإنتاج، ولهذا نحن في وضع أفضل مقارنة بدول الجوار؛ ففي حين توقف إنتاج النفط في بعض دول المنطقة، ظل إنتاجنا مستمراً بفضل حصافة شركة النفط الوطنية وحكمتها. وإذا شهد مستوى الإنتاج أي تذبذب في أي حقل، فإن ذلك كان ضمن التخطيط الدقيق للشركة نفسها.\n\n@Irna_ar​",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The text discusses production policies and operations of the National Iranian Oil Company, citing statements made by its CEO regarding Iran's domestic oil infrastructure and economic strategy."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "PASS",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "PASS",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "PASS",
+              "defects": []
+            },
+            "18": {
+              "status": "PASS",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "PASS",
+              "defects": []
+            },
+            "23": {
+              "status": "PASS",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "PASS",
+              "defects": []
+            },
+            "26": {
+              "status": "PASS",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "PASS",
+              "defects": []
+            },
+            "30": {
+              "status": "PASS",
+              "defects": []
+            },
+            "31": {
+              "status": "PASS",
+              "defects": []
+            },
+            "32": {
+              "status": "PASS",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "PASS",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "أكد المدير التنفيذي لشركة النفط الوطنية الإيرانية، حميد بورد، استمرار عمليات إنتاج النفط والغاز في البلاد على الرغم من الظروف الاستثنائية والحرب غير المتكافئة التي تواجهها طهران. وأوضح بورد أن قطاع النفط يواصل أداء دوره الاستراتيجي باعتباره ركيزة أساسية للاقتصاد الوطني، متجاوزاً كافة التحديات التاريخية. وأشار المسؤول الإيراني إلى أن ما وصفه بـ \"العدو\" يسعى لاستهداف البنية التحتية النفطية عبر وسائل متعددة تشمل القصف، والحصار البحري، والعقوبات، مؤكداً في الوقت ذاته أن الكوادر الوطنية تواصل مهامها الفنية بفاعلية. كما شدد بورد على أن إيران استطاعت الحفاظ على معدلات إنتاجها بشكل أفضل مقارنة بدول الجوار، مشيراً إلى أن أي تذبذب في الإنتاج في بعض الحقول جاء وفق تخطيط مسبق ودقيق من قبل الشركة.",
+          "title": "إيران الآن | شركة النفط الوطنية: مستمرون في الإنتاج رغم التحديات والحرب غير المتكافئة"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "CORRECT_APPROVAL",
+      "sections": [],
+      "why": "Oil/gas is supported by source headline; production, attributed threat and planned fluctuations preserved. Shortening is allowed by section 20.",
+      "expectedDecision": "APPROVED",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "No demonstrated defect",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui9l0ht000aqo1a0zqp1npj",
+    "post": "isna_arabic/12165",
+    "mode": "NORMAL",
+    "source": "ولايتي: السيد الزيدي، الشرعية لا تأتي من واشنطن\n\nطهران(إیسنا) - أكد مستشار قائد الثورة الإسلامية في الشؤون الدولية، علي أكبر ولايتي أن جبهة المقاومة تشكل جبهة واحدة تمتد من صنعاء إلى النجف، قائلا: السيد الزيدي، الشرعية لا تأتي من واشنطن، بل تأتي من تراب النجف ودماء الشهداء.\n\nhttps://ar.isna.ir/xdX8nv\n@isna_arabic",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The source features a statement by Ali Akbar Velayati, an advisor to the Supreme Leader of Iran, discussing the Resistance Front and asserting Iran-aligned political positions."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "PASS",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "PASS",
+              "defects": []
+            },
+            "17": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "PASS",
+              "defects": []
+            },
+            "25": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "26": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "27": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "أكد مستشار قائد الثورة الإسلامية للشؤون الدولية، علي أكبر ولايتي، أن جبهة المقاومة تمثل كياناً واحداً يمتد من صنعاء إلى النجف. وشدد ولايتي في معرض رده على السيد الزيدي على أن الشرعية لا تُستمد من واشنطن، بل تنبع من تراب النجف وتضحيات الشهداء.",
+          "title": "إيران الآن | ولايتي: الشرعية لا تأتي من واشنطن بل من تراب النجف ودماء الشهداء"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        1,
+        28,
+        34,
+        40
+      ],
+      "quote": "في معرض رده على السيد الزيدي",
+      "why": "Source directly addresses al-Zaidi; calling it a reply supplies an unstated prior exchange. Preserve خطاب/address without asserting a reply.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  },
+  {
+    "id": "cmui9niqo0035qo1akzwpmm2p",
+    "post": "iraninarabic/119495",
+    "mode": "DIRECT",
+    "source": "الأمين العام لكتائب سيد الشهداء في العراق:  لا يليق بالعراق المشاركة بحصار إيران.. ويدعو لرفض إملاءات واشنطن",
+    "intake": {
+      "iranRelated": true,
+      "rationale": "The text explicitly mentions Iran in the context of political and economic pressure (the blockade) and discusses the relationship between Iraq and Iran's foreign policy."
+    },
+    "cycles": [
+      {
+        "check": {
+          "sections": {
+            "1": {
+              "status": "PASS",
+              "defects": []
+            },
+            "2": {
+              "status": "PASS",
+              "defects": []
+            },
+            "3": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "4": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "5": {
+              "status": "PASS",
+              "defects": []
+            },
+            "6": {
+              "status": "PASS",
+              "defects": []
+            },
+            "7": {
+              "status": "PASS",
+              "defects": []
+            },
+            "8": {
+              "status": "PASS",
+              "defects": []
+            },
+            "9": {
+              "status": "PASS",
+              "defects": []
+            },
+            "10": {
+              "status": "PASS",
+              "defects": []
+            },
+            "11": {
+              "status": "PASS",
+              "defects": []
+            },
+            "12": {
+              "status": "PASS",
+              "defects": []
+            },
+            "13": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "14": {
+              "status": "PASS",
+              "defects": []
+            },
+            "15": {
+              "status": "PASS",
+              "defects": []
+            },
+            "16": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "17": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "18": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "19": {
+              "status": "PASS",
+              "defects": []
+            },
+            "20": {
+              "status": "PASS",
+              "defects": []
+            },
+            "21": {
+              "status": "PASS",
+              "defects": []
+            },
+            "22": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "23": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "24": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "25": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "26": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "27": {
+              "status": "PASS",
+              "defects": []
+            },
+            "28": {
+              "status": "PASS",
+              "defects": []
+            },
+            "29": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "30": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "31": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "32": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "33": {
+              "status": "PASS",
+              "defects": []
+            },
+            "34": {
+              "status": "PASS",
+              "defects": []
+            },
+            "35": {
+              "status": "PASS",
+              "defects": []
+            },
+            "36": {
+              "status": "PASS",
+              "defects": []
+            },
+            "37": {
+              "status": "PASS",
+              "defects": []
+            },
+            "38": {
+              "status": "NOT_APPLICABLE",
+              "defects": []
+            },
+            "39": {
+              "status": "PASS",
+              "defects": []
+            },
+            "40": {
+              "status": "PASS",
+              "defects": []
+            }
+          }
+        },
+        "cycle": 0,
+        "article": {
+          "body": "دعا الأمين العام لكتائب سيد الشهداء في العراق، أبو آلاء الولائي، إلى رفض ما وصفها بـ\"الإملاءات الأميركية\"، مؤكداً أن مشاركة العراق في حصار الجمهورية الإسلامية الإيرانية أمر لا يليق به. وشدد الولائي في تصريحاته على أهمية اتخاذ مواقف مستقلة بعيداً عن الضغوط الخارجية، مشدداً على ضرورة الحفاظ على العلاقات الاستراتيجية التي تربط بغداد بطهران.",
+          "title": "إيران الآن | الأمين العام لكتائب سيد الشهداء: لا يليق بالعراق المشاركة في حصار إيران"
+        }
+      }
+    ],
+    "originalStatus": "PENDING_APPROVAL",
+    "audit": {
+      "related": true,
+      "truth": "FALSE_APPROVAL",
+      "sections": [
+        1,
+        10,
+        15,
+        20,
+        28,
+        34,
+        40
+      ],
+      "quote": "أبو آلاء الولائي",
+      "why": "Absent name supplied from role. Independent positions, external pressure and strategic Baghdad–Tehran relations are added to the two-claim source.",
+      "expectedDecision": "FAIL_REQUIRES_R1",
+      "r2Required": "UNMEASURED: depends on corrected article and full recheck",
+      "root": "Observed model non-compliance / unsupported inference; internal reasoning unavailable. Title/body opening ambiguity contributes to prefix false defects.",
+      "changedOutputMeasured": false
+    }
+  }
+]

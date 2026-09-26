@@ -1,3 +1,4 @@
+import {stagingBatchSchema,batchRestriction,recordBatchClaim} from '../../worker/staging-batch';
 import {runCanonicalJob} from './canonical-job';
 import {canaryAdmission,canaryTargetSql,stagingCanarySchema} from '../../worker/staging-canary';
 import {normalizeProcessingSource,processingSource} from './processing-source';
@@ -66,7 +67,8 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
   return client.$transaction(async tx=>{
     // Every claimant shares this row lock, including a worker with stale env.
     // Policy activation/hold changes take its exclusive lock before returning.
-    const [settings]=await tx.$queryRaw<{processingPaused:boolean;stagingCanaryPolicy:unknown}[]>`SELECT "processingPaused","stagingCanaryPolicy" FROM "AppSettings" WHERE id=1 FOR SHARE`;
+    const lock=process.env.IRAN_TODAY_ENVIRONMENT==='staging'?Prisma.sql`FOR UPDATE`:Prisma.sql`FOR SHARE`;
+    const [settings]=await tx.$queryRaw<{processingPaused:boolean;stagingCanaryPolicy:unknown}[]>`SELECT "processingPaused","stagingCanaryPolicy" FROM "AppSettings" WHERE id=1 ${lock}`;
     const admission=canaryAdmission(settings??{processingPaused:false,stagingCanaryPolicy:null});
     const report=(reason:string|null)=>observeAdmission?.({...admission,canaryClaimAllowed:reason===null,canaryClaimBlockedReason:reason});
     if(!admission.canaryClaimAllowed){report(admission.canaryClaimBlockedReason);return null;}
@@ -80,14 +82,18 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
       const post=await tx.sourcePost.findUniqueOrThrow({where:{id:target},include:{source:true}});
       if(!['INGESTED','FAILED'].includes(post.status)||post.source.platform!=='TELEGRAM'||!post.source.enabled||post.source.deletedAt||post.source.processingPaused){report('CANARY_TARGET_INELIGIBLE');return null;}
     }
-    const targetRestriction=canaryTargetSql(target);
+    const batchParsed=stagingBatchSchema.safeParse(settings?.stagingCanaryPolicy);
+    const batch=batchParsed.success?batchParsed.data:null;
+    const batchScope=batch?await batchRestriction(tx,batch):Prisma.empty;
+    if(batchScope===null){report('BATCH_SETTLED');return null;}
+    const targetRestriction=Prisma.sql`${canaryTargetSql(target)} ${batchScope}`;
     let slot=0;
     if(newsroom){
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(20916013)`;
       const previous=await tx.auditLog.findFirst({where:{action:'NEWSROOM_JOB_CLAIMED',entityType:'QueueScheduler',entityId:'newsroom'},orderBy:[{createdAt:'desc'},{id:'desc'}],select:{metadata:true}});
       slot=nextClaimSlot(Number((previous?.metadata as {slot?:number}|null)?.slot??-1));
     }
-    const expired=await tx.processingJob.findMany({where:{...(target?{sourcePostId:target}:{}),stage,status:"RUNNING",lockedAt:{lt:new Date(now.getTime()-leaseMs)},...(telegramOnly?{sourcePost:{source:{platform:"TELEGRAM"}}}:{})}});
+    const expired=await tx.processingJob.findMany({where:{...(target?{sourcePostId:target}:batch?{sourcePostId:{in:batch.sourcePostIds}}:{}),stage,status:"RUNNING",lockedAt:{lt:new Date(now.getTime()-leaseMs)},...(telegramOnly?{sourcePost:{source:{platform:"TELEGRAM"}}}:{})}});
     for(const job of expired) {
       const exhausted=job.attemptCount>=job.maxAttempts;
       const reclaimed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy,lockedAt:job.lockedAt},data:{status:exhausted?"FAILED":"RETRY",lockedAt:null,lockedBy:null,availableAt:now,lastError:exhausted?"LEASE_EXHAUSTED":"LEASE_EXPIRED"}});
@@ -101,7 +107,7 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
     // is timestamptz in raw SQL; implicit conversion uses the DB session zone
     // and can claim future retries early. Compare explicit UTC wall timestamps.
     const due=costRecheckBefore ? Prisma.sql`("availableAt" <= CAST(${now.toISOString()} AS timestamp) OR ("status"='RETRY' AND "lastError"='PROVIDER_COST_WAIT' AND "updatedAt" < CAST(${costRecheckBefore.toISOString()} AS timestamp)))` : Prisma.sql`"availableAt" <= CAST(${now.toISOString()} AS timestamp)`;
-    const rows=await tx.$queryRaw<{id:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${sourceHold} ${exclusions} ${targetRestriction} ORDER BY ${ordering} FOR UPDATE OF "ProcessingJob" SKIP LOCKED LIMIT 1`;
+    const rows=await tx.$queryRaw<{id:string;sourcePostId:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","sourcePostId","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${sourceHold} ${exclusions} ${targetRestriction} ORDER BY ${ordering} FOR UPDATE OF "ProcessingJob" SKIP LOCKED LIMIT 1`;
     if (!rows.length){report(target?'CANARY_TARGET_NOT_DUE_OR_RUNNING_OR_TERMINAL':'NO_ELIGIBLE_JOB');return null;}
     if(rows[0].lastError==='PROVIDER_COST_WAIT'&&rows[0].availableAt>now&&costRecheckBefore)await tx.auditLog.create({data:{action:'PROCESSING_COST_WAIT_RECHECKED',actor:workerId,entityType:'ProcessingJob',entityId:rows[0].id,message:'Normal single-job claim reconsidered an obsolete cost schedule; actual request guard still required',metadata:{previousAvailableAt:rows[0].availableAt.toISOString(),capacityObservedAt:costRecheckBefore.toISOString()}}});
     if(newsroom){
@@ -109,6 +115,7 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
       const [clock]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() AS now`;
       await tx.auditLog.create({data:{createdAt:clock.now,action:'NEWSROOM_JOB_CLAIMED',actor:workerId,entityType:'QueueScheduler',entityId:'newsroom',message:'Durable 3 fresh / 1 oldest-due allocation',metadata:{slot,jobId:rows[0].id}}});
     }
+    if(batch)await recordBatchClaim(tx,batch,rows[0].sourcePostId,rows[0].id,workerId);
     report(null);
     if(target)await tx.auditLog.create({data:{action:'STAGING_CANARY_JOB_CLAIMED',actor:workerId,entityType:'ProcessingJob',entityId:rows[0].id,message:'Atomic selected-story claim',metadata:{...admission,canaryTargetJobId:rows[0].id}}});
     return tx.processingJob.update({where:{id:rows[0].id},data:{status:"RUNNING",lockedAt:now,lockedBy:token,attemptCount:{increment:1}},include:{sourcePost:{include:{source:true}}}});

@@ -6,7 +6,7 @@ import {ProcessingError} from '../src/lib/processing/contracts';
 
 const article={title:'إيران الآن | افتتاح مكتبة في طهران',body:'أعلنت بلدية طهران افتتاح مكتبة عامة.'};
 const source='أعلنت بلدية طهران افتتاح مكتبة عامة.';
-const check=(failed:number[]=[])=>({sections:Object.fromEntries(Array.from({length:40},(_,i)=>[String(i+1),{status:failed.includes(i+1)?'FAIL':'PASS',defects:failed.includes(i+1)?[{defect:'تغيير غير مدعوم في الخبر',correction:'استعادة المعنى المثبت في النص'}]:[]}]))});
+const check=(failed:number[]=[])=>({sections:Object.fromEntries(Array.from({length:40},(_,i)=>[String(i+1),{status:failed.includes(i+1)?'FAIL':'PASS',defects:failed.includes(i+1)?[{defect:'تغيير غير مدعوم في الخبر',correction:'استعادة المعنى المثبت في النص',sourceQuote:null,articleQuote:article.title}]:[]}]))});
 function transport(outputs:unknown[],seen:CanonicalRequest[]){return async(r:CanonicalRequest)=>{seen.push(r);const next=outputs.shift();if(next instanceof Error)throw next;return next;};}
 
 test('usable Iran news generates immediately after intake; all 40 checks approve without legacy receipts',async()=>{
@@ -62,10 +62,10 @@ for(const [post,section,defect] of [
  ['iraninarabic/119469',40,'النطاق يشمل مطارات أخرى وفئات متضررة أغفلت']
 ] as const)test(`saved natural ${post}: exact diagnosis reaches R1 with unchanged full source/contract`,async()=>{
  const f=natural.find(x=>x.post===post)!;assert.ok(f);const draft={title:f.v0.title,body:f.v0.body},seen:CanonicalRequest[]=[];
- const failed=check([section]);failed.sections[String(section)].defects[0].defect=defect;
+ const failed=check([section]);failed.sections[String(section)].defects[0].defect=defect;failed.sections[String(section)].defects[0].articleQuote=draft.title;
  // The repeated failure proves no unchanged bad V0 is promoted; this fixture
  // does not pretend a mocked reviewer establishes live semantic reliability.
  const result=await runCanonicalFlow(f.source,transport([{iranRelated:true,rationale:'fixture'},draft,failed,draft,failed,draft,failed],seen));
  assert.equal(result.status,'NEEDS_REVIEW');
- for(const r of seen.filter(r=>r.stage==='canonical_correct')){const input=r.input as {source:string;failures:{defects:{defect:string}[]}[]};assert.equal(input.source,f.source);assert.equal(input.failures[0].defects[0].defect,defect);assert.ok(r.instructions.includes(editorialContract));}
+ for(const r of seen.filter(r=>r.stage==='canonical_correct')){const input=r.input as {frozenSource:{text:string};failures:{defects:{defect:string}[]}[]};assert.equal(input.frozenSource.text,f.source);assert.equal(input.failures[0].defects[0].defect,defect);assert.ok(r.instructions.includes(editorialContract));}
 });

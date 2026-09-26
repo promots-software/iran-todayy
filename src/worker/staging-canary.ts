@@ -1,3 +1,4 @@
+import {stagingBatchSchema} from './staging-batch';
 import {isDeepStrictEqual} from 'node:util';
 import {z} from 'zod';
 import {Prisma,type PrismaClient} from '@prisma/client';
@@ -8,10 +9,11 @@ type Settings={processingPaused:boolean;stagingCanaryPolicy:unknown};
 export function canaryAdmission(settings:Settings,env:Record<string,string|undefined>=process.env){
  const configured=settings.stagingCanaryPolicy!==null&&settings.stagingCanaryPolicy!==undefined;
  const parsed=stagingCanarySchema.safeParse(settings.stagingCanaryPolicy);
- const base={processingMode:settings.processingPaused?'PAUSED':configured?'CANARY_SELECTED':'NORMAL',canaryTargetSourcePostId:parsed.success?parsed.data.targetSourcePostId:null,canaryClaimAllowed:false,canaryClaimBlockedReason:null as string|null};
+ const batch=stagingBatchSchema.safeParse(settings.stagingCanaryPolicy);
+ const base={processingMode:settings.processingPaused?'PAUSED':configured?(batch.success?'BATCH_30':'CANARY_SELECTED'):'NORMAL',canaryTargetSourcePostId:parsed.success?parsed.data.targetSourcePostId:null,canaryClaimAllowed:false,canaryClaimBlockedReason:null as string|null};
  if(settings.processingPaused)return {...base,canaryClaimBlockedReason:'GLOBAL_PROCESSING_HOLD'};
  if(!configured)return {...base,canaryClaimAllowed:true};
- if(!parsed.success)return {...base,canaryClaimBlockedReason:'INVALID_CANARY_CONFIGURATION'};
+ if(!parsed.success&&!batch.success)return {...base,canaryClaimBlockedReason:'INVALID_CANARY_CONFIGURATION'};
  if(env.IRAN_TODAY_ENVIRONMENT!=='staging'||env.TELEGRAM_CHAT_ID!=='-1004436536617')return {...base,canaryClaimBlockedReason:'CANARY_ENVIRONMENT_MISMATCH'};
  return {...base,canaryClaimAllowed:true};
 }
