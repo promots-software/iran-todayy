@@ -25,7 +25,7 @@ test('native Gemini adapter uses complete canonical contract and logs each mocke
  const provider=new GeminiLanguageProvider('offline-not-a-real-key',async(_url,init)=>{
   const body=JSON.parse(String(init?.body));const system=body.systemInstruction.parts[0].text;const input=JSON.parse(body.contents[0].parts[0].text);
   const stage=calls.length===0?'intake':calls.length===1?'generate':'check';calls.push({stage,system,input,max:body.generationConfig.maxOutputTokens});
-  const output=stage==='intake'?{iranRelated:true,rationale:'طهران'}:stage==='generate'?{title:'إيران الآن | افتتاح مكتبة',body:'افتتحت مكتبة في طهران.'}:{sections:Object.fromEntries(Array.from({length:40},(_,i)=>[String(i+1),{status:'PASS',defects:[]}]))};
+  const output=stage==='intake'?{iranRelated:true,rationale:'طهران'}:stage==='generate'?{title:'إيران الآن | افتتاح مكتبة',body:'افتتحت مكتبة في طهران.'}:{sections:Array.from({length:40},(_,i)=>({sectionId:String(i+1),status:'PASS',defects:[]}))};
   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:100,candidatesTokenCount:50,thoughtsTokenCount:0}});
  },u=>{usage.push(u);},true);
  const result=await runCanonicalFlow('افتتحت مكتبة في طهران.',r=>provider.canonicalRequest(r,AbortSignal.timeout(5000)));

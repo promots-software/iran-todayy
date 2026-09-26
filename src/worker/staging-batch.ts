@@ -1,7 +1,7 @@
 import {z} from 'zod';
 import {Prisma,type PrismaClient} from '@prisma/client';
 const target=z.string().regex(/^c[a-z0-9]{20,31}$/);
-export const stagingBatchSchema=z.object({version:z.literal('staging-batch-v1'),mode:z.literal('BATCH_30'),limit:z.literal(30),sourcePostIds:z.array(target).max(30),notBefore:z.iso.datetime(),databaseName:z.string().min(1),requestId:z.uuid(),authorizedBy:z.string().min(1),settledAt:z.iso.datetime().nullable()}).strict().refine(p=>new Set(p.sourcePostIds).size===p.sourcePostIds.length);
+export const stagingBatchSchema=z.object({version:z.literal('staging-batch-v1'),mode:z.literal('BATCH_30'),limit:z.number().int().min(1).max(30),sourcePostIds:z.array(target).max(30),notBefore:z.iso.datetime(),databaseName:z.string().min(1),requestId:z.uuid(),authorizedBy:z.string().min(1),settledAt:z.iso.datetime().nullable()}).strict().refine(p=>new Set(p.sourcePostIds).size===p.sourcePostIds.length&&p.sourcePostIds.length<=p.limit);
 export type StagingBatch=z.infer<typeof stagingBatchSchema>;
 export async function configureStagingBatch(db:PrismaClient,raw:unknown){
  const p=stagingBatchSchema.parse(raw);
@@ -12,10 +12,10 @@ export async function configureStagingBatch(db:PrismaClient,raw:unknown){
   const [d]=await tx.$queryRaw<{name:string}[]>`SELECT current_database() AS name`;
   if(d.name!==p.databaseName||!s.processingPaused||s.stagingCanaryPolicy!==null||await tx.processingJob.count({where:{status:'RUNNING'}}))throw Error('BATCH_PREFLIGHT_FAILED');
   await tx.appSettings.update({where:{id:1},data:{stagingCanaryPolicy:p,processingPaused:false}});
-  await tx.auditLog.create({data:{action:'STAGING_BATCH_ACTIVATED',actor:p.authorizedBy,entityType:'AppSettings',entityId:'1',message:'Exactly 30 first-time source posts; immutable membership recorded atomically at claim',metadata:p}});
+  await tx.auditLog.create({data:{action:'STAGING_BATCH_ACTIVATED',actor:p.authorizedBy,entityType:'AppSettings',entityId:'1',message:`At most ${p.limit} first-time source posts; immutable membership recorded atomically at claim`,metadata:p}});
  });
 }
-/** Called under the AppSettings exclusive lock; no 31st admission is possible. */
+/** Called under the AppSettings exclusive lock; no admission beyond the configured bound is possible. */
 export async function batchRestriction(tx:Prisma.TransactionClient,p:StagingBatch){
  const [d]=await tx.$queryRaw<{name:string}[]>`SELECT current_database() AS name`;
  if(d.name!==p.databaseName)throw Error('BATCH_DATABASE_MISMATCH');
@@ -25,7 +25,7 @@ export async function batchRestriction(tx:Prisma.TransactionClient,p:StagingBatc
   if(!unsettled){
    const settled={...p,settledAt:p.settledAt??new Date().toISOString()};
    await tx.appSettings.update({where:{id:1},data:{processingPaused:true,stagingCanaryPolicy:settled}});
-   await tx.auditLog.create({data:{action:'STAGING_BATCH_SETTLED',actor:'staging-worker',entityType:'AppSettings',entityId:'1',message:'All 30 settled; processing automatically paused',metadata:settled}});
+   await tx.auditLog.create({data:{action:'STAGING_BATCH_SETTLED',actor:'staging-worker',entityType:'AppSettings',entityId:'1',message:`All ${p.limit} settled; processing automatically paused`,metadata:settled}});
    return null;
   }
   return Prisma.sql`AND (${members})`;
