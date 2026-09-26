@@ -159,7 +159,7 @@ async function main() {
                 const measured={...usage,processingMode:processingMode?.processingMode??'NORMAL'};
                 log('AI_STAGE_USAGE',{postId:job.sourcePostId,...measured});
                 await db.auditLog.create({data:{action:'AI_STAGE_USAGE',actor:workerId,entityType:'SourcePost',entityId:job.sourcePostId,message:'Provider token/cost accounting',metadata:json(measured)}});
-              }),databaseCheckpoints(db,job.sourcePostId));
+              },process.env.IRAN_TODAY_ENVIRONMENT==='staging'),databaseCheckpoints(db,job.sourcePostId));
               const outcome=await processJob(db,job,provider,AbortSignal.any([signal,AbortSignal.timeout(180000)]));
               processing.delete(lane);attempts=0;
               log('JOB_FINISHED',outcome);

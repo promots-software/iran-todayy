@@ -179,6 +179,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const source=await client.source.findUniqueOrThrow({where:{id:post.sourceId}});
       if (source.platform !== "TELEGRAM" || !source.enabled || source.deletedAt) throw new ProcessingError("LIVE_SOURCE_DISABLED");
     }
+    const generatedInput=provider.generationFirst?await provider.prepareGeneration!({content},signal,async event=>{await audit(client,post.id,event.generationRequired&&!event.articleReturned&&event.causeCode?'IRAN_RELATED_STORY_DID_NOT_REACH_GENERATION':'PRE_GENERATION','Staging generation-order diagnostic',event);}):undefined;
     if(!content.trim())throw new ProcessingError('SOURCE_TEXT_REQUIRED');
     if(processingMode==='DIRECT') {
       const duplicate=await exactDirectDuplicate(client,job,processingMode);
@@ -186,7 +187,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     }
     const directSnapshot=processingMode==='DIRECT'?await eventSnapshot(client):null;
     const scope={decision:'IRAN_RELEVANCE_ONCE'};
-    const u=validateUnderstanding(await provider.understand({...(processingMode==='DIRECT'?{processingMode,comparisonCandidates:directSnapshot!.candidates.map(c=>c.data)}:{}),content:content,publishedAt:post.sourcePublishedAt,profile:sourceProfile,rules:ruleSet},signal),content);
+    const u=validateUnderstanding(await provider.understand({...(generatedInput?{generatedInput}:{}),...(processingMode==='DIRECT'?{processingMode,comparisonCandidates:directSnapshot!.candidates.map(c=>c.data)}:{}),content:content,publishedAt:post.sourcePublishedAt,profile:sourceProfile,rules:ruleSet},signal),content);
     if((await client.source.findUniqueOrThrow({where:{id:post.sourceId},select:{processingMode:true}})).processingMode!==processingMode)throw new ProcessingError('SOURCE_PROCESSING_MODE_CHANGED',true,undefined,1000);
 
     // Assign provenance ourselves; never trust a provider-supplied database identity.
@@ -197,10 +198,11 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     // Provider work must never hold the shared event-decision lock. Prepare
     // against an immutable snapshot, then recheck under the lock before commit.
     const snapshot=filter?null:directSnapshot??await eventSnapshot(client);
+    const validatedBeforeMatching=provider.generationFirst&&!filter?await provider.draft({...(generatedInput?{generatedInput}:{}),...processingMode==='DIRECT'?{processingMode:'DIRECT' as const}:{},content:content,understanding:u,rules:ruleSet},signal):null;
     const preparedMatch=snapshot?await matchEvent(u.event,post.sourcePublishedAt,snapshot.candidates,provider,signal,{source:content,understanding:u,processingMode}):null;
     if(snapshot?.legacy&&preparedMatch?.classification==='NEW_EVENT'){preparedMatch.classification='UNCERTAIN_MATCH';preparedMatch.rationale='توجد أحداث قديمة بلا استخراج منظم؛ يلزم فحصها قبل إنشاء حدث جديد';preparedMatch.evidence={legacyEvents:snapshot.legacy};}
     const skipDraft=(provider.draftOnlyAccepted||processingMode==='DIRECT')&&(selectionBlocksDraft(u,processingMode)||!completeEventStructure(u,content,processingMode)||!['NEW_EVENT','MATERIAL_UPDATE'].includes(preparedMatch?.classification??''));
-    const preparedDraft=!filter&&!skipDraft?await provider.draft({...processingMode==='DIRECT'?{processingMode:'DIRECT' as const}:{},content:content,understanding:u,rules:ruleSet},signal):null;
+    const preparedDraft=validatedBeforeMatching??(!filter&&!skipDraft?await provider.draft({...(generatedInput?{generatedInput}:{}),...processingMode==='DIRECT'?{processingMode:'DIRECT' as const}:{},content:content,understanding:u,rules:ruleSet},signal):null);
     proposal=availableDraft(preparedDraft,'REVIEW_REQUIRED');
     signal.throwIfAborted();
     return await client.$transaction(async tx=>{

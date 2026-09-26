@@ -29,3 +29,12 @@ export function graftEvidenceMetadata(plan:ReturnType<typeof evidenceMetadataPla
 export async function correctEvidenceMetadata<T>(source:string,raw:unknown,schema:z.ZodType,validate:(raw:unknown)=>T,request:(plan:ReturnType<typeof evidenceMetadataPlan>)=>Promise<unknown>):Promise<T>{
  try{return validate(raw);}catch(error){if(!(error instanceof ProcessingError)||error.code!=='AMBIGUOUS_EVIDENCE_CONTEXT')throw error;const plan=evidenceMetadataPlan(source,raw,schema);if(!plan.slots.length)throw error;return validate(graftEvidenceMetadata(plan,await request(plan)));}
 }
+
+/** The model selects an immutable candidate, never recreates coordinates. */
+export function evidenceMetadataWire(plan:ReturnType<typeof evidenceMetadataPlan>){
+ const candidates=plan.slots.map(slot=>({fieldId:slot.fieldId,candidates:slot.candidates.map((c,i)=>({id:slot.fieldId+':occurrence:'+i,...c}))}));
+ const schema=z.object({catalogId:z.literal(plan.identity),selections:z.object(Object.fromEntries(candidates.map(s=>[s.fieldId,z.enum(['UNRESOLVED',...s.candidates.map(c=>c.id)])]))).strict()}).strict();
+ return {schema,input:{...plan,slots:plan.slots.map((s,i)=>({...s,candidates:candidates[i].candidates}))},instructions:'Select exactly one immutable occurrence ID per required field, or UNRESOLVED. Do not emit coordinates. Never choose the first/nearest occurrence by default: the original fact association must establish the intended occurrence. Unknown IDs fail; no substitution.',decode(raw:unknown){
+  const value=schema.parse(raw);return {corrections:candidates.map(s=>{const selected=value.selections[s.fieldId];const c=s.candidates.find(c=>c.id===selected);return {fieldId:s.fieldId,status:c?'RESOLVED':'UNRESOLVED',startOffset:c?.startOffset??null,endOffset:c?.endOffset??null};})};
+ }};
+}

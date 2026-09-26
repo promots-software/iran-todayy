@@ -72,13 +72,15 @@ export const draftSchema = z.object({
 }).strict();
 export type Draft = z.infer<typeof draftSchema>;
 export interface LanguageProvider {
+  readonly generationFirst?: boolean;
+  prepareGeneration?(input: import('./pre-generation').GenerationIntake, signal:AbortSignal, observe?:import('./pre-generation').GenerationObserver):Promise<import('./pre-generation').GeneratedInput>;
   readonly id: string;
   readonly live: boolean;
   readonly draftOnlyAccepted?: boolean;
   readonly constrainedRewrite?: boolean;
-  understand(input: { comparisonCandidates?: EventData[]; processingMode?: "NORMAL"|"DIRECT"; content: string; publishedAt: Date; profile: SourceProfile; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
+  understand(input: { generatedInput?:import('./pre-generation').GeneratedInput; comparisonCandidates?: EventData[]; processingMode?: "NORMAL"|"DIRECT"; content: string; publishedAt: Date; profile: SourceProfile; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
   compare(input: { incoming: EventData; existing: EventData }, signal: AbortSignal): Promise<unknown>;
-  draft(input: { processingMode?: "NORMAL"|"DIRECT"; content: string; understanding: Understanding; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
+  draft(input: { generatedInput?:import('./pre-generation').GeneratedInput; processingMode?: "NORMAL"|"DIRECT"; content: string; understanding: Understanding; rules: typeof ruleSet }, signal: AbortSignal): Promise<unknown>;
 }
 export interface Monitor {
   readonly id: string;

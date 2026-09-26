@@ -7,9 +7,9 @@ export {readLocalGeminiKey} from './gemini-key';
 export type GeminiUsage={stage:string;attempt:number;httpStatus:number|null;inputTokens:number|null;outputTokens:number|null;thinkingTokens:number|null;estimatedCostUsd:number|null;replayed?:boolean;durationMs?:number};
 /** Native Gemini transport, shared extraction/classification/atom validators. No fallback provider. */
 export class GeminiLanguageProvider implements LanguageProvider{
- readonly id='gemini:gemini-3.1-flash-lite:semantic-integrity-v4.4';readonly live=true;readonly draftOnlyAccepted=true;readonly constrainedRewrite=true;
+ get id(){return this.generationFirst?'gemini:gemini-3.1-flash-lite:generation-first:semantic-integrity-v4.4':'gemini:gemini-3.1-flash-lite:semantic-integrity-v4.4';}readonly live=true;readonly draftOnlyAccepted=true;readonly constrainedRewrite=true;
  private delegate:GroqLanguageProvider;
- constructor(key:string,transport:typeof fetch=fetch,log:(u:GeminiUsage)=>void|Promise<void>=()=>{}){
+ constructor(key:string,transport:typeof fetch=fetch,log:(u:GeminiUsage)=>void|Promise<void>=()=>{},readonly generationFirst=false){
   if(!key)throw new ProcessingError('GEMINI_API_KEY_REQUIRED');
   this.delegate=new GroqLanguageProvider('injected-gemini-transport',async(_url,init)=>{
    const req=JSON.parse(String(init?.body));
@@ -40,8 +40,9 @@ export class GeminiLanguageProvider implements LanguageProvider{
     finally{record.durationMs=Date.now()-started;await log(record);}
    }
    throw new ProcessingError('GEMINI_HTTP_503');
-  },()=>{});
+  },()=>{},undefined,generationFirst);
  }
+ prepareGeneration(...args:Parameters<GroqLanguageProvider['prepareGeneration']>){return this.delegate.prepareGeneration(...args);}
  understand(i:Parameters<LanguageProvider['understand']>[0],s:AbortSignal){return this.delegate.understand(i,s);}
  classifyExtracted(...args:Parameters<GroqLanguageProvider['classifyExtracted']>){return this.delegate.classifyExtracted(...args);}
  compare(i:Parameters<LanguageProvider['compare']>[0],s:AbortSignal){return this.delegate.compare(i,s);}

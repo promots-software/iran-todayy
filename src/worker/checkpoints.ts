@@ -29,7 +29,8 @@ export function checkpointProvider(provider:LanguageProvider, store:CheckpointSt
     return checkpointCall(store,key,call);
   }
   return {
-    id:provider.id,live:provider.live,draftOnlyAccepted:provider.draftOnlyAccepted,constrainedRewrite:provider.constrainedRewrite,
+    id:provider.id,live:provider.live,generationFirst:provider.generationFirst,
+    prepareGeneration:provider.prepareGeneration?.bind(provider),draftOnlyAccepted:provider.draftOnlyAccepted,constrainedRewrite:provider.constrainedRewrite,
     understand:(input,signal)=>stage('understand',input,signal,()=>provider.understand(input,signal)),
     compare:(input,signal)=>stage('compare',input,signal,()=>provider.compare(input,signal)),
     draft:(input,signal)=>stage('draft',input,signal,()=>provider.draft(input,signal)),

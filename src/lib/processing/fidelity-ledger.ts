@@ -64,6 +64,9 @@ export function validateFidelityReceipt(source:string,publication:PublicationUni
   const parent={excerpt:c.excerpt,context:p.text,start:0,end:0};
   try{resolveContextEvidence(parent,p.text);}catch{return fail('INVALID_CANDIDATE_OCCURRENCE',path);}
   const mask=new Uint8Array(c.excerpt.length);
+  // Apply the existing canonical-prefix exemption at the component boundary too.
+  // Only the actual publication prefix is presentation; interior prose is not.
+  if(parent.start===0)mask.fill(1,0,Math.min(mask.length,canonicalPresentationPrefixLength(source,p.text)));
   for(const [j,part] of c.components.entries()){
    if(componentIds.has(part.id))return fail('DUPLICATE_COMPONENT_ID',[...path,j]);componentIds.add(part.id);
    if(new Set(part.sourceUnitIds).size!==part.sourceUnitIds.length||part.sourceUnitIds.some(id=>!c.sourceUnitIds.includes(id)))return fail('INVALID_COMPONENT_SOURCE_LINK',[...path,j]);
