@@ -1,4 +1,5 @@
 import {canonicalGeminiWireSchema,canonicalGeminiSerialization,decodeCanonicalGeminiReceipt} from './gemini-canonical-wire';
+import {matchingWireSchema,matchingSerialization,decodeMatchingReceipt} from './gemini-matching-wire';
 import {geminiWireSchema} from './gemini-wire-schema';
 import {GroqLanguageProvider} from './groq';
 import {failurePolicy,retryAfter} from './failure-policy';
@@ -16,8 +17,9 @@ export class GeminiLanguageProvider implements LanguageProvider{
    const req=JSON.parse(String(init?.body));
    const proposition=/^iran_today_proposition_(source|candidate|assessor|comparator)$/.test(req.response_format.json_schema.name);
    const canonicalCheck=req.response_format.json_schema.name==='iran_today_canonical_check';
+   const canonicalMatch=req.response_format.json_schema.name==='iran_today_canonical_match';
    const schema=geminiWireSchema(req.response_format.json_schema.schema);
-   const body={systemInstruction:{parts:[{text:req.messages[0].content+(canonicalCheck?'\n'+canonicalGeminiSerialization:'')}]},contents:[{role:'user',parts:[{text:req.messages[1].content}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:canonicalCheck?canonicalGeminiWireSchema(schema):schema,maxOutputTokens:req.max_completion_tokens,candidateCount:1,thinkingConfig:proposition?{thinkingLevel:'high' as const}:{thinkingBudget:0}}};
+   const body={systemInstruction:{parts:[{text:req.messages[0].content+(canonicalCheck?'\n'+canonicalGeminiSerialization:canonicalMatch?'\n'+matchingSerialization(schema):'')}]},contents:[{role:'user',parts:[{text:req.messages[1].content}]}],generationConfig:{responseMimeType:'application/json',responseJsonSchema:canonicalCheck?canonicalGeminiWireSchema(schema):canonicalMatch?matchingWireSchema(schema):schema,maxOutputTokens:req.max_completion_tokens,candidateCount:1,thinkingConfig:proposition?{thinkingLevel:'high' as const}:{thinkingBudget:0}}};
    for(let attempt=1;attempt<=1;attempt++){
     const started=Date.now();
     const record:GeminiUsage={stage:req.response_format.json_schema.name,attempt,httpStatus:null,inputTokens:null,outputTokens:null,thinkingTokens:null,estimatedCostUsd:null};
@@ -38,7 +40,7 @@ export class GeminiLanguageProvider implements LanguageProvider{
      if(envelope.candidates?.length!==1||envelope.candidates[0].finishReason!=='STOP'||(!proposition&&(usage?.thoughtsTokenCount??0)>0))throw new ProcessingError('GEMINI_INCOMPLETE');
      const content=envelope.candidates[0].content?.parts?.filter((p:{text?:string;thought?:boolean})=>typeof p.text==='string'&&!p.thought).map((p:{text:string})=>p.text).join('');
      if(!content)throw new ProcessingError('GEMINI_INVALID_RESPONSE');
-     return Response.json({choices:[{finish_reason:'stop',message:{content:canonicalCheck?decodeCanonicalGeminiReceipt(content):content}}]},{headers:{'x-worker-checkpoint-replayed':record.replayed?'true':'false'}});
+     return Response.json({choices:[{finish_reason:'stop',message:{content:canonicalCheck?decodeCanonicalGeminiReceipt(content):canonicalMatch?decodeMatchingReceipt(content,schema):content}}]},{headers:{'x-worker-checkpoint-replayed':record.replayed?'true':'false'}});
     }catch(error){if(error instanceof ProcessingError&&/^GEMINI_HTTP_\d{3}$/.test(error.code))record.httpStatus=Number(error.code.slice(-3));throw error instanceof ProcessingError?error:new ProcessingError('GEMINI_TRANSPORT_FAILED',true);}
     finally{record.durationMs=Date.now()-started;await log(record);}
    }
