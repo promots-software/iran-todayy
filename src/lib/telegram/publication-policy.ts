@@ -1,3 +1,4 @@
+import {canonicalPublicationFacts} from './canonical-publication';
 import {processingSource} from '../processing/processing-source';
 import {normalMaterialUpdateFacts} from './material-update-evidence';
 import {isDeepStrictEqual} from 'node:util';
@@ -28,13 +29,14 @@ export function publicationReady(item:PublicationCandidate,frozen=false){
  const mode=record(item.validationResult).processingMode;
  if(!['NORMAL','DIRECT'].includes(String(mode))||item.status!==(frozen?'APPROVED':'PENDING_APPROVAL')||item.validationStatus!=='PASSED'||item.error||item.rejectionReason||item.needsReviewReasons.length||item.humanDraft||(!frozen&&item.publication)||!clean(item.validationResult,mode))return false;
  const contributors=publicationContributors(item);if(!contributors.length)return false;
- try{normalMaterialUpdateFacts(item);}catch{return false;}
+ let canonical=false;try{canonical=!!canonicalPublicationFacts(item);if(!canonical)normalMaterialUpdateFacts(item);}catch{return false;}
  for(const post of contributors){
   const result=record(post.processingResult);
   if(post.source.processingMode!==mode||!post.source.enabled||post.source.deletedAt||post.source.platform!=='TELEGRAM'||post.humanDraft||post.status!=='PENDING_APPROVAL'||post.error||post.rejectionReason||!clean(result,mode))return false;
   if(!post.jobs.length||post.jobs.some(j=>j.status!=='COMPLETED')||result.eventRevisionId!==item.eventRevisionId||!['NEW_EVENT','MATERIAL_UPDATE'].includes(String(result.classification))||!post.matches.some(m=>m.eventRevisionId===item.eventRevisionId&&['NEW_EVENT','MATERIAL_UPDATE'].includes(m.classification))||post.matches.some(m=>['UNCERTAIN','UNCERTAIN_MATCH'].includes(m.classification)))return false;
   try{
    const u=validateUnderstanding(result.extraction,processingSource(post));
+   if(canonical)continue;
    if(mode==='DIRECT'){
     if(result.generationContract==='direct-generation-v2'||result.generationContract==='direct-generation-v3'){
      const article=directFinalArticle(processingSource(post),u);

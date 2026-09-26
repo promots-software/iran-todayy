@@ -1,3 +1,4 @@
+import {canaryAdmission} from './staging-canary';
 import {processingLanes} from './newsroom-scheduler';
 import {idleClaimMs} from './database-cadence';
 import {randomUUID} from 'node:crypto';
@@ -93,15 +94,17 @@ async function main() {
             messages:(handle,after,readSignal)=>{requireLease();return reader.messages(handle,after,readSignal);},
           };
         },{requireActive:requireLease,log});
+        let lastAdmission:ReturnType<typeof canaryAdmission>|undefined;
         const heartbeat=async()=>{
           while(!signal.aborted){
             requireLease();await safety();
             if([...processing.values()].some(start=>Date.now()-start>210000))throw new ProcessingError('WORKER_JOB_DEADLINE');
             const telegramReady=poller!.ready;
-            const processingPaused=(await db.appSettings.findUnique({where:{id:1},select:{processingPaused:true}}))?.processingPaused??false;
+            const processingPaused=(await db.appSettings.findUnique({where:{id:1},select:{processingPaused:true,stagingCanaryPolicy:true}}));
+            const processingAdmission=canaryAdmission(processingPaused??{processingPaused:true,stagingCanaryPolicy:null});
             await renewLease(db,runId,processing.size?'BUSY':telegramReady?'IDLE':'ERROR',{
               shadowMode:true,requireApproval:true,autoPublish:false,externalPublishingEnabled:false,
-              telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:!processingPaused,pollErrors,provider:'gemini-3.1-flash-lite',
+              telegramReady,processingCount:processing.size,liveMonitoringEnabled:telegramReady,processingEnabled:processingAdmission.canaryClaimAllowed,...processingAdmission,...(lastAdmission?{lastClaimAdmission:lastAdmission}:{}),pollErrors,provider:'gemini-3.1-flash-lite',
               pollPhase,activeSource,lastPollError,lastPollCompletedAt,
               processingCapacity,
               commit:/^[a-f0-9]{40}$/.test(process.env.RAILWAY_GIT_COMMIT_SHA??'')?process.env.RAILWAY_GIT_COMMIT_SHA:null,
@@ -147,7 +150,7 @@ async function main() {
               requireLease();await safety();
               // Local checks and checkpoint replay never wait for AI capacity.
               // Only an actual uncached network stage obtains provider capacity.
-              const job=await claimJob(db,runId,new Date(),true,[],true,costWaitRecheckBefore(processingCapacity));
+              const job=await claimJob(db,runId,new Date(),true,[],true,costWaitRecheckBefore(processingCapacity),state=>{if(JSON.stringify(state)!==JSON.stringify(lastAdmission))log('PROCESSING_ADMISSION',state);lastAdmission=state;});
               if(!job){await pause(idleClaimMs,signal);continue;}
               processing.set(lane,Date.now());
               await db.auditLog.create({data:{action:'PROVIDER_JOB_ADMITTED',actor:workerId,entityType:'ProviderBudget',entityId:'gemini',message:'Bounded two-lane processing; durable fairness and per-request cost protection'}});

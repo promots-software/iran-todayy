@@ -72,6 +72,7 @@ export const draftSchema = z.object({
 }).strict();
 export type Draft = z.infer<typeof draftSchema>;
 export interface LanguageProvider {
+  canonicalRequest?(request:import('./canonical-flow').CanonicalRequest,signal:AbortSignal):Promise<unknown>;
   readonly generationFirst?: boolean;
   prepareGeneration?(input: import('./pre-generation').GenerationIntake, signal:AbortSignal, observe?:import('./pre-generation').GenerationObserver):Promise<import('./pre-generation').GeneratedInput>;
   readonly id: string;

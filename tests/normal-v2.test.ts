@@ -100,8 +100,7 @@ for(const source of ['شورای شهر مدرسه جدیدی افتتاح کر�
  const p=mock(source,{body:'افتتح المجلس مدرسة جديدة.'});const u=await p.provider.understand(input(source),signal());assert(u.rendering);const draft=await p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());const final=finalizeConstrainedDraft(draft,source,u,official);assert.deepEqual(p.calls,['extract','render','review_rendering','classify','draft','review']);assert.equal(blockingEditorialReasons(final.review).length,0);assert(final.body.includes('افتتح المجلس'));
 });
 
-// Structural replay of the live failure: evidence omitted a leading source label.
-// The renderer cannot repair immutable evidence; repair belongs to extraction.
+// Missing keyed coverage now fails at the binding boundary. It cannot authorize an article repair.
 for(const [source,body] of [
  ['تنبيه تجريبي — افتتح المجلس مدرسة جديدة.','تنبيه تجريبي — افتتح المجلس مدرسة جديدة.'],
  ['برچسب آزمایشی — شورا مدرسه جدیدی افتتاح کرد.','وسم تجريبي — افتتح المجلس مدرسة جديدة.'],
@@ -109,13 +108,12 @@ for(const [source,body] of [
  ['تنبيه تجريبي — المجلس قام بافتتاح مدرسة جديدة وذلك اليوم.','تنبيه تجريبي — افتتح المجلس مدرسة جديدة اليوم.'],
  ['تنبيه تجريبي — قال المجلس إنه افتتح مدرسة جديدة. وأضاف أنه سيعلن التفاصيل لاحقاً.','تنبيه تجريبي — قال المجلس إنه افتتح مدرسة جديدة. وأضاف أنه سيعلن التفاصيل لاحقاً.'],
  ['تنبيه تجريبي — افتتح المجلس 3 مدارس اليوم بعد 4 ساعات من المراجعة.','تنبيه تجريبي — افتتح المجلس 3 مدارس اليوم بعد 4 ساعات من المراجعة.'],
-])test('source occurrence restores representation without rewriting evidence: '+source,async()=>{
- const p=mock(source,{uncovered:true,body});const u=await p.provider.understand(input(source),signal());const draft=await p.provider.draft({content:source,understanding:u,rules:ruleSet},signal());
- assert.equal(p.calls.filter(s=>s==='extract').length,1);assert.equal(p.calls.filter(s=>s==='classify').length,1);assert.equal(p.calls.filter(s=>s==='draft').length,1);assert.equal(u.event.facts[0].evidence.excerpt,source.split('— ')[1]);assert('normalGeneration' in draft);assert.equal(u.publicationProposal?.editorialContractHash,EDITORIAL_CONTRACT_SHA256);
+])test('missing explicit coverage stops without article repair: '+source,async()=>{
+ const p=mock(source,{uncovered:true,body});await assert.rejects(p.provider.understand(input(source),signal()),/INCOMPLETE_COVERAGE_SELECTION/);assert.deepEqual(p.calls,['extract']);
 });
-test('source mapping is not a semantic completeness certificate',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{uncovered:true,always:true,bad:'unsupported'});const u=await p.provider.understand(input(source),signal());await assert.rejects(p.provider.draft({content:source,understanding:u,rules:ruleSet},signal()));assert.equal(p.calls.filter(s=>s==='extract').length,1);assert(!u.publicationProposal);});
+test('source mapping is not a semantic completeness certificate',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{always:true,bad:'unsupported'});const u=await p.provider.understand(input(source),signal());await assert.rejects(p.provider.draft({content:source,understanding:u,rules:ruleSet},signal()));assert.equal(p.calls.filter(s=>s==='extract').length,1);assert(!u.publicationProposal);});
 
-test('UNRELATED bypasses coverage repair and rendering without changing selection',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{unrelated:true,uncovered:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'UNRELATED_TO_IRAN');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});
+test('UNRELATED bypasses coverage repair and rendering without changing selection',async()=>{const source='تنبيه تجريبي — افتتح المجلس مدرسة جديدة.';const p=mock(source,{unrelated:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.filterReason,'UNRELATED_TO_IRAN');assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});
 
 test('definite unrelated is filtered despite contentType uncertainty',async()=>{const source='The foreign council has opened a new school.';const p=mock(source,{unrelated:true,uncertainContent:true});const u=await p.provider.understand(input(source),signal());assert.equal(u.relevance,'IRRELEVANT');assert.deepEqual(p.calls,['extract']);});
 test('locally invalid translated number stops before independent review',async()=>{const source='The council has opened a new school.';const p=mock(source,{invalidRendering:true});await assert.rejects(p.provider.understand(input(source),signal()),/ARABIC_RENDERING_NUMBER_MISMATCH/);assert.deepEqual(p.calls,['extract','render']);});

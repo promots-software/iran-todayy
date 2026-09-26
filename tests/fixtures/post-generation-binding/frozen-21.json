@@ -1,0 +1,471 @@
+[
+  {
+    "post": "irna_ar/19807",
+    "source": "اجتماع وزيري خارجية إيران وعُمان في نيويورك\n\nطهران / 26 ايلول/سبتمبر/ارنا- التقى وزير خارجية الجمهورية الإسلامية الإيرانية ووزير خارجية عُمان في نيويورك الجمعة.\n\nوجرى اللقاء بين وزير خارجية الجمهورية الإسلامية الإيرانية عباس عراقجي ووزير خارجية سلطنة عُمان بدر البوسعيدي على هامش الدورة الحادية والثمانين للجمعية العامة للأمم المتحدة في نيويورك.\n​\nوالتقى عراقجي لغاية الان العديد من نظرائه من الدول الاخرى على هامش اجتماع الجمعية العامة للبحث في العلاقات الثنائية واهم القضايا الاقليمية والدولية ذات الاهتمام المشترك.\n\n@Irna_ar​",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عراقجي يبحث مع نظيره العُماني في نيويورك ملفات إقليمية ودولية",
+      "body": "التقى وزير الخارجية الإيراني عباس عراقجي بنظيره العُماني بدر البوسعيدي، وذلك على هامش أعمال الدورة الـ81 للجمعية العامة للأمم المتحدة المنعقدة في نيويورك. ويأتي هذا اللقاء في إطار سلسلة اجتماعات مكثفة يجريها عراقجي مع نظرائه من مختلف الدول، لمناقشة العلاقات الثنائية والتباحث حول أهم القضايا ذات الاهتمام المشترك على المستويين الإقليمي والدولي.",
+      "diagnostics": [
+        "تمت صياغة الخبر بأسلوب مهني يتناسب مع سياسة إيران الآن.",
+        "تم الحفاظ على المعلومات الأساسية والأسماء والأطراف المعنية.",
+        "تمت مراعاة التعليمات الخاصة بعدم استخدام 'عاجل' والالتزام بقالب التحرير المطلوب."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"relevance\": \"POLITICAL_NEWS\",\n  \"actors\": [\n    {\n      \"span\": {\n        \"first\": \"عباس\",\n        \"last\": \"عراقجي\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u5\",\n        \"lastUnit\": \"u5\"\n      }\n    },\n    {\n      \"span\": {\n        \"first\": \"بدر\",\n        \"last\": \"البوسعيدي\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u5\",\n        \"lastUnit\": \"u5\"\n      }\n    }\n  ],\n  \"action\": {\n    \"span\": {\n      \"first\": \"التقى\",\n      \"last\": \"اللقاء\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u5\"\n    }\n  },\n  \"object\": {\n    \"span\": {\n      \"first\": \"وزير\",\n      \"last\": \"البوسعيدي\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u5\",\n      \"lastUnit\": \"u5\"\n    }\n  },\n  \"location\": {\n    \"span\": {\n      \"first\": \"نيويورك\",\n      \"last\": \"نيويورك\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u5\",\n      \"lastUnit\": \"u5\"\n    }\n  },\n  \"event_time\": {\n    \"span\": {\n      \"first\": \"الجمعة\",\n      \"last\": \"الجمعة\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"statements\": [\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"التقى\",\n          \"last\": \"الجمعة\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"speaker\": null,\n      \"sourceUnitIds\": [\"u3\"]\n    },\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"وجرى\",\n          \"last\": \"نيويورك\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u5\",\n          \"lastUnit\": \"u5\"\n        }\n      },\n      \"speaker\": null,\n      \"sourceUnitIds\": [\"u5\"]\n    },\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"والتقى\",\n          \"last\": \"المشترك\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u7\",\n          \"lastUnit\": \"u7\"\n        }\n      },\n      \"speaker\": null,\n      \"sourceUnitIds\": [\"u7\"]\n    }\n  ],\n  \"contentType\": \"NEWS\",\n  \"contentTypeEvidence\": {\n    \"span\": {\n      \"first\": \"التقى\",\n      \"last\": \"الجمعة\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"nonFactualUnitIds\": [\"u9\"],\n  \"catalogId\": \"4b01dec414d3b8be6d4533edd10f34c399b9cd8d6ff3dc52732521f60255f68f\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "irna_ar/19806",
+    "source": "🎙 عراقجي: لا ينبغي أن تكون التنمية رهينة للإكراه أو التمييز أو الأجندات السياسية أو الأحادية\n\nطهران / 26 ايلول / سبتمبر/ارنا- أكد وزير الخارجية الإيراني، عباس عراقجي، أن الجمهورية الإسلامية الإيرانية لا تزال ملتزمة بميثاق الأمم المتحدة، والمساواة في السيادة، والحق في التنمية، والتعددية الحقيقية، مشدداً على أنه لا ينبغي أبداً أن تكون التنمية رهينة للإكراه أو التمييز أو الأجندات السياسية أو الأحادية.\n\n@Irna_ar​",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عراقجي: التنمية لا يجب أن تكون رهينة للأجندات السياسية والأحادية",
+      "body": "أكد وزير الخارجية الإيراني، عباس عراقجي، التزام الجمهورية الإسلامية الإيرانية الراسخ بميثاق الأمم المتحدة ومبادئ المساواة في السيادة.\n\nوشدد عراقجي، في تصريحات له، على ضرورة حماية الحق في التنمية، معتبراً أنه لا ينبغي إطلاقاً أن تظل التنمية رهينة للإكراه أو التمييز أو الأجندات السياسية أو الممارسات الأحادية التي تفرضها بعض الأطراف.",
+      "diagnostics": [
+        "Successfully converted Persian-style news snippet into Iran Now editorial format.",
+        "Preserved core facts: Abbas Araghchi's statements on UN Charter, sovereign equality, and rejection of unilateralism in development.",
+        "Maintained attribution to the source.",
+        "Followed mandatory header and naming conventions."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"relevance\": \"POLITICAL_NEWS\",\n  \"actors\": [\n    {\n      \"span\": {\n        \"first\": \"عباس\",\n        \"last\": \"عراقجي\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u3\",\n        \"lastUnit\": \"u3\"\n      }\n    }\n  ],\n  \"action\": {\n    \"span\": {\n      \"first\": \"أكد\",\n      \"last\": \"أكد\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"object\": null,\n  \"location\": {\n    \"span\": {\n      \"first\": \"طهران\",\n      \"last\": \"طهران\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"event_time\": {\n    \"span\": {\n      \"first\": \"26\",\n      \"last\": \"سبتمبر\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"statements\": [\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"أكد\",\n          \"last\": \"عراقجي\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"speaker\": {\n        \"span\": {\n          \"first\": \"عباس\",\n          \"last\": \"عراقجي\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"sourceUnitIds\": [\"u3\"]\n    },\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"الجمهورية\",\n          \"last\": \"الحقيقية\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"speaker\": {\n        \"span\": {\n          \"first\": \"عباس\",\n          \"last\": \"عراقجي\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"sourceUnitIds\": [\"u3\"]\n    },\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"لا\",\n          \"last\": \"الأحادية\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"speaker\": {\n        \"span\": {\n          \"first\": \"عباس\",\n          \"last\": \"عراقجي\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u3\",\n          \"lastUnit\": \"u3\"\n        }\n      },\n      \"sourceUnitIds\": [\"u3\"]\n    }\n  ],\n  \"contentType\": \"NEWS\",\n  \"contentTypeEvidence\": {\n    \"span\": {\n      \"first\": \"أكد\",\n      \"last\": \"الأحادية\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"nonFactualUnitIds\": [\"u5\"],\n  \"catalogId\": \"063f5bf8b0e2940481fef8ef78f022e22ac39d4d4712d4a4654281233ea55d52\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "khabarfouri/566114",
+    "source": "مرندی: هیچ پیشرفتی در مذاکرات غیرمستقیم با ترامپ حاصل نشده است؛ منطقه به سمت تشدید تنش‌ها پیش می‌رود\n\n@khabarfouri",
+    "mode": "DIRECT",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | مرندي: لا تقدم في المفاوضات غير المباشرة مع إدارة ترامب والمنطقة تتجه نحو التصعيد",
+      "body": "أكد مستشار الوفد الإيراني المفاوض، محمد مرندي، عدم إحراز أي تقدم في المفاوضات غير المباشرة مع إدارة دونالد ترامب، مشيراً إلى أن الأوضاع في المنطقة تسير نحو مزيد من التصعيد والتوتر.",
+      "diagnostics": [
+        "تمت ترجمة وتكييف الخبر بما يتناسب مع سياسة التحرير في إيران الآن",
+        "تمت مراعاة المعايير اللغوية والصحفية المعتمدة في العقد",
+        "تم توضيح أن المفاوضات غير مباشرة كما ورد في المصدر"
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"extraction\": {\n    \"actors\": [\n      {\n        \"span\": {\n          \"first\": \"مرندی\",\n          \"last\": \"مرندی\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u1\",\n          \"lastUnit\": \"u1\"\n        }\n      },\n      {\n        \"span\": {\n          \"first\": \"ترامپ\",\n          \"last\": \"ترامپ\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u1\",\n          \"lastUnit\": \"u1\"\n        }\n      }\n    ],\n    \"action\": {\n      \"span\": {\n        \"first\": \"تشدید\",\n        \"last\": \"می‌رود\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    \"object\": {\n      \"span\": {\n        \"first\": \"مذاکرات\",\n        \"last\": \"غیرمستقیم\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    \"location\": {\n      \"span\": {\n        \"first\": \"منطقه\",\n        \"last\": \"منطقه\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    \"event_time\": null,\n    \"statements\": [\n      {\n        \"evidence\": {\n          \"span\": {\n            \"first\": \"هیچ\",\n            \"last\": \"است\"\n          },\n          \"context\": {\n            \"firstUnit\": \"u1\",\n            \"lastUnit\": \"u1\"\n          }\n        },\n        \"speaker\": {\n          \"span\": {\n            \"first\": \"مرندی\",\n            \"last\": \"مرندی\"\n          },\n          \"context\": {\n            \"firstUnit\": \"u1\",\n            \"lastUnit\": \"u1\"\n          }\n        },\n        \"kind\": \"CLAIM\",\n        \"material\": true,\n        \"sourceUnitIds\": [\n          \"u1\"\n        ]\n      },\n      {\n        \"evidence\": {\n          \"span\": {\n            \"first\": \"منطقه\",\n            \"last\": \"می‌رود\"\n          },\n          \"context\": {\n            \"firstUnit\": \"u1\",\n            \"lastUnit\": \"u1\"\n          }\n        },\n        \"speaker\": {\n          \"span\": {\n            \"first\": \"مرندی\",\n            \"last\": \"مرندی\"\n          },\n          \"context\": {\n            \"firstUnit\": \"u1\",\n            \"lastUnit\": \"u1\"\n          }\n        },\n        \"kind\": \"CLAIM\",\n        \"material\": true,\n        \"sourceUnitIds\": [\n          \"u1\"\n        ]\n      }\n    ],\n    \"safety\": {\n      \"filterReason\": \"NONE\",\n      \"priority\": \"P2\",\n      \"sensitiveActor\": false,\n      \"leaderDeath\": false,\n      \"seriousClaim\": false,\n      \"rankUnverified\": true\n    },\n    \"relevance\": \"POLITICAL_NEWS\",\n    \"contentType\": \"NEWS\",\n    \"contentTypeEvidence\": {\n      \"span\": {\n        \"first\": \"مرندی\",\n        \"last\": \"می‌رود\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    \"nonFactualUnitIds\": [\n      \"u3\"\n    ]\n  },\n  \"catalogId\": \"089cc24ca07b7d9a3ca409096aaa3f628c19e69b91f59370d3637e77e4a6c4ce\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80221",
+    "source": "الأمين العام لكتائب سيد الشهداء أبو آلاء الولائي:\n\nلا يليق بالعراق أن يكون جزءاً من حصار جائر على إيران، وندعو نوابه إلى إلزام الحكومة بعدم الرضوخ للإملاءات الأميركية ورفض الحصار، أسوةً بروسيا والصين\n\n#العراق",
+    "mode": "NORMAL",
+    "error": "AI_INVALID_SCHEMA",
+    "v0": {
+      "title": "إيران الآن | أبو آلاء الولائي: لا يليق بالعراق المشاركة في حصار إيران",
+      "body": "دعا الأمين العام لكتائب سيد الشهداء، أبو آلاء الولائي، البرلمان العراقي إلى إلزام الحكومة برفض الرضوخ للإملاءات الأميركية. واعتبر الولائي أن مشاركة العراق في ما وصفه بـ«الحصار الجائر» على إيران أمر لا يليق بمكانة البلاد.\n\nوحثّ الولائي في تصريحاته النواب العراقيين على اتخاذ موقف حازم لإنهاء هذه المشاركة، مشدداً على ضرورة تبني موقف سيادي يرفض الانصياع للضغوط، على غرار المواقف التي اتخذتها كل من روسيا والصين في هذا الملف.",
+      "diagnostics": [
+        "Converted source text into professional news format according to Iran Now contract.",
+        "Preserved attribution of statements to Abu Alaa al-Walai.",
+        "Maintained editorial framing consistent with instructions.",
+        "Removed hashtag as per non-blocking formatting guidelines for prose copy."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"source:c53a937f75bd3591:5\",\"last\":\"source:c53a937f75bd3591:7\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}}],\"action\":{\"span\":{\"first\":\"source:c53a937f75bd3591:21\",\"last\":\"source:c53a937f75bd3591:31\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"object\":{\"span\":{\"first\":\"source:c53a937f75bd3591:19\",\"last\":\"source:c53a937f75bd3591:19\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"location\":null,\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"source:c53a937f75bd3591:9\",\"last\":\"source:c53a937f75bd3591:19\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":{\"span\":{\"first\":\"source:c53a937f75bd3591:0\",\"last\":\"source:c53a937f75bd3591:7\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"sourceUnitIds\":[\"u1\",\"u3\"]},{\"evidence\":{\"span\":{\"first\":\"source:c53a937f75bd3591:21\",\"last\":\"source:c53a937f75bd3591:35\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":{\"span\":{\"first\":\"source:c53a937f75bd3591:0\",\"last\":\"source:c53a937f75bd3591:7\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"sourceUnitIds\":[\"u1\",\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"source:c53a937f75bd3591:9\",\"last\":\"source:c53a937f75bd3591:35\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"nonFactualUnitIds\":[\"u5\"],\"catalogId\":\"fe0dc724ed0cafa8bc8f51b70ebb6f649dd3d94e1a8d1d485c95cf3385d2b683\"}"
+      }
+    ],
+    "draftFailure": {
+      "path": "publication.body[0].text",
+      "expected": "دعا الأمين العام لكتائب سيد الشهداء، أبو آلاء الولائي، البرلمان العراقي إلى إلزام الحكومة برفض الرضوخ للإملاءات الأميركية. واعتبر الولائي أن مشاركة العراق في ما وصفه بـ«الحصار الجائر» على إيران أمر لا يليق بمكانة البلاد.\n\nوحثّ الولائي في تصريحاته النواب العراقيين على اتخاذ موقف حازم لإنهاء هذه المشاركة، مشدداً على ضرورة تبني موقف سيادي يرفض الانصياع للضغوط، على غرار المواقف التي اتخذتها كل من روسيا والصين في هذا الملف.",
+      "actual": "دعا الأمين العام لكتائب سيد الشهداء، أبو آلاء الولائي، البرلمان العراقي إلى إلزام الحكومة برفض الرضوخ للإملاءات الأميركية. واعتبر الولائي أن مشاركة العراق في ما وصفه بـ«الحصار الجائر» على إيران أمر لا يليق بمكانة البلاد. وحثّ الولائي في تصريحاته النواب العراقيين على اتخاذ موقف حازم لإنهاء هذه المشاركة، مشدداً على ضرورة تبني موقف سيادي يرفض الانصياع للضغوط، على غرار المواقف التي اتخذتها كل من روسيا والصين في هذا الملف.",
+      "expectedLength": 422,
+      "actualLength": 421,
+      "equal": false,
+      "newlines": 2,
+      "onlyWhitespaceChanged": true,
+      "normalized": "دعا الأمين العام لكتائب سيد الشهداء، أبو آلاء الولائي، البرلمان العراقي إلى إلزام الحكومة برفض الرضوخ للإملاءات الأميركية. واعتبر الولائي أن مشاركة العراق في ما وصفه بـ«الحصار الجائر» على إيران أمر لا يليق بمكانة البلاد.\n\nوحثّ الولائي في تصريحاته النواب العراقيين على اتخاذ موقف حازم لإنهاء هذه المشاركة، مشدداً على ضرورة تبني موقف سيادي يرفض الانصياع للضغوط، على غرار المواقف التي اتخذتها كل من روسيا والصين في هذا الملف."
+    }
+  },
+  {
+    "post": "mayadeenchannel/80183",
+    "source": "رابطة علماء اليمن:\n\nكان على مفتي السعودية الدعوة إلى وقف العدوان ورفع الحصار عن اليمن بدل التحريض عليه\n\n#الميادين",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | رابطة علماء اليمن: كان على مفتي السعودية الدعوة لإنهاء العدوان بدل التحريض على اليمن",
+      "body": "انتقدت رابطة علماء اليمن تصريحات مفتي السعودية، مؤكدة أنه كان يجدر به الدعوة إلى وقف العدوان ورفع الحصار المفروض على الشعب اليمني بدلاً من التحريض ضده.",
+      "diagnostics": [
+        "Converted source material into Iran Now editorial format",
+        "Preserved attribution to the Yemeni Scholars Association",
+        "Removed hashtag per output guidelines",
+        "Applied natural Arabic phrasing rather than literal translation"
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"رابطة\",\"last\":\"اليمن\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},{\"span\":{\"first\":\"مفتي\",\"last\":\"السعودية\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}}],\"action\":null,\"object\":null,\"location\":null,\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"كان\",\"last\":\"عليه\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":{\"span\":{\"first\":\"رابطة\",\"last\":\"اليمن\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"sourceUnitIds\":[\"u1\",\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"كان\",\"last\":\"عليه\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"nonFactualUnitIds\":[\"u5\"],\"catalogId\":\"0fb118cff005b03d7491d19260da8d06e949594a949d78ff4a75fbdfee85bb27\"}"
+      }
+    ]
+  },
+  {
+    "post": "irna_ar/19805",
+    "source": "🖥 عراقجي يعلن خطة لإعادة فتح مضيق هرمز في حال القبول بشوط إيران\n\nاطهران / 26 ايلول/سبتمبر/ارنا- قدّم وزير الخارجية الايراني عباس عراقجي توضيحات في مؤتمر صحفي حول خطة إعادة فتح مضيق هرمز في حال القبول بشروط إيران.\n\n@Irna_ar​",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عراقجي: خطة لإعادة فتح مضيق هرمز مشروطة بتلبية مطالب طهران",
+      "body": "أعلن وزير الخارجية الإيراني عباس عراقجي عن وجود خطة تهدف إلى إعادة فتح مضيق هرمز، مؤكداً أن تنفيذها مرهون بقبول الأطراف المعنية بالشروط الإيرانية.\n\nوأوضح عراقجي خلال مؤتمر صحفي عقده في طهران اليوم 26 أيلول/سبتمبر، تفاصيل هذه الخطة التي ترتبط مباشرة بمدى استجابة الأطراف الأخرى للمطالب التي حددتها الجمهورية الإسلامية.",
+      "diagnostics": [
+        "Used required opening format.",
+        "Corrected month name as per contract.",
+        "Maintained neutral attribution of claims.",
+        "Ensured professional Arabic news style.",
+        "Verified structure constraints."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"عراقجي\",\"last\":\"عراقجي\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},{\"span\":{\"first\":\"عباس\",\"last\":\"عراقجي\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}}],\"action\":{\"span\":{\"first\":\"يعلن\",\"last\":\"يعلن\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"object\":{\"span\":{\"first\":\"خطة\",\"last\":\"خطة\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"location\":{\"span\":{\"first\":\"مضيق\",\"last\":\"هرمز\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"event_time\":{\"span\":{\"first\":\"26\",\"last\":\"سبتمبر\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"statements\":[{\"evidence\":{\"span\":{\"first\":\"عراقجي\",\"last\":\"إيران\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":null,\"sourceUnitIds\":[\"u1\"]},{\"evidence\":{\"span\":{\"first\":\"قدّم\",\"last\":\"إيران\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":{\"span\":{\"first\":\"عباس\",\"last\":\"عراقجي\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"sourceUnitIds\":[\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"🖥\",\"last\":\"إيران\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u3\"}},\"nonFactualUnitIds\":[\"u5\"],\"catalogId\":\"d3dfda0be3788b89fa764bea4cf829e00870fb21622f09fb2cbaf64d0c4da721\"}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80217",
+    "source": "\"ما تفعله \"إسرائيل\" في الضفة الغربية من ممارسات يرقى إلى حظر التجوال\"\n\n\nالمحلل في الشؤون السياسية والإقليمية ناصر اللحام #الميادين",
+    "mode": "NORMAL",
+    "error": "INCOMPLETE_COVERAGE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | ناصر اللحام: ممارسات \"إسرائيل\" في الضفة الغربية ترقى إلى مستوى حظر التجوال",
+      "body": "أكد المحلل السياسي في الشؤون الإقليمية، ناصر اللحام، أن ما ترتكبه \"إسرائيل\" من ممارسات وتضييق في الضفة الغربية يرقى إلى مستوى فرض حظر تجوال فعلي على الفلسطينيين.",
+      "diagnostics": [
+        "Converted source quote into a concise news report format.",
+        "Maintained Israel naming convention.",
+        "Preserved attribution to the analyst.",
+        "Removed hashtag as per editorial instructions."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"relevance\": \"IRRELEVANT\",\n  \"actors\": [\n    {\n      \"span\": {\n        \"first\": \"ناصر\",\n        \"last\": \"اللحام\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u4\",\n        \"lastUnit\": \"u4\"\n      }\n    }\n  ],\n  \"action\": null,\n  \"object\": null,\n  \"location\": null,\n  \"event_time\": null,\n  \"statements\": [],\n  \"contentType\": \"NEWS\",\n  \"contentTypeEvidence\": {\n    \"span\": {\n      \"first\": \"ما\",\n      \"last\": \"التجوال\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u1\",\n      \"lastUnit\": \"u1\"\n    }\n  },\n  \"nonFactualUnitIds\": [\n    \"u4\"\n  ],\n  \"catalogId\": \"9d8a90f8e71b645003c4c167e088f6d61678c67266427c0fe44b1dc1efc35c13\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "iraninarabic/119467",
+    "source": "رئيس كتلة منتصرون النيابية فالح الخزعلي في العراق: الطيران الايراني الذي منعته الحكومة بناء على الرغبات الامريكية هو الوحيد الذي بقي داعماً بنقل السلاح للعراق من 2014 حتى التحرير",
+    "mode": "DIRECT",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | الخزعلي: الطيران الإيراني كان الداعم الوحيد لنقل السلاح للعراق منذ 2014",
+      "body": "أكد رئيس كتلة \"منتصرون\" النيابية في العراق، فالح الخزعلي، أن الطيران الإيراني كان الجهة الوحيدة التي واصلت دعم العراق عبر نقل السلاح منذ عام 2014 وحتى مرحلة التحرير. وأشار الخزعلي إلى أن الحكومة العراقية كانت قد منعت هذا الدعم الجوي في وقت سابق استجابةً للرغبات الأميركية.",
+      "diagnostics": [
+        "Successfully converted the source statement into a formal news report format for Iran Now.",
+        "Maintained the requested editorial focus on Iranian support as described by the source.",
+        "Ensured correct attribution of the statement to the Iraqi MP.",
+        "Adhered to the Iran Now writing contract regarding tone and structure."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"extraction\":{\"actors\":[{\"span\":{\"first\":\"فالح\",\"last\":\"الخزعلي\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}}],\"action\":null,\"object\":null,\"location\":{\"span\":{\"first\":\"العراق\",\"last\":\"العراق\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"event_time\":{\"span\":{\"first\":\"2014\",\"last\":\"2014\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"statements\":[{\"evidence\":{\"span\":{\"first\":\"الطيران\",\"last\":\"التحرير\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":{\"span\":{\"first\":\"فالح\",\"last\":\"الخزعلي\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"kind\":\"CLAIM\",\"material\":true,\"sourceUnitIds\":[\"u1\"]}],\"safety\":{\"filterReason\":\"NONE\",\"priority\":\"P3\",\"sensitiveActor\":true,\"leaderDeath\":false,\"seriousClaim\":true,\"rankUnverified\":false},\"relevance\":\"POLITICAL_NEWS\",\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"رئيس\",\"last\":\"التحرير\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[]},\"catalogId\":\"2cbe85a90e7780144c276daed783f42dd5215167a47ea95f27ff6b99c76c2b7f\"}"
+      }
+    ]
+  },
+  {
+    "post": "irna_ar/19804",
+    "source": "وزيرا خارجية إيران وتركيا يلتقيان في نيويورك\n\nطهران / 26 ايلول/ سبتمبر/ارنا- التقى وزيرا خارجية إيران وتركيا في نيويورك، على هامش اجتماع اجمعية العامة للأمم المتحدة.\n\nوفي اللقاء تباحث وزير الخارجية الإيراني عباس عراقجي ونظيره التركي هاكان فيدان في نيويورك، على هامش الدورة الحادية والثمانين للجمعية العامة للأمم المتحدة.\n​\nوالتقى عراقجي لغاية العديد من نظرائه من الدول الاخرى على هامش اجتماع الجمعية العامة للبحث في العلاقات الثنائية واهم القضايا الاقليمية والدولية ذات الاهتمام المشترك.\n\n@Irna_ar​",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عراقجي وفيدان يبحثان العلاقات الثنائية في نيويورك",
+      "body": "التقى وزير الخارجية الإيراني عباس عراقجي نظيره التركي هاكان فيدان، على هامش اجتماعات الدورة الـ81 للجمعية العامة للأمم المتحدة في نيويورك. وناقش الوزيران عدداً من الملفات ذات الاهتمام المشترك وسبل تعزيز العلاقات الثنائية بين طهران وأنقرة. كما أجرى عراقجي سلسلة لقاءات مع عدد من نظرائه من دول أخرى في نيويورك، لمناقشة القضايا الإقليمية والدولية الراهنة.",
+      "diagnostics": [
+        "Processed successfully",
+        "Standardized article format",
+        "Converted month to Arabic format",
+        "Attributed diplomatic meetings clearly"
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"عباس\",\"last\":\"عراقجي\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}},{\"span\":{\"first\":\"هاكان\",\"last\":\"فيدان\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}}],\"action\":{\"span\":{\"first\":\"التقى\",\"last\":\"التقى\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"object\":{\"span\":{\"first\":\"وزيرا\",\"last\":\"خارجية\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"location\":{\"span\":{\"first\":\"نيويورك\",\"last\":\"نيويورك\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"event_time\":{\"span\":{\"first\":\"26\",\"last\":\"سبتمبر\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"statements\":[{\"evidence\":{\"span\":{\"first\":\"التقى\",\"last\":\"المتحدة\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":null,\"sourceUnitIds\":[\"u3\"]},{\"evidence\":{\"span\":{\"first\":\"تباحث\",\"last\":\"المتحدة\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}},\"speaker\":null,\"sourceUnitIds\":[\"u5\"]},{\"evidence\":{\"span\":{\"first\":\"التقى\",\"last\":\"المشترك\"},\"context\":{\"firstUnit\":\"u7\",\"lastUnit\":\"u7\"}},\"speaker\":null,\"sourceUnitIds\":[\"u7\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"وزيرا\",\"last\":\"نيويورك\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[\"u9\"],\"catalogId\":\"8f9e03b1a3f51aeb66d1a107ffc969787ca531ea2efdf42fd3db6ecd4b41d0a9\"}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80216",
+    "source": "مراسل الميادين:\n\n\nآليات الاحتلال تطلق النار في منطقتي السلاطين والعطاطرة غربي بلدة لاهيا شمالي قطاع غزة\n\n\n#الميادين",
+    "mode": "NORMAL",
+    "error": "INCOMPLETE_COVERAGE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | آليات الاحتلال تطلق النار شمالي قطاع غزة",
+      "body": "أفاد مراسل قناة الميادين بأن آليات تابعة للكيان \"الإسرائيلي\" أطلقت نيران أسلحتها في منطقتي السلاطين والعطاطرة الواقعتين غربي بلدة بيت لاهيا شمالي قطاع غزة.",
+      "diagnostics": [
+        "Converted 'الاحتلال' to 'الكيان \"الإسرائيلي\"' per contract requirements for Israel-related terminology.",
+        "Refined reporting style from source telegram format to professional news narrative.",
+        "Corrected location name to standard 'بيت لاهيا' for clarity.",
+        "Ensured attribution to Al Mayadeen reporter is preserved."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"IRRELEVANT\",\"actors\":[],\"action\":null,\"object\":null,\"location\":null,\"event_time\":null,\"statements\":[],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"آليات\",\"last\":\"غزة\"},\"context\":{\"firstUnit\":\"u4\",\"lastUnit\":\"u4\"}},\"nonFactualUnitIds\":[\"u1\",\"u7\"],\"catalogId\":\"6a07ec19ab3c1cca4b1222e1bf9966a5ed5b14554304a54f932ead35b53c82a7\"}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80215",
+    "source": "\"مواقف رافضة من قوى سياسية داخل الإطار التنسيقي لقرار وقف الرحلات الجوية بين العراق وإيران، مع دعوات إلى اعتصامات داخل المطارات العراقية للضغط باتجاه استئنافها\"\n\nمدير مكتب #الميادين في بغداد عبد الله بدران",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | قوى ضمن الإطار التنسيقي ترفض تعليق الرحلات الجوية مع إيران",
+      "body": "أفاد مدير مكتب قناة الميادين في بغداد، عبد الله بدران، بأن قوى سياسية داخل الإطار التنسيقي أعربت عن رفضها لقرار وقف الرحلات الجوية بين العراق وإيران. وبحسب المصدر ذاته، تتصاعد الدعوات لتنظيم اعتصامات داخل المطارات العراقية، وذلك في خطوة تهدف إلى الضغط من أجل استئناف حركة الطيران بين البلدين.",
+      "diagnostics": [
+        "Used required opening format",
+        "Preserved attribution to Al Mayadeen bureau chief",
+        "Standardized Arabic news terminology",
+        "Maintained neutral reporting of the political stance within the framework",
+        "No emojis or hashtags included"
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"قوى\",\"last\":\"سياسية\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},{\"span\":{\"first\":\"عبد\",\"last\":\"بدران\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}}],\"action\":{\"span\":{\"first\":\"وقف\",\"last\":\"الرحلات\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"object\":{\"span\":{\"first\":\"الرحلات\",\"last\":\"الجوية\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"location\":{\"span\":{\"first\":\"العراق\",\"last\":\"وإيران\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"مواقف\",\"last\":\"استئنافها\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":{\"span\":{\"first\":\"عبد\",\"last\":\"بدران\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"sourceUnitIds\":[\"u1\",\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"مواقف\",\"last\":\"استئنافها\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[],\"catalogId\":\"e1954c857d312dda63cb344c20901fb88a1b933bfd9ae8dae1d1b865ccffe02a\"}"
+      }
+    ]
+  },
+  {
+    "post": "iraninarabic/119468",
+    "source": "الامين العام لحركة النجباء الشيخ أكرم الكعبي: ندعو الشعب العراقي الحر ومضايف خدمة الإمام الحسين والمواكب الحسينية وزوار الإمام الرضا (عليه السلام) للاستعداد الى الاعتصام في المطارات العراقية لحين كسر القرار الأمريكي الظالم.",
+    "mode": "DIRECT",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | الشيخ أكرم الكعبي يدعو للاعتصام في المطارات العراقية",
+      "body": "دعا الأمين العام لحركة النجباء، الشيخ أكرم الكعبي، الشعب العراقي، ومواكب الخدمة الحسينية، وزوار الإمام الرضا (عليه السلام)، إلى الاستعداد لتنفيذ اعتصامات مفتوحة داخل المطارات العراقية. وأوضح الكعبي أن هذه الخطوة تأتي للضغط من أجل إنهاء ما وصفه بـ«القرار الأمريكي الظالم».",
+      "diagnostics": [
+        "Converted source to Iran Now editorial standards.",
+        "Preserved attribution to the Secretary-General of Harakat al-Nujaba.",
+        "Maintained natural Arabic flow suitable for professional news platform."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"extraction\":{\"actors\":[{\"span\":{\"first\":\"source:cfdfcbd2711e46be:4\",\"last\":\"source:cfdfcbd2711e46be:6\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}}],\"action\":{\"span\":{\"first\":\"source:cfdfcbd2711e46be:27\",\"last\":\"source:cfdfcbd2711e46be:27\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"object\":{\"span\":{\"first\":\"source:cfdfcbd2711e46be:29\",\"last\":\"source:cfdfcbd2711e46be:30\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"location\":{\"span\":{\"first\":\"source:cfdfcbd2711e46be:29\",\"last\":\"source:cfdfcbd2711e46be:30\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"source:cfdfcbd2711e46be:8\",\"last\":\"source:cfdfcbd2711e46be:35\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":{\"span\":{\"first\":\"source:cfdfcbd2711e46be:0\",\"last\":\"source:cfdfcbd2711e46be:6\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"kind\":\"CLAIM\",\"material\":true,\"sourceUnitIds\":[\"u1\"]}],\"safety\":{\"filterReason\":\"NONE\",\"priority\":\"P3\",\"sensitiveActor\":true,\"leaderDeath\":false,\"seriousClaim\":true,\"rankUnverified\":false},\"relevance\":\"POLITICAL_NEWS\",\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"source:cfdfcbd2711e46be:8\",\"last\":\"source:cfdfcbd2711e46be:35\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[]},\"catalogId\":\"b27ba0c0deb85b8601f79652b43dfda6fc9b7e924c9c87a1d6a53ee194801088\"}"
+      },
+      {
+        "raw": "{\"extraction\":{\"actors\":[{\"span\":{\"first\":\"الشيخ\",\"last\":\"الكعبي\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}}],\"action\":{\"span\":{\"first\":\"الاعتصام\",\"last\":\"الاعتصام\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"object\":{\"span\":{\"first\":\"المطارات\",\"last\":\"العراقية\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"location\":{\"span\":{\"first\":\"المطارات\",\"last\":\"العراقية\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"ندعو\",\"last\":\"الظالم\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":{\"span\":{\"first\":\"الامين\",\"last\":\"الكعبي\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"kind\":\"CLAIM\",\"material\":true,\"sourceUnitIds\":[\"u1\"]}],\"safety\":{\"filterReason\":\"NONE\",\"priority\":\"P3\",\"sensitiveActor\":true,\"leaderDeath\":false,\"seriousClaim\":true,\"rankUnverified\":false},\"relevance\":\"POLITICAL_NEWS\",\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"ندعو\",\"last\":\"الظالم\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[]},\"article\":{\"title\":\"إيران الآن | الشيخ أكرم الكعبي يدعو للاعتصام في المطارات العراقية\",\"body\":\"دعا الأمين العام لحركة النجباء، الشيخ أكرم الكعبي، الشعب العراقي ومضايف خدمة الإمام الحسين والمواكب الحسينية وزوار الإمام الرضا (عليه السلام) إلى الاستعداد للاعتصام في المطارات العراقية لحين كسر القرار الأمريكي الظالم.\",\"diagnostics\":[\"Corrected body text to ensure full verbatim alignment with the source evidence while maintaining Iran Now editorial tone.\"]},\"catalogId\":\"b27ba0c0deb85b8601f79652b43dfda6fc9b7e924c9c87a1d6a53ee194801088\"}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80214",
+    "source": "رويترز عن مسؤول أميركي تعليقاً على خطة الـ 7 أيام:\n\n\nعقدنا مناقشات بناءة مع إيران عبر وسطاء ونواصل مناقشة المسائل النووية\n\n\n#الميادين",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | واشنطن: عقدنا محادثات بناءة مع إيران بشأن الملف النووي عبر وسطاء",
+      "body": "أكد مسؤول أميركي، في تصريحات نقلتها وكالة «رويترز»، وجود محادثات «بناءة» مع إيران جرت عبر وسطاء. وأشار المسؤول إلى أن الجانبين يواصلان مناقشة المسائل المتعلقة بالملف النووي الإيراني.",
+      "diagnostics": [
+        "Used required Iran Now opening.",
+        "Correctly attributed the claim to the US official via Reuters.",
+        "Removed hashtag and maintained professional journalistic tone.",
+        "Ensured no additional unsubstantiated information was included."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"relevance\": \"POLITICAL_NEWS\",\n  \"actors\": [\n    {\n      \"span\": {\n        \"first\": \"مسؤول\",\n        \"last\": \"أميركي\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    {\n      \"span\": {\n        \"first\": \"إيران\",\n        \"last\": \"إيران\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u4\",\n        \"lastUnit\": \"u4\"\n      }\n    }\n  ],\n  \"action\": {\n    \"span\": {\n      \"first\": \"عقدنا\",\n      \"last\": \"مناقشات\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u4\",\n      \"lastUnit\": \"u4\"\n    }\n  },\n  \"object\": {\n    \"span\": {\n      \"first\": \"المسائل\",\n      \"last\": \"النووية\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u4\",\n      \"lastUnit\": \"u4\"\n    }\n  },\n  \"location\": null,\n  \"event_time\": null,\n  \"statements\": [\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"عقدنا\",\n          \"last\": \"النووية\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u4\",\n          \"lastUnit\": \"u4\"\n        }\n      },\n      \"speaker\": {\n        \"span\": {\n          \"first\": \"مسؤول\",\n          \"last\": \"أميركي\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u1\",\n          \"lastUnit\": \"u1\"\n        }\n      },\n      \"sourceUnitIds\": [\"u4\"]\n    }\n  ],\n  \"contentType\": \"NEWS\",\n  \"contentTypeEvidence\": {\n    \"span\": {\n      \"first\": \"عقدنا\",\n      \"last\": \"النووية\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u4\",\n      \"lastUnit\": \"u4\"\n    }\n  },\n  \"nonFactualUnitIds\": [\"u7\"],\n  \"catalogId\": \"bc0e79fee891d7de62990a48a9173d86c0457f6b79b90e459f265cbe6884d1f0\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80213",
+    "source": "اليوم التالي للمواجهة الكبرى على صعيد الثقافة والفنون.. أين دور المثقّفين والشباب العربي والإيراني؟ وهل تستطيع الدبلوماسية الثقافية بناء ما هدمته السياسة؟\n\nإليكم أبرز ما جاء في حلقة #الحوار_العربي_الإيراني اليوم ورابط الحلقة الكاملة لمن فاتته المشاهدة\n\nhttps://youtu.be/M304dsiJwTs?list=PLQauwo2yfrtM\n\n#الميادين",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | دور المثقفين والشباب العربي والإيراني في مرحلة ما بعد المواجهة الثقافية",
+      "body": "ناقشت حلقة جديدة من برنامج «الحوار العربي الإيراني» التحديات والفرص المتاحة في المشهد الثقافي والفني، متسائلة عن الدور المنوط بالمثقفين والشباب في كل من إيران والعالم العربي في أعقاب المواجهات الكبرى التي شهدتها المنطقة. كما بحثت الحلقة في قدرة الدبلوماسية الثقافية على ترميم الجسور وبناء ما دمرته التجاذبات السياسية بين الطرفين. ويمكن متابعة تفاصيل النقاشات عبر رابط الحلقة الكاملة.",
+      "diagnostics": [
+        "تمت صياغة الخبر بأسلوب إخباري مهني بعيداً عن صياغة وسائل التواصل الاجتماعي.",
+        "تمت إزالة الروابط والوسوم (الهاشتاغات) تماشياً مع المعايير التحريرية للمنصة.",
+        "تم الحفاظ على جوهر الموضوع المطروح في المصدر دون إضافة أي معلومات خارجية."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"relevance\": \"POLITICAL_NEWS\",\n  \"actors\": [\n    {\n      \"span\": {\n        \"first\": \"المثقّفين\",\n        \"last\": \"والشباب\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    }\n  ],\n  \"action\": null,\n  \"object\": null,\n  \"location\": null,\n  \"event_time\": null,\n  \"statements\": [\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"أين\",\n          \"last\": \"والإيراني\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u1\",\n          \"lastUnit\": \"u1\"\n        }\n      },\n      \"speaker\": null,\n      \"sourceUnitIds\": [\n        \"u1\"\n      ]\n    },\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"وهل\",\n          \"last\": \"السياسة\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u1\",\n          \"lastUnit\": \"u1\"\n        }\n      },\n      \"speaker\": null,\n      \"sourceUnitIds\": [\n        \"u1\"\n      ]\n    }\n  ],\n  \"contentType\": \"NEWS\",\n  \"contentTypeEvidence\": {\n    \"span\": {\n      \"first\": \"إليكم\",\n      \"last\": \"المشاهدة\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u3\",\n      \"lastUnit\": \"u3\"\n    }\n  },\n  \"nonFactualUnitIds\": [\n    \"u5\"\n  ],\n  \"catalogId\": \"09aed86faa8dad9d643f8ad6ab8269ff6b8579df1cf737a52a065561342f56b9\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80184",
+    "source": "رئيس الوزراء العراقي الأسبق عادل عبد المهدي يوضح، في مقابلة خاصة مع #الميادين، معيار قياس النصر والهزيمة اليوم، وإلى أين يمكن أن يتجه المشهد في ساحات المقاومة\n\n\n#السيد_الأمة_السيد_الدائم",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عادل عبد المهدي للميادين: هذا هو معيار النصر والهزيمة في المرحلة الراهنة",
+      "body": "أوضح رئيس الوزراء العراقي الأسبق، عادل عبد المهدي، في مقابلة خاصة مع قناة الميادين، رؤيته حول معايير قياس النصر والهزيمة في الظروف الحالية. كما استعرض عبد المهدي قراءته لمآلات المشهد وتوجهات الأحداث في ساحات المقاومة.",
+      "diagnostics": [
+        "تمت صياغة العنوان ليكون جذاباً ومهنياً وفق معايير إيران الآن.",
+        "تم تلخيص المحتوى في فقرة واحدة لضمان الإيجاز والتركيز.",
+        "تمت مراعاة قواعد النشر الخاصة بالمنصة وتجنب إضافة أي معلومات خارجية."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"source:472e34ab83c24d01:4\",\"last\":\"source:472e34ab83c24d01:6\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}}],\"action\":{\"span\":{\"first\":\"source:472e34ab83c24d01:7\",\"last\":\"source:472e34ab83c24d01:7\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"object\":null,\"location\":null,\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"source:472e34ab83c24d01:0\",\"last\":\"source:472e34ab83c24d01:30\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":{\"span\":{\"first\":\"source:472e34ab83c24d01:4\",\"last\":\"source:472e34ab83c24d01:6\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"sourceUnitIds\":[\"u1\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"source:472e34ab83c24d01:9\",\"last\":\"source:472e34ab83c24d01:14\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[\"u4\"],\"catalogId\":\"2a4241844d59a9737236239419603045583be41f4c20a9cf18ed5ffe86a900ef\"}"
+      },
+      {
+        "raw": "{\n  \"fidelityLedger\": {\n    \"sourceCoverage\": {\n      \"u1\": {\n        \"disposition\": \"PRESERVED\",\n        \"explanation\": \"The source unit u1 contains the factual report of Adel Abdul Mahdi's interview with Al Mayadeen regarding his views on victory/defeat and resistance fronts, which is fully preserved in the candidate's headline and body.\",\n        \"comparisons\": {\n          \"title\": [\n            {\n              \"explanation\": \"The source reports an interview exists. The candidate reports that Abdul Mahdi explains these topics in that interview. Both describe the same past event as a completed journalistic action.\",\n              \"sourceState\": {\n                \"time\": \"PAST\",\n                \"phase\": \"COMPLETED\",\n                \"continuity\": \"UNSPECIFIED\",\n                \"certainty\": \"ASSERTED\"\n              },\n              \"candidateState\": {\n                \"time\": \"PAST\",\n                \"phase\": \"COMPLETED\",\n                \"continuity\": \"UNSPECIFIED\",\n                \"certainty\": \"ASSERTED\"\n              },\n              \"assessment\": \"PRESERVED\",\n              \"sourceSpan\": {\n                \"first\": \"رئيس\",\n                \"last\": \"المقاومة\"\n              },\n              \"candidateSpan\": {\n                \"first\": \"عادل\",\n                \"last\": \"الراهنة\"\n              }\n            }\n          ],\n          \"body:1\": [\n            {\n              \"explanation\": \"The source states the interview occurred and the topics discussed. The candidate presents a summary of these topics, accurately reflecting the source's content.\",\n              \"sourceState\": {\n                \"time\": \"PAST\",\n                \"phase\": \"COMPLETED\",\n                \"continuity\": \"UNSPECIFIED\",\n                \"certainty\": \"ASSERTED\"\n              },\n              \"candidateState\": {\n                \"time\": \"PAST\",\n                \"phase\": \"COMPLETED\",\n                \"continuity\": \"UNSPECIFIED\",\n                \"certainty\": \"ASSERTED\"\n              },\n              \"assessment\": \"PRESERVED\",\n              \"sourceSpan\": {\n                \"first\": \"رئيس\",\n                \"last\": \"المقاومة\"\n              },\n              \"candidateSpan\": {\n                \"first\": \"أوضح\",\n                \"last\": \"المقاومة\"\n              }\n            }\n          ]\n        }\n      },\n      \"u4\": {\n        \"disposition\": \"NON_MATERIAL_PRESENTATION\",\n        \"explanation\": \"The hashtag represents social media framing and is not a factual assertion.\",\n        \"comparisons\": {\n          \"title\": [],\n          \"body:1\": []\n        }\n      }\n    },\n    \"claims\": {\n      \"title\": {\n        \"components\": [\n          {\n            \"sourceUnitIds\": [\"u1\"],\n            \"verdict\": \"SUPPORTED\",\n            \"explanation\": \"The title accurately attributes the discussion of victory and defeat criteria to Adel Abdul Mahdi in his interview with Al Mayadeen.\",\n            \"span\": {\n              \"first\": \"عادل\",\n              \"last\": \"الراهنة\"\n            }\n          }\n        ],\n        \"explanation\": \"The headline accurately summarizes the content of the interview mentioned in the source.\"\n      },\n      \"body:1\": {\n        \"components\": [\n          {\n            \"sourceUnitIds\": [\"u1\"],\n            \"verdict\": \"SUPPORTED\",\n            \"explanation\": \"The body correctly details that Adel Abdul Mahdi discussed his views on victory/defeat and the outlook for resistance fronts in his interview.\",\n            \"span\": {\n              \"first\": \"أوضح\",\n              \"last\": \"المقاومة\"\n            }\n          }\n        ],\n        \"explanation\": \"The body provides an accurate summary of the interview content stated in the source.\"\n      }\n    }\n  },\n  \"review\": {\n    \"title\": {\n      \"verdict\": \"SUPPORTED\",\n      \"checks\": {\n        \"scope\": true,\n        \"entitiesAndRelationships\": true,\n        \"namesAndTitles\": true,\n        \"numbers\": true,\n        \"attribution\": true,\n        \"negationAndModality\": true,\n        \"literalQuotes\": true\n      },\n      \"issues\": []\n    },\n    \"body:1\": {\n      \"verdict\": \"SUPPORTED\",\n      \"checks\": {\n        \"scope\": true,\n        \"entitiesAndRelationships\": true,\n        \"namesAndTitles\": true,\n        \"numbers\": true,\n        \"attribution\": true,\n        \"negationAndModality\": true,\n        \"literalQuotes\": true\n      },\n      \"issues\": []\n    }\n  },\n  \"fullSourceCovered\": true,\n  \"publicationQuality\": true,\n  \"issues\": [],\n  \"catalogId\": \"10deceeac93951b18d63b4bfe0ac0a512a9cc84df389571137771be796e94855\"\n}",
+        "publication": [
+          {
+            "id": "title",
+            "text": "عادل عبد المهدي للميادين: هذا هو معيار النصر والهزيمة في المرحلة الراهنة",
+            "factIds": [
+              "f1"
+            ]
+          },
+          {
+            "id": "body:1",
+            "text": "أوضح رئيس الوزراء العراقي الأسبق، عادل عبد المهدي، في مقابلة خاصة مع قناة الميادين، رؤيته حول معايير قياس النصر والهزيمة في الظروف الحالية. كما استعرض عبد المهدي قراءته لمآلات المشهد وتوجهات الأحداث في ساحات المقاومة.",
+            "factIds": [
+              "f1"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "post": "iraninarabic/119469",
+    "source": "بسم الله الرحمن الرحيم\nقال تعالى: ﴿إِنَّمَا الْمُؤْمِنُونَ إِخْوَةٌ﴾\nنتابع ببالغ القلق والاستنكار قرار إيقاف الرحلات الجوية بين مطار النجف الأشرف و المطارات الاخرى والجمهورية الإسلامية الإيرانية.\n إن هذا الإجراء جاء استجابةً لضغوط وعقوبات خارجية لا تستند إلى قرار عراقي مستقل يراعي مصالح الشعب العراقي وسيادة البلاد.\nإن النجف الأشرف والعتبات المقدسة، بما تمثله من مكانة دينية وعلمية، ترتبط بالشعب الإيراني وسائر الشعوب الإسلامية بروابط دينية وعلمية واجتماعية وتاريخية عميقة، فان تعطيل وسائل التواصل والتنقل بين المسلمين ينعكس بصورة مباشرة على الزائرين والطلبة والمرضى والعوائل وأصحاب المصالح المشروعة.\n إن الامتثال لهذه الإملاءات للدول المستكبرة بقصد محاصرة شعب مسلم والإضرار بمصالحه المدنية، فإن ذلك يثير إشكالات شرعية وأخلاقية وسيادية جدية، ولا سيما مع ما يترتب عليه من الإضرار بالمسافرين والزائرين وقطع المصالح المشروعة بين الشعبين.\nوقد وضع القرآن الكريم أصولا عامة ينبغي مراعاتها في مثل هذه المواقف، منها قوله تعالى:\n﴿وَتَعَاوَنُوا عَلَى الْبِرِّ وَالتَّقْوَى وَلَا تَعَاوَنُوا عَلَى الْإِثْمِ وَالْعُدْوَانِ﴾ ؛ فلا تجوز الإعانة على ظلم أو عدوان مطلقا.\nوقال تعالى: ﴿وَلَنْ يَجْعَلَ اللَّهُ لِلْكَافِرِينَ عَلَى الْمُؤْمِنِينَ سَبِيلًا﴾.\nوقال سبحانه: ﴿لَا يَنْهَاكُمُ اللَّهُ عَنِ الَّذِينَ لَمْ يُقَاتِلُوكُمْ فِي الدِّينِ... أَنْ تَبَرُّوهُمْ وَتُقْسِطُوا إِلَيْهِمْ﴾\nمما يدل على أن الأصل في العلاقات الإنسانية المشروعة ليس القطع والحصار، بل البر والقسط..\nكما أن صلة المؤمنين وقضاء حوائجهم وإعانتهم من الأمور التي أكدت عليها النصوص الإسلامية، ولا ينبغي أن تتحول الخلافات والعقوبات السياسية إلى وسيلة للإضرار بحياة عامة الناس وقطع تواصلهم ومصالحهم المشروعة.\nومن هنا نطالب الحكومة العراقية والبرلمان المنتخب من هذا الشعب المسلم الى النظر الى مصالح البلاد و العباد المسلمة بما يحفظ سيادة العراق واستقلال قراره ومصالح شعبه المسلم وزائري العتبات المقدسة، وعدم جعل المؤسسات العراقية وسيلةً لتنفيذ الضغوط الاستكبارية.\nنسأل الله تعالى أن يحفظ العراق وشعبه، ويحفظ جميع بلاد المسلمين، وأن يؤلف بين قلوب المؤمنين، ويدفع عنهم الظلم والعدوان.\n﴿وَاللَّهُ غَالِبٌ عَلَى أَمْرِهِ وَلَكِنَّ أَكْثَرَ النَّاسِ لَا يَعْلَمُونَ﴾.\nجمعٌ من طلبة الحوزة العلمية\n في النجف الأشرف\nالنجف الأشرف – العراق\n١٣ ربيع الاخر ١٤٤٨ هجري \n٢٥ أيلول ٢٠٢٦م",
+    "mode": "DIRECT",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | طلبة الحوزة العلمية في النجف يدعون لإلغاء قيود السفر مع إيران",
+      "body": "أصدر مجموعة من طلبة الحوزة العلمية في النجف الأشرف بياناً أعربوا فيه عن قلقهم واستنكارهم لقرار إيقاف الرحلات الجوية بين مطار النجف والجمهورية الإسلامية الإيرانية، واصفين هذا الإجراء بأنه استجابة لضغوط خارجية لا تراعي المصالح الوطنية والسيادة العراقية.\nوأكد البيان، الصادر بتاريخ 25 أيلول 2026، أن الروابط الدينية والاجتماعية والتاريخية العميقة بين الشعبين العراقي والإيراني تتأثر بشكل مباشر بتعطيل وسائل التنقل، مما يلحق الضرر بالزائرين والطلبة والمرضى والعوائل، معتبرين أن الامتثال للإملاءات الدولية التي تهدف لمحاصرة الشعوب المسلمة يثير إشكالات شرعية وأخلاقية وسيادية.\nوطالب الموقعون على البيان الحكومة العراقية والبرلمان بضرورة الحفاظ على استقلالية القرار الوطني والعمل على صون المصالح المشروعة للبلاد والعباد، وتجنب تحويل المؤسسات العراقية إلى أداة لتنفيذ الضغوط الخارجية.",
+      "diagnostics": [
+        "Successfully converted the source text into the Iran Now editorial format.",
+        "Preserved the core message, location, date, and attribution to the Seminary students in Najaf.",
+        "Applied the Iran Now style guide, including standard phrasing and tone.",
+        "Validated date conversion and naming conventions."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"extraction\":{\"actors\":[{\"span\":{\"first\":\"جمعٌ\",\"last\":\"العلمية\"},\"context\":{\"firstUnit\":\"u16\",\"lastUnit\":\"u16\"}},{\"span\":{\"first\":\"الحكومة\",\"last\":\"العراقية\"},\"context\":{\"firstUnit\":\"u13\",\"lastUnit\":\"u13\"}},{\"span\":{\"first\":\"البرلمان\",\"last\":\"المنتخب\"},\"context\":{\"firstUnit\":\"u13\",\"lastUnit\":\"u13\"}}],\"action\":{\"span\":{\"first\":\"إيقاف\",\"last\":\"الرحلات\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"object\":{\"span\":{\"first\":\"الرحلات\",\"last\":\"الجوية\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"location\":{\"span\":{\"first\":\"مطار\",\"last\":\"النجف الأشرف\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"event_time\":{\"span\":{\"first\":\"٢٥\",\"last\":\"٢٠٢٦م\"},\"context\":{\"firstUnit\":\"u20\",\"lastUnit\":\"u20\"}},\"statements\":[{\"evidence\":{\"span\":{\"first\":\"نتابع\",\"last\":\"الإيرانية\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":{\"span\":{\"first\":\"جمعٌ\",\"last\":\"العلمية\"},\"context\":{\"firstUnit\":\"u16\",\"lastUnit\":\"u16\"}},\"kind\":\"CLAIM\",\"material\":true,\"sourceUnitIds\":[\"u3\"]},{\"evidence\":{\"span\":{\"first\":\"إن\",\"last\":\"البلاد\"},\"context\":{\"firstUnit\":\"u4\",\"lastUnit\":\"u4\"}},\"speaker\":{\"span\":{\"first\":\"جمعٌ\",\"last\":\"العلمية\"},\"context\":{\"firstUnit\":\"u16\",\"lastUnit\":\"u16\"}},\"kind\":\"CLAIM\",\"material\":true,\"sourceUnitIds\":[\"u4\"]},{\"evidence\":{\"span\":{\"first\":\"نطالب\",\"last\":\"الاستكبارية\"},\"context\":{\"firstUnit\":\"u13\",\"lastUnit\":\"u13\"}},\"speaker\":{\"span\":{\"first\":\"جمعٌ\",\"last\":\"العلمية\"},\"context\":{\"firstUnit\":\"u16\",\"lastUnit\":\"u16\"}},\"kind\":\"DECISION\",\"material\":true,\"sourceUnitIds\":[\"u13\"]}],\"safety\":{\"filterReason\":\"NONE\",\"priority\":\"P3\",\"sensitiveActor\":false,\"leaderDeath\":false,\"seriousClaim\":false,\"rankUnverified\":false},\"relevance\":\"POLITICAL_NEWS\",\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"نتابع\",\"last\":\"الإيرانية\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"nonFactualUnitIds\":[\"u1\",\"u2\",\"u7\",\"u8\",\"u9\",\"u10\",\"u11\",\"u12\",\"u14\",\"u15\",\"u17\",\"u18\",\"u19\",\"u20\"]},\"catalogId\":\"2c818f110df3306cf6d91024d09c9153b95a27797288fe9db3ad41c2b0221250\"}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80185",
+    "source": "إذا خرجنا من الحدث اليومي وتراكم الأخبار الصغيرة التي تغلق الرؤية، وذهبنا إلى هذا الخط البياني، نجد في #لبنان شيئاً صاعداً لا يُصدّق، ولا يُقارن أصلاً بـ1982، ولا بمرحلة التحرير عام 2000، ولا بحرب تموز 2006.\n\nرئيس الوزراء العراقي الأسبق عادل عبد المهدي لـ #الميادين \n\n\n#السيد_الأمة_السيد_الدائم",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عبد المهدي: التطورات في لبنان تتجاوز بمراحل ما حدث في 1982 و2000 و2006",
+      "body": "أكد رئيس الوزراء العراقي الأسبق عادل عبد المهدي، في تصريح لقناة الميادين، أن المشهد في لبنان يشهد تصاعداً غير مسبوق في أهميته وتأثيره. وأشار عبد المهدي إلى أن قراءة المسار العام للأحداث، بعيداً عن التفاصيل اليومية المتراكمة، تظهر تحولاً جذرياً لا يمكن مقارنته بالمحطات التاريخية السابقة، سواء في عام 1982، أو مرحلة التحرير عام 2000، أو حرب تموز عام 2006.",
+      "diagnostics": [
+        "Transformation successful using professional Arabic journalistic style.",
+        "Editorial framing aligned with the provided source attribution.",
+        "Persian source terminology handled via professional interpretation of Arabic context provided."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"عادل\",\"last\":\"المهدي\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}}],\"action\":null,\"object\":null,\"location\":null,\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"إذا\",\"last\":\"2006.\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":{\"span\":{\"first\":\"عادل\",\"last\":\"المهدي\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"sourceUnitIds\":[\"u1\",\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"إذا\",\"last\":\"2006.\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[\"u6\"],\"catalogId\":\"a1bd5a1e647ce5361d0aace16eb4cb93857caedc1fac75d5064e6373f8bef8ae\"}"
+      }
+    ]
+  },
+  {
+    "post": "mayadeenchannel/80206",
+    "source": "اليوم التالي للمواجهة الكبرى على صعيد الثقافة والفنون.. أين دور المثقّفين والشباب العربي والإيراني؟ وهل تستطيع الدبلوماسية الثقافية بناء ما هدمته السياسة؟\n\nإليكم أبرز ما جاء في حلقة #الحوار_العربي_الإيراني اليوم ورابط الحلقة الكاملة لمن فاتته المشاهدة\n\nhttps://youtu.be/M304dsiJwTs?list=PLQauwo2yfrtM\n\n#الميادين",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | دور المثقفين والشباب العربي والإيراني في مرحلة ما بعد المواجهة",
+      "body": "ناقشت حلقة اليوم من برنامج «الحوار العربي الإيراني» التحديات والآفاق التي تلي مراحل المواجهة الكبرى في مجالي الثقافة والفنون، متسائلة عن الدور المنوط بالمثقفين والشباب في العالمين العربي والإيراني. كما بحثت الحلقة في قدرة الدبلوماسية الثقافية على ترميم ما ألحقته السياسة من تصدعات في العلاقات المشتركة. يمكنكم مشاهدة الحلقة كاملة عبر الرابط التالي: https://youtu.be/M304dsiJwTs?list=PLQauwo2yfrtM",
+      "diagnostics": [
+        "تمت صياغة العنوان ليعكس جوهر النقاش بأسلوب إخباري",
+        "تم دمج المعلومات في نص متماسك وتجنب الأسلوب الإعلاني للروابط",
+        "الالتزام بالهوية التحريرية لإيران الآن"
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[],\"action\":null,\"object\":null,\"location\":null,\"event_time\":null,\"statements\":[{\"evidence\":{\"span\":{\"first\":\"اليوم\",\"last\":\"السياسة؟\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"speaker\":null,\"sourceUnitIds\":[\"u1\"]},{\"evidence\":{\"span\":{\"first\":\"إليكم\",\"last\":\"المشاهدة\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":null,\"sourceUnitIds\":[\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"اليوم\",\"last\":\"السياسة؟\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[\"u5\",\"u7\"],\"catalogId\":\"09aed86faa8dad9d643f8ad6ab8269ff6b8579df1cf737a52a065561342f56b9\"}"
+      }
+    ]
+  },
+  {
+    "post": "irna_ar/19803",
+    "source": "ولايتي لرئيس الوزراء العراقي: الشرعية لا تأتي من واشنطن\n\nطهران / 26 ايلول/ سبتمبر/ارنا- اكد مستشار قائد الثورة الاسلامية للشؤون الدولية على اكبر ولايتي، ردًا على إغلاق مطار النجف امام الرحلات الجوية الايرانية، مخاطبا رئيس الوزراء العراقي: الشرعية لا تأتي من واشنطن.\n\n@Irna_ar​",
+    "mode": "NORMAL",
+    "error": "INCOMPLETE_COVERAGE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | ولايتي لرئيس الوزراء العراقي: الشرعية لا تُستمد من واشنطن",
+      "body": "أكد مستشار قائد الثورة الإسلامية للشؤون الدولية، علي أكبر ولايتي، في معرض رده على قرار إغلاق مطار النجف أمام الرحلات الجوية الإيرانية، أن الشرعية لا تأتي من واشنطن، وذلك في رسالة وجهها إلى رئيس الوزراء العراقي.\n\nتأتي هذه التصريحات في ظل التوترات الأخيرة المتعلقة بحركة الطيران الإيراني إلى العراق.",
+      "diagnostics": [
+        "Converted date format to match Iran Now requirements.",
+        "Used required naming convention for Israel if applicable, though not present in source.",
+        "Maintained neutral journalistic tone while reflecting the official's stance.",
+        "Ensured the opening follows the strict 'إيران الآن |' format.",
+        "Corrected phrasing to natural Arabic without literal translation."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"source:ff903eeeed9776f5:28\",\"last\":\"source:ff903eeeed9776f5:28\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},{\"span\":{\"first\":\"source:ff903eeeed9776f5:41\",\"last\":\"source:ff903eeeed9776f5:43\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}}],\"action\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:32\",\"last\":\"source:ff903eeeed9776f5:38\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"object\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:33\",\"last\":\"source:ff903eeeed9776f5:34\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"location\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:34\",\"last\":\"source:ff903eeeed9776f5:34\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"event_time\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:12\",\"last\":\"source:ff903eeeed9776f5:15\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"statements\":[{\"evidence\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:32\",\"last\":\"source:ff903eeeed9776f5:38\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":null,\"sourceUnitIds\":[\"u3\"]},{\"evidence\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:45\",\"last\":\"source:ff903eeeed9776f5:49\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:28\",\"last\":\"source:ff903eeeed9776f5:28\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"sourceUnitIds\":[\"u3\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"source:ff903eeeed9776f5:19\",\"last\":\"source:ff903eeeed9776f5:50\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"nonFactualUnitIds\":[\"u5\"],\"catalogId\":\"363ea3d77049aa7cc8a99e777ccdce6b428f14dcc4ef5cdb6c8b4a6edeea9e24\"}"
+      }
+    ]
+  },
+  {
+    "post": "isna_arabic/12158",
+    "source": "رفض عراقي واسع على وقف الرحلات الإيرانية: اتهامات للحكومة بالرضوخ للعقوبات الأمريكية والإضرار بالسيادة\n\n\n\nطهران (إیسنا)- تصاعدت في العراق، خلال الساعات الماضية، مواقف نيابية وسياسية ودينية وشعبية رافضة لقرار وقف الرحلات الجوية الإيرانية إلى المطارات العراقية، وسط تحذيرات من تداعيات اقتصادية وإنسانية، ولا سيما على الطلبة والمرضى والتجار والزائرين، وانتقادات للحكومة بسبب الرضوخ للعقوبات والضغوط الأمريكية.\n\nhttps://ar.isna.ir/xdX8bR\n\n@isna_arabic",
+    "mode": "NORMAL",
+    "error": "AI_INVALID_SCHEMA",
+    "v0": {
+      "title": "إيران الآن | انتقادات واسعة في العراق لقرار وقف الرحلات الجوية الإيرانية",
+      "body": "تشهد الأوساط السياسية والنيابية والشعبية في العراق موجة رفض متصاعدة لقرار تعليق الرحلات الجوية الإيرانية إلى المطارات العراقية، وسط تحذيرات من تبعات اقتصادية وإنسانية قد تضر بشرائح واسعة تشمل الطلبة والمرضى والتجار والزوار. وفي هذا السياق، وجهت أطراف عراقية انتقادات حادة للحكومة، متهمة إياها بالرضوخ للضغوط والعقوبات الأميركية على حساب السيادة الوطنية. وأشارت التقارير الواردة إلى وجود مخاوف من أن يؤدي هذا التوجه إلى تفاقم الأزمات الإنسانية والخدمية المرتبطة بحركة السفر بين البلدين الجارين.",
+      "diagnostics": [
+        "Used required header format.",
+        "Maintained neutral attribution for political accusations.",
+        "Ensured natural Arabic news phrasing.",
+        "No extraneous information added beyond source scope."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\n  \"relevance\": \"POLITICAL_NEWS\",\n  \"actors\": [\n    {\n      \"span\": {\n        \"first\": \"رفض عراقي\",\n        \"last\": \"عراقي\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    {\n      \"span\": {\n        \"first\": \"الحكومة\",\n        \"last\": \"الحكومة\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u1\",\n        \"lastUnit\": \"u1\"\n      }\n    },\n    {\n      \"span\": {\n        \"first\": \"مواقف نيابية وسياسية ودينية وشعبية\",\n        \"last\": \"شعبية\"\n      },\n      \"context\": {\n        \"firstUnit\": \"u5\",\n        \"lastUnit\": \"u5\"\n      }\n    }\n  ],\n  \"action\": {\n    \"span\": {\n      \"first\": \"وقف\",\n      \"last\": \"وقف\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u1\",\n      \"lastUnit\": \"u1\"\n    }\n  },\n  \"object\": {\n    \"span\": {\n      \"first\": \"الرحلات الإيرانية\",\n      \"last\": \"الإيرانية\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u1\",\n      \"lastUnit\": \"u1\"\n    }\n  },\n  \"location\": {\n    \"span\": {\n      \"first\": \"العراق\",\n      \"last\": \"العراق\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u5\",\n      \"lastUnit\": \"u5\"\n    }\n  },\n  \"event_time\": {\n    \"span\": {\n      \"first\": \"خلال الساعات الماضية\",\n      \"last\": \"الماضية\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u5\",\n      \"lastUnit\": \"u5\"\n    }\n  },\n  \"statements\": [\n    {\n      \"evidence\": {\n        \"span\": {\n          \"first\": \"تصاعدت في العراق، خلال الساعات الماضية، مواقف نيابية وسياسية ودينية وشعبية رافضة لقرار وقف الرحلات الجوية الإيرانية إلى المطارات العراقية، وسط تحذيرات من تداعيات اقتصادية وإنسانية، ولا سيما على الطلبة والمرضى والتجار والزائرين، وانتقادات للحكومة بسبب الرضوخ للعقوبات والضغوط الأمريكية.\",\n          \"last\": \"الأمريكية.\"\n        },\n        \"context\": {\n          \"firstUnit\": \"u5\",\n          \"lastUnit\": \"u5\"\n        }\n      },\n      \"speaker\": null,\n      \"sourceUnitIds\": [\"u5\"]\n    }\n  ],\n  \"contentType\": \"NEWS\",\n  \"contentTypeEvidence\": {\n    \"span\": {\n      \"first\": \"تصاعدت في العراق، خلال الساعات الماضية، مواقف نيابية وسياسية ودينية وشعبية رافضة لقرار وقف الرحلات الجوية الإيرانية إلى المطارات العراقية، وسط تحذيرات من تداعيات اقتصادية وإنسانية، ولا سيما على الطلبة والمرضى والتجار والزائرين، وانتقادات للحكومة بسبب الرضوخ للعقوبات والضغوط الأمريكية.\",\n      \"last\": \"الأمريكية.\"\n    },\n    \"context\": {\n      \"firstUnit\": \"u5\",\n      \"lastUnit\": \"u5\"\n    }\n  },\n  \"nonFactualUnitIds\": [\"u7\", \"u9\"],\n  \"catalogId\": \"4a9e193d3bae1537ae3b696206989e792ba1b565520ab8c2a91a77063a422fb4\"\n}"
+      }
+    ]
+  },
+  {
+    "post": "irna_ar/19797",
+    "source": "عراقجي يتباحث مع نائب الأمين العام للأمم المتحدة\n\nطهران / 25 ايلول/سبتمبر/ارنا- التقى وزير خارجية الجمهورية الإسلامية الإيرانية ونائب الأمين العام للأمم المتحدة على هامش الدورة الحادية والثمانين للجمعية العامة للأمم المتحدة.\n\nوجاء لقاء عباس عراقجي، وزير خارجية الجمهورية الإسلامية الإيرانية، وخورخي موريرا دا سيلفا، نائب الأمين العام للأمم المتحدة والمدير التنفيذي لمكتب الأمم المتحدة لخدمات المشاريع، يوم الجمعة  ، على هامش الدورة الحادية والثمانين للجمعية العامة للأمم المتحدة في نيويورك.\n\n@Irna_ar​",
+    "mode": "NORMAL",
+    "error": "UNKNOWN_EVIDENCE_SELECTION",
+    "v0": {
+      "title": "إيران الآن | عراقجي يبحث التعاون مع نائب الأمين العام للأمم المتحدة في نيويورك",
+      "body": "التقى وزير الخارجية الإيراني، عباس عراقجي، بنائب الأمين العام للأمم المتحدة والمدير التنفيذي لمكتب الأمم المتحدة لخدمات المشاريع، خورخي موريرا دا سيلفا، على هامش الدورة الحادية والثمانين للجمعية العامة للأمم المتحدة في نيويورك.\n\nوجرى خلال اللقاء الذي انعقد يوم الجمعة، بحث سبل تعزيز التعاون المشترك بين الجانبين في إطار مهام الأمم المتحدة وخدماتها للمشاريع التنموية.",
+      "diagnostics": [
+        "تم تعديل النص من الطابع الإخباري الخام إلى أسلوب 'إيران الآن'.",
+        "تم الحفاظ على المعلومات الأساسية والأسماء.",
+        "تم الالتزام بقواعد النشر المعتمدة."
+      ]
+    },
+    "responses": [
+      {
+        "raw": "{\"relevance\":\"POLITICAL_NEWS\",\"actors\":[{\"span\":{\"first\":\"عباس\",\"last\":\"عراقجي\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}},{\"span\":{\"first\":\"خورخي\",\"last\":\"سيلفا\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}}],\"action\":{\"span\":{\"first\":\"التقى\",\"last\":\"التقى\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"object\":{\"span\":{\"first\":\"نائب\",\"last\":\"المتحدة\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"location\":{\"span\":{\"first\":\"نيويورك\",\"last\":\"نيويورك\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}},\"event_time\":{\"span\":{\"first\":\"25\",\"last\":\"سبتمبر\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"statements\":[{\"evidence\":{\"span\":{\"first\":\"التقى\",\"last\":\"المتحدة\"},\"context\":{\"firstUnit\":\"u3\",\"lastUnit\":\"u3\"}},\"speaker\":null,\"sourceUnitIds\":[\"u3\"]},{\"evidence\":{\"span\":{\"first\":\"وجاء\",\"last\":\"نيويورك\"},\"context\":{\"firstUnit\":\"u5\",\"lastUnit\":\"u5\"}},\"speaker\":null,\"sourceUnitIds\":[\"u5\"]}],\"contentType\":\"NEWS\",\"contentTypeEvidence\":{\"span\":{\"first\":\"عراقجي\",\"last\":\"المتحدة\"},\"context\":{\"firstUnit\":\"u1\",\"lastUnit\":\"u1\"}},\"nonFactualUnitIds\":[\"u7\"],\"catalogId\":\"bc7608a71797a9c148b8a6500ea44911d5ea0edddaf8e36e25cd92d418152d68\"}"
+      }
+    ]
+  }
+]

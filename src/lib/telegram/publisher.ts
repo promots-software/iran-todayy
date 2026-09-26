@@ -1,3 +1,4 @@
+import {canonicalPublicationFacts} from './canonical-publication';
 import {assertStagingDestination} from './staging-guard';
 import {processingSource} from '../processing/processing-source';
 import {normalMaterialUpdateFacts} from './material-update-evidence';
@@ -76,7 +77,7 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
   const required=[...new Set(validation.review.map(reviewKey))];
   if(input.resolutions.length!==required.length||new Set(input.resolutions.map(r=>r.key)).size!==required.length||input.resolutions.some(r=>!required.includes(r.key)||r.note.trim().length<10||r.note.length>3000))throw new ProcessingError('EXPLICIT_REVIEW_REQUIRED');
   const event=eventSchema.parse(item.eventRevision.facts);
-  const normalUpdate=normalMaterialUpdateFacts(item);
+  const normalUpdate=canonicalPublicationFacts(item)??normalMaterialUpdateFacts(item);
   if(normalUpdate)event.facts=normalUpdate;
   // A DIRECT update's event revision also retains historical facts. The new
   // publication is bound only to its own source-backed generation evidence.

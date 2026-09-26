@@ -1,3 +1,4 @@
+import {bindingMock} from './fixtures/binding-wire';
 import test from 'node:test';import assert from 'node:assert/strict';
 import {reviewPropositions,enforcePropositionReview,propositionReceipt,type PropositionRequest} from '../src/lib/processing/proposition-review';
 import {validatePropositionBinding} from '../src/lib/processing/proposition-binding';
@@ -29,14 +30,14 @@ test('completed source inventory is reused by durable exact request identity aft
 });
 test('invalid receipt stops without article repair or replacement request',async()=>{let calls=0,repairs=0;await assert.rejects(normalStage('draft',async()=>{repairs++;return reviewPropositions(source,units,async r=>{calls++;return r.stage==='proposition_assessor'?{}:mocked(r);});}),/PROPOSITION_RECEIPT_INVALID/);assert.equal(calls,3);assert.equal(repairs,1);});
 test('real Gemini adapter path requests HIGH/8192 only for four new review stages; no classification for DIRECT',async()=>{
- const stages:string[]=[],requests:unknown[]=[];const p=new GeminiLanguageProvider('offline',async(_url,init)=>{
+ const stages:string[]=[],requests:unknown[]=[];const p=new GeminiLanguageProvider('offline',bindingMock(async(_url,init)=>{
   const r=JSON.parse(String(init?.body)),d=JSON.parse(r.contents[0].parts[0].text),props=r.generationConfig.responseJsonSchema.properties;requests.push(r);
   const v=assumedPropositionResponse(d);stages.push(d.version?d.role??(d.targetManifest?'assessor':'comparator'):props.extraction?'generation':'legacy_fidelity');
   assert.equal(r.generationConfig.maxOutputTokens,v===undefined?4096:8192);
   assert.deepEqual(r.generationConfig.thinkingConfig,v===undefined?{thinkingBudget:0}:{thinkingLevel:'high'});
   const output=v??(props.extraction?combinedFixture(source,source,source):reviewedFixture(source,d.publication));
   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:10,candidatesTokenCount:10,thoughtsTokenCount:v===undefined?0:10}});
- });const u=await p.understand({processingMode:'DIRECT',content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},new AbortController().signal);
+ }));const u=await p.understand({processingMode:'DIRECT',content:source,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet},new AbortController().signal);
  assert.equal(stages.length,6);assert.equal(u.propositionReview?.verdict,'SUPPORTED');assert.deepEqual(stages,['generation','legacy_fidelity','proposition_source','proposition_candidate','assessor','comparator']);assert.equal(requests.length,6);
 });
 test('scoped output headroom preserves cost hard ceiling and legacy limit',()=>{assert.equal(budgetDecision([],100,0,8192).allowed,false);assert.equal(budgetDecision([],100,0,8192,8192).allowed,true);assert.equal(budgetDecision([{at:1,usd:1000}],100,2,8192,8192).reason,'PROVIDER_COST_WAIT');});

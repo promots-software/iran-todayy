@@ -30,6 +30,7 @@ export function checkpointProvider(provider:LanguageProvider, store:CheckpointSt
   }
   return {
     id:provider.id,live:provider.live,generationFirst:provider.generationFirst,
+    canonicalRequest:provider.canonicalRequest?.bind(provider),
     prepareGeneration:provider.prepareGeneration?.bind(provider),draftOnlyAccepted:provider.draftOnlyAccepted,constrainedRewrite:provider.constrainedRewrite,
     understand:(input,signal)=>stage('understand',input,signal,()=>provider.understand(input,signal)),
     compare:(input,signal)=>stage('compare',input,signal,()=>provider.compare(input,signal)),

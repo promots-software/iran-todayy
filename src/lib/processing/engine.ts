@@ -1,3 +1,5 @@
+import {runCanonicalJob} from './canonical-job';
+import {canaryAdmission,canaryTargetSql,stagingCanarySchema} from '../../worker/staging-canary';
 import {normalizeProcessingSource,processingSource} from './processing-source';
 import {directPublicationReceiptSchema} from './direct-publication-contract';
 import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
@@ -58,18 +60,34 @@ export async function ingest(client: PrismaClient, sourceId: string, raw: unknow
     return post;
   });
 }
-export async function claimJob(client: PrismaClient, workerId: string, now=new Date(), telegramOnly=false, excludePostIds:string[] = [], newsroom=false, costRecheckBefore?:Date) {
+export async function claimJob(client: PrismaClient, workerId: string, now=new Date(), telegramOnly=false, excludePostIds:string[] = [], newsroom=false, costRecheckBefore?:Date,observeAdmission?:(state:ReturnType<typeof canaryAdmission>)=>void) {
   // A fresh opaque claim token fences stale processes after restart or lease recovery.
   const token=`${workerId}:${randomUUID()}`;
   return client.$transaction(async tx=>{
-    if((await tx.appSettings.findUnique({where:{id:1}}))?.processingPaused)return null;
+    // Every claimant shares this row lock, including a worker with stale env.
+    // Policy activation/hold changes take its exclusive lock before returning.
+    const [settings]=await tx.$queryRaw<{processingPaused:boolean;stagingCanaryPolicy:unknown}[]>`SELECT "processingPaused","stagingCanaryPolicy" FROM "AppSettings" WHERE id=1 FOR SHARE`;
+    const admission=canaryAdmission(settings??{processingPaused:false,stagingCanaryPolicy:null});
+    const report=(reason:string|null)=>observeAdmission?.({...admission,canaryClaimAllowed:reason===null,canaryClaimBlockedReason:reason});
+    if(!admission.canaryClaimAllowed){report(admission.canaryClaimBlockedReason);return null;}
+    const target=admission.canaryTargetSourcePostId;
+    if(target){
+      const policy=stagingCanarySchema.parse(settings!.stagingCanaryPolicy);
+      const [database]=await tx.$queryRaw<{name:string}[]>`SELECT current_database() AS name`;
+      if(database.name!==policy.databaseName){report('CANARY_DATABASE_MISMATCH');return null;}
+      const locked=await tx.$queryRaw<{id:string}[]>`SELECT id FROM "SourcePost" WHERE id=${target} FOR UPDATE SKIP LOCKED`;
+      if(!locked.length){report('CANARY_TARGET_MISSING_OR_LOCKED');return null;}
+      const post=await tx.sourcePost.findUniqueOrThrow({where:{id:target},include:{source:true}});
+      if(!['INGESTED','FAILED'].includes(post.status)||post.source.platform!=='TELEGRAM'||!post.source.enabled||post.source.deletedAt||post.source.processingPaused){report('CANARY_TARGET_INELIGIBLE');return null;}
+    }
+    const targetRestriction=canaryTargetSql(target);
     let slot=0;
     if(newsroom){
       await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(20916013)`;
       const previous=await tx.auditLog.findFirst({where:{action:'NEWSROOM_JOB_CLAIMED',entityType:'QueueScheduler',entityId:'newsroom'},orderBy:[{createdAt:'desc'},{id:'desc'}],select:{metadata:true}});
       slot=nextClaimSlot(Number((previous?.metadata as {slot?:number}|null)?.slot??-1));
     }
-    const expired=await tx.processingJob.findMany({where:{stage,status:"RUNNING",lockedAt:{lt:new Date(now.getTime()-leaseMs)},...(telegramOnly?{sourcePost:{source:{platform:"TELEGRAM"}}}:{})}});
+    const expired=await tx.processingJob.findMany({where:{...(target?{sourcePostId:target}:{}),stage,status:"RUNNING",lockedAt:{lt:new Date(now.getTime()-leaseMs)},...(telegramOnly?{sourcePost:{source:{platform:"TELEGRAM"}}}:{})}});
     for(const job of expired) {
       const exhausted=job.attemptCount>=job.maxAttempts;
       const reclaimed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy,lockedAt:job.lockedAt},data:{status:exhausted?"FAILED":"RETRY",lockedAt:null,lockedBy:null,availableAt:now,lastError:exhausted?"LEASE_EXHAUSTED":"LEASE_EXPIRED"}});
@@ -83,18 +101,20 @@ export async function claimJob(client: PrismaClient, workerId: string, now=new D
     // is timestamptz in raw SQL; implicit conversion uses the DB session zone
     // and can claim future retries early. Compare explicit UTC wall timestamps.
     const due=costRecheckBefore ? Prisma.sql`("availableAt" <= CAST(${now.toISOString()} AS timestamp) OR ("status"='RETRY' AND "lastError"='PROVIDER_COST_WAIT' AND "updatedAt" < CAST(${costRecheckBefore.toISOString()} AS timestamp)))` : Prisma.sql`"availableAt" <= CAST(${now.toISOString()} AS timestamp)`;
-    const rows=await tx.$queryRaw<{id:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${sourceHold} ${exclusions} ORDER BY ${ordering} FOR UPDATE OF "ProcessingJob" SKIP LOCKED LIMIT 1`;
-    if (!rows.length) return null;
+    const rows=await tx.$queryRaw<{id:string;availableAt:Date;lastError:string|null}[]>`SELECT "id","availableAt","lastError" FROM "ProcessingJob" WHERE "stage" = ${stage} AND "status" IN ('PENDING','RETRY') AND ${due} AND "attemptCount" < "maxAttempts" ${scope} ${sourceHold} ${exclusions} ${targetRestriction} ORDER BY ${ordering} FOR UPDATE OF "ProcessingJob" SKIP LOCKED LIMIT 1`;
+    if (!rows.length){report(target?'CANARY_TARGET_NOT_DUE_OR_RUNNING_OR_TERMINAL':'NO_ELIGIBLE_JOB');return null;}
     if(rows[0].lastError==='PROVIDER_COST_WAIT'&&rows[0].availableAt>now&&costRecheckBefore)await tx.auditLog.create({data:{action:'PROCESSING_COST_WAIT_RECHECKED',actor:workerId,entityType:'ProcessingJob',entityId:rows[0].id,message:'Normal single-job claim reconsidered an obsolete cost schedule; actual request guard still required',metadata:{previousAvailableAt:rows[0].availableAt.toISOString(),capacityObservedAt:costRecheckBefore.toISOString()}}});
     if(newsroom){
       // Transaction start time may precede an earlier holder of the lock.
       const [clock]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() AS now`;
       await tx.auditLog.create({data:{createdAt:clock.now,action:'NEWSROOM_JOB_CLAIMED',actor:workerId,entityType:'QueueScheduler',entityId:'newsroom',message:'Durable 3 fresh / 1 oldest-due allocation',metadata:{slot,jobId:rows[0].id}}});
     }
+    report(null);
+    if(target)await tx.auditLog.create({data:{action:'STAGING_CANARY_JOB_CLAIMED',actor:workerId,entityType:'ProcessingJob',entityId:rows[0].id,message:'Atomic selected-story claim',metadata:{...admission,canaryTargetJobId:rows[0].id}}});
     return tx.processingJob.update({where:{id:rows[0].id},data:{status:"RUNNING",lockedAt:now,lockedBy:token,attemptCount:{increment:1}},include:{sourcePost:{include:{source:true}}}});
   });
 }
-type ClaimedJob = NonNullable<Awaited<ReturnType<typeof claimJob>>>;
+export type ClaimedJob = NonNullable<Awaited<ReturnType<typeof claimJob>>>;
 
 /** Only exact same-source text in the existing dedup window may skip AI.
  * A previous unvalidated/review failure is never a substitute for evidence. */
@@ -179,6 +199,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const source=await client.source.findUniqueOrThrow({where:{id:post.sourceId}});
       if (source.platform !== "TELEGRAM" || !source.enabled || source.deletedAt) throw new ProcessingError("LIVE_SOURCE_DISABLED");
     }
+    if(process.env.IRAN_TODAY_ENVIRONMENT==='staging'&&provider.generationFirst&&provider.canonicalRequest)return await runCanonicalJob(client,job,provider,signal,processingMode);
     const generatedInput=provider.generationFirst?await provider.prepareGeneration!({content},signal,async event=>{await audit(client,post.id,event.generationRequired&&!event.articleReturned&&event.causeCode?'IRAN_RELATED_STORY_DID_NOT_REACH_GENERATION':'PRE_GENERATION','Staging generation-order diagnostic',event);}):undefined;
     if(!content.trim())throw new ProcessingError('SOURCE_TEXT_REQUIRED');
     if(processingMode==='DIRECT') {
@@ -302,6 +323,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
     },{timeout:30000,maxWait:5000});
   } catch (error) {
     const code=error instanceof ProcessingError?error.code:signal.aborted?"WORKER_INTERRUPTED":"PROCESSING_FAILED";
+    const canonicalHold=error instanceof ProcessingError&&error.diagnostic?.stage==='canonical_matching'&&'output'in error.diagnostic?error.diagnostic.output as {canonicalApproval:unknown;editorialStatus:'APPROVED'}:null;
     // Replan outside the lock. Checkpointed stages replay locally; new event
     // comparisons alone may require capacity. Bound churn under active writers.
     if(code==='MATCH_SNAPSHOT_CHANGED'&&snapshotRetry<2&&!signal.aborted)return runJob(client,job,provider,signal,snapshotRetry+1,attemptStartedAt);
@@ -316,7 +338,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const changed=await tx.processingJob.updateMany({where:{id:job.id,status:"RUNNING",lockedBy:job.lockedBy},data:{status:terminal?"FAILED":"RETRY",availableAt:next,lockedAt:null,lockedBy:null,lastError:code,...(budgetHold?{attemptCount:{decrement:1}}:{})}});
       if (changed.count) {
         const decision=processingMode==='DIRECT'?{editorialEligibility:code==='DIRECT_MATCH_INPUT_INVALID'?'MATCHING_HOLD':'PROCESSING_ERROR',deliveryDecision:'HOLD',review:[]}:editorialDecision({error:code},{autoPublish:false,shadowMode:true,requireApproval:true});
-        await tx.sourcePost.update({where:{id:post.id},data:{status:processingMode==='DIRECT'?"FAILED":terminal&&decision.editorialEligibility!=="PROCESSING_ERROR"?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(processingMode==='DIRECT'||retryable||decision.editorialEligibility==="PROCESSING_ERROR"?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:processingMode==='DIRECT'||decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
+        await tx.sourcePost.update({where:{id:post.id},data:{status:processingMode==='DIRECT'?"FAILED":terminal&&decision.editorialEligibility!=="PROCESSING_ERROR"?"NEEDS_REVIEW":"FAILED",error:code,retryCount:job.attemptCount,nextRetryAt:terminal?null:next,processingResult:json({processingMode,...decision,...(canonicalHold?{...canonicalHold,editorialEligibility:'MATCHING_HOLD'}:{}),validated:false,availableDraft:(error instanceof ProcessingError?error.availableDraft:null)??proposal??reviewPrefill(post.processingResult),recovery:{state:terminal?(processingMode==='DIRECT'||retryable||decision.editorialEligibility==="PROCESSING_ERROR"?"MANUAL_RECOVERY_REQUIRED":"HUMAN_REVIEW_REQUIRED"):"SCHEDULED_RETRY",attempt:job.attemptCount,maxAttempts:job.maxAttempts},ruleSetVersion:ruleSet.version,...(error instanceof ProcessingError&&error.diagnostic?{diagnostic:error.diagnostic}:{}),review:processingMode==='DIRECT'||decision.editorialEligibility==='PROCESSING_ERROR'?[]:[reason("UNSUPPORTED_OUTPUT",code)]})}});
         await audit(tx,post.id,"PROCESSING_ERROR","تعذرت المعالجة؛ تفاصيل آمنة للمراجعة",{code,retryable,attempt:job.attemptCount,recovery:terminal?(processingMode==='DIRECT'||retryable||decision.editorialEligibility==='PROCESSING_ERROR'?'MANUAL_RECOVERY_REQUIRED':'HUMAN_REVIEW_REQUIRED'):'SCHEDULED_RETRY',priorProcessingResult:post.processingResult});
         if(isProviderWait(code)&&!terminal)await audit(tx,post.id,'PROCESSING_PROVIDER_WAIT','Provider-dependent stage scheduled; processing lane released',{jobId:job.id,code,eligibleAt:next.toISOString(),startedAt:new Date().toISOString()});
         if(isProviderWait(code)&&terminal)await audit(tx,post.id,'PROCESSING_PROVIDER_RECOVERY_REQUIRED','Provider outcome requires technical reconciliation; no automatic replay scheduled',{jobId:job.id,code});

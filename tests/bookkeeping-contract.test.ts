@@ -5,7 +5,7 @@ import {editorialContract} from '../src/lib/processing/editorial-contract';
 import {validateObjectiveArticle} from '../src/lib/processing/direct-publication';
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {bookkeepingContract,spanCatalog} from '../src/lib/processing/bookkeeping-contract';
+import {bookkeepingContract,indexedSpanCatalog as spanCatalog} from '../src/lib/processing/bookkeeping-contract';
 import {normalExtractionSchema,normalSelection,validateNormalExtractionCoverage} from '../src/lib/processing/normal-v2';
 import {validateMinimalExtraction} from '../src/lib/processing/groq-extraction';
 import {directIndependentSchemaFor} from '../src/lib/processing/direct-two-stage';
@@ -17,12 +17,12 @@ import frozen from './fixtures/staging-hardening/frozen-13.json';
 const source='أعلنت إيران افتتاح المدرسة اليوم.';
 function select(text:string,namespace:string,excerpt=text,occurrence=0){
  const catalog=spanCatalog(text,namespace);let start=-1;for(let n=0;n<=occurrence;n++)start=text.indexOf(excerpt,start+1);
- assert(start>=0);const first=catalog.atoms.find(a=>a.start===start),last=catalog.atoms.find(a=>a.end===start+excerpt.length);assert(first&&last);return {first:first.id,last:last.id};
+ assert(start>=0);const first=catalog.atoms.find(a=>a.start===start),last=catalog.atoms.find(a=>a.end===start+excerpt.length);assert(first&&last);return {first:catalog.atoms.indexOf(first),last:catalog.atoms.indexOf(last)};
 }
 function extraction(text=source){
  const contract=bookkeepingContract('extract',{content:text},normalExtractionSchema)!;
  const units=sourceUnits(text);const evidence={span:select(text,'source'),context:{firstUnit:units[0].id,lastUnit:units.at(-1)!.id}};
- const raw={catalogId:(contract.input as {bookkeeping:{catalogId:string}}).bookkeeping.catalogId,relevance:'POLITICAL_NEWS',contentType:'NEWS',contentTypeEvidence:evidence,actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence,speaker:null,sourceUnitIds:units.map(u=>u.id)}],nonFactualUnitIds:[] as string[]};
+ const raw={catalogId:(contract.input as {bookkeeping:{catalogId:string}}).bookkeeping.catalogId,relevance:'POLITICAL_NEWS',contentType:'NEWS',contentTypeEvidence:evidence,actors:[],action:null,object:null,location:null,event_time:null,statements:[{evidence,speaker:null}],unitCoverage:Object.fromEntries(units.map(u=>[u.id,{statementIndices:[0],nonFactual:false}]))};
  return {contract,raw};
 }
 const state={time:'PAST',phase:'COMPLETED',continuity:'UNSPECIFIED',certainty:'ASSERTED'};
@@ -39,17 +39,17 @@ for(const text of ['خبر إيران','#حسن_نصرالله قال خبر إ�
 });
 test('normal extraction consumes application fact IDs and complete coverage',()=>{const x=extraction();const decoded=x.contract.decode(x.raw),p=normalSelection(decoded,source),v=validateMinimalExtraction(p.extraction,source);assert.equal(v.statements[0].id,'f1');assert.doesNotThrow(()=>validateNormalExtractionCoverage(source,v,p.extraction,p.coverage,true));});
 for(const mode of ['unknown','synonym','candidate namespace','reversed','off-by-one'])test('invalid evidence selection '+mode,()=>{
- const c=spanCatalog(source,'source'),v=select(source,'source');if(mode==='reversed')[v.first,v.last]=[v.last,v.first];else v.first=mode==='candidate namespace'?select(source,'candidate:title').first:mode==='synonym'?'denial':mode==='off-by-one'?v.first+'1':'missing';assert.throws(()=>c.resolve(v));
+ const c=spanCatalog(source,'source'),v=select(source,'source');if(mode==='reversed')[v.first,v.last]=[v.last,v.first];else Reflect.set(v,'first',mode==='candidate namespace'?'candidate:title:0':mode==='synonym'?'denial':mode==='off-by-one'?c.atoms.length:'missing');assert.throws(()=>c.resolve(v));
 });
 test('same spelling different occurrence has distinct exact immutable IDs',()=>{const text='إيران ثم إيران';const a=select(text,'source','إيران',0),b=select(text,'source','إيران',1);assert.notEqual(a.first,b.first);assert.equal(spanCatalog(text,'source').resolve(b).startOffset,9);});
-test('different source cannot reuse evidence IDs',()=>assert.throws(()=>spanCatalog(source+' جديد','source').resolve(select(source,'source'))));
+test('different source cannot reuse request identity',()=>{const a=extraction(),b=extraction(source+' جديد');assert.throws(()=>b.contract.decode(a.raw));});
 for(const mode of ['f5','unknown unit','missing coverage','conflicting nonfactual','duplicate association','wrong digest'])test('coverage never guesses '+mode,()=>{
- const x=extraction();if(mode==='f5')Object.assign(x.raw.statements[0],{id:'f5'});if(mode==='unknown unit')x.raw.statements[0].sourceUnitIds=['u999'];if(mode==='missing coverage')x.raw.statements=[];if(mode==='conflicting nonfactual')x.raw.nonFactualUnitIds=['u1'];if(mode==='duplicate association')x.raw.statements[0].sourceUnitIds=['u1','u1'];if(mode==='wrong digest')x.raw.catalogId='wrong';assert.throws(()=>x.contract.decode(x.raw));
+ const x=extraction();if(mode==='f5')Object.assign(x.raw.statements[0],{id:'f5'});if(mode==='unknown unit')Object.assign(x.raw.unitCoverage,{u999:{statementIndices:[0],nonFactual:false}});if(mode==='missing coverage')x.raw.statements=[];if(mode==='conflicting nonfactual')x.raw.unitCoverage.u1.nonFactual=true;if(mode==='duplicate association')x.raw.unitCoverage.u1.statementIndices=[0,0];if(mode==='wrong digest')x.raw.catalogId='wrong';assert.throws(()=>x.contract.decode(x.raw));
 });
 test('keyed receipt produces canonical IDs/cardinality without prose echo',()=>{const x=receipt(),v=x.contract.decode(x.raw) as {review:{id:string}[];fidelityLedger:unknown};assert.deepEqual(v.review.map(r=>r.id),['title']);assert.doesNotThrow(()=>validateFidelityLedger(x.text,x.publication,v.fidelityLedger));});
 for(const mode of ['missing','unknown','duplicate JSON','conflicting JSON','namespace','digest','source unit'])test('receipt fails closed '+mode,()=>{
  const x=receipt();if(mode.includes('JSON')){const value=mode==='duplicate JSON'?'1':'2';assert.throws(()=>parseProviderJson('{"review":{"title":1,"title":'+value+'}}'),/DUPLICATE_PROVIDER_KEY/);return;}
- if(mode==='missing')Reflect.deleteProperty(x.raw.review,'title');if(mode==='unknown')Object.assign(x.raw.review,{unknown:x.raw.review.title});if(mode==='namespace')x.raw.fidelityLedger.claims.title.components[0].span=select(source,'source');if(mode==='digest')x.raw.catalogId='wrong';if(mode==='source unit')x.raw.fidelityLedger.claims.title.components[0].sourceUnitIds=['u999'];assert.throws(()=>x.contract.decode(x.raw));
+ if(mode==='missing')Reflect.deleteProperty(x.raw.review,'title');if(mode==='unknown')Object.assign(x.raw.review,{unknown:x.raw.review.title});if(mode==='namespace')Reflect.set(x.raw.fidelityLedger.claims.title.components[0].span,'first','source:0');if(mode==='digest')x.raw.catalogId='wrong';if(mode==='source unit')x.raw.fidelityLedger.claims.title.components[0].sourceUnitIds=['u999'];assert.throws(()=>x.contract.decode(x.raw));
 });
 test('duplicate escaped JSON key cannot hide negative result',()=>assert.throws(()=>parseProviderJson('{"title":1,"\\u0074itle":2}'),/DUPLICATE_PROVIDER_KEY/));
 test('nested objects may reuse keys and strings may contain braces',()=>assert.deepEqual(parseProviderJson('{"a":{"id":"}"},"b":{"id":"{"}}'),{a:{id:'}'},b:{id:'{'}}));

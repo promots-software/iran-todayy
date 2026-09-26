@@ -1,3 +1,4 @@
+import {bindingMock} from './binding-wire';
 import {ProcessingError} from '../../src/lib/processing/contracts';
 import {GeminiLanguageProvider} from '../../src/lib/processing/gemini';
 import type {PropositionInventory,PropositionUnit} from '../../src/lib/processing/proposition-support';
@@ -14,7 +15,7 @@ export function assumedPropositionResponse(data:Record<string,unknown>):unknown{
 }
 export function withAssumedPropositionSupport(transport:typeof fetch):typeof fetch{return async(url,init)=>{
  const body=JSON.parse(String(init?.body)),native=!!body.contents,data=JSON.parse(native?body.contents[0].parts[0].text:body.messages[1].content),output=assumedPropositionResponse(data);
- if(output===undefined)return transport(url,init);
+ if(output===undefined)return native?bindingMock(transport)(url,init):transport(url,init);
  return Response.json(native?{candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:0,candidatesTokenCount:0,thoughtsTokenCount:0}}:{choices:[{finish_reason:'stop',message:{content:JSON.stringify(output)}}]});
 };}
 /** A name that makes the extra mocked stages explicit at imports. */

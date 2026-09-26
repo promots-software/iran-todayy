@@ -96,6 +96,7 @@ enum WorkerState {
 }
 
 model AppSettings {
+  stagingCanaryPolicy Json?
   telegramAutoPolicy Json?
   id             Int            @id @default(1)
   publishingMode PublishingMode @default(REQUIRE_APPROVAL)

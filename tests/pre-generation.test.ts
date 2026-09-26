@@ -1,3 +1,4 @@
+import {bindingMock} from './fixtures/binding-wire';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {generateFirst,assertGenerationRequired,type PreGenerationAudit} from '../src/lib/processing/pre-generation';
@@ -16,24 +17,24 @@ const response=(output:unknown)=>Response.json({candidates:[{finishReason:'STOP'
 for(const mode of ['NORMAL','DIRECT'] as const){
  test(mode+' usable Iran-related reaches generation before malformed extraction',async()=>{
   const order:string[]=[];
-  const p=new GeminiLanguageProvider('offline',async(_url,init)=>{
+  const p=new GeminiLanguageProvider('offline',bindingMock(async(_url,init)=>{
    const r=JSON.parse(String(init?.body)),props=r.generationConfig.responseJsonSchema.properties;
    if(props.iranRelated){order.push('intake');return response({iranRelated:true,rationale:'حدث في طهران'});}
    if(props.title){order.push('generation');assert.equal(r.systemInstruction.parts[0].text.split(editorialContract).length,2);return response(article);}
    order.push('extraction');return response({broken:'bookkeeping'});
-  },()=>{},true);
+  }),()=>{},true);
   const generatedInput=await p.prepareGeneration({content:source},signal);
   await assert.rejects(p.understand({content:source,processingMode:mode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,generatedInput},signal));
   assert.deepEqual(order,['intake','generation','extraction']);assert(generatedInput.audit.articleReturned);
  });
  test(mode+' unrelated is filtered without generation',async()=>{
-  let calls=0;const p=new GeminiLanguageProvider('offline',async()=>{calls++;return response({iranRelated:false,rationale:'النص لا يتصل بإيران'});},()=>{},true);
+  let calls=0;const p=new GeminiLanguageProvider('offline',bindingMock(async()=>{calls++;return response({iranRelated:false,rationale:'النص لا يتصل بإيران'});}),()=>{},true);
   const generatedInput=await p.prepareGeneration({content:'افتتحت بلدية باريس مكتبة.'},signal);
   const u=await p.understand({content:'افتتحت بلدية باريس مكتبة.',processingMode:mode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,generatedInput},signal);
   assert.equal(u.filterReason,'UNRELATED_TO_IRAN');assert.equal(calls,1);
  });
  for(const content of ['', '   ', '📷', '\ufffd\ufffd'])test(mode+' unusable input '+JSON.stringify(content),async()=>{
-  let calls=0;const p=new GeminiLanguageProvider('offline',async()=>{calls++;throw Error('forbidden');},()=>{},true);
+  let calls=0;const p=new GeminiLanguageProvider('offline',bindingMock(async()=>{calls++;throw Error('forbidden');}),()=>{},true);
   await assert.rejects(p.prepareGeneration({content},signal),/SOURCE_TEXT_REQUIRED/);assert.equal(calls,0);
  });
 }
@@ -44,7 +45,7 @@ for(const mode of ['NORMAL','DIRECT'] as const)for(const defect of ['excerpt','o
  if(defect==='offset')Object.assign(x.statements[0].evidence,{startOffset:999,endOffset:1000});
  if(defect==='unknownFact')x.coverage[0].factIds=['f999'];
  if(defect==='missingCoverage')x.coverage=[];
- const p=new GeminiLanguageProvider('offline',async(_url,init)=>{
+ const p=new GeminiLanguageProvider('offline',bindingMock(async(_url,init)=>{
   const r=JSON.parse(String(init?.body)),props=r.generationConfig.responseJsonSchema.properties;
   if(props.iranRelated){order.push('intake');return response({iranRelated:true,rationale:'Iran'});}
   if(props.title){order.push('generation');return response(article);}
@@ -52,7 +53,7 @@ for(const mode of ['NORMAL','DIRECT'] as const)for(const defect of ['excerpt','o
   if(order.length>3)return response({}); // metadata correction cannot hide fixture defect
   if(mode==='DIRECT')return response({extraction:x});
   const {safety:unused,statements,...rest}=x;void unused;return response({...rest,statements:statements.map(({evidence,speaker})=>({evidence,speaker}))});
- },()=>{},true);
+ }),()=>{},true);
  const generatedInput=await p.prepareGeneration({content:source},signal);
  await assert.rejects(p.understand({content:source,processingMode:mode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,generatedInput},signal));
  assert.deepEqual(order.slice(0,3),['intake','generation','validation-data']);assert(generatedInput.audit.articleReturned);
@@ -65,7 +66,7 @@ test('capacity errors preserve retry code and expose unmet article outcome',asyn
 });
 test('DIRECT generated V0 remains exact through all existing independent validation stages',async()=>{
  const stages:string[]=[];
- const p=new GeminiLanguageProvider('offline',async(_url,init)=>{
+ const p=new GeminiLanguageProvider('offline',bindingMock(async(_url,init)=>{
   const r=JSON.parse(String(init?.body)),d=JSON.parse(r.contents[0].parts[0].text),props=r.generationConfig.responseJsonSchema.properties;
   if(props.iranRelated){stages.push('intake');return response({iranRelated:true,rationale:'Iran'});}
   if(props.title){stages.push('generation');return response(article);}
@@ -73,7 +74,7 @@ test('DIRECT generated V0 remains exact through all existing independent validat
   if(v!==undefined){stages.push('proposition');return response(v);}
   if(props.extraction){stages.push('extraction');const {article:unused,...x}=combinedFixture(source,source,source);void unused;assert.deepEqual(d.frozenArticle,article);return response(x);}
   stages.push('review');return response(reviewedFixture(source,d.publication));
- },()=>{},true);
+ }),()=>{},true);
  const generatedInput=await p.prepareGeneration({content:source},signal);
  const u=await p.understand({content:source,processingMode:'DIRECT',publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,generatedInput},signal);
  const draft=await p.draft({content:source,processingMode:'DIRECT',understanding:u,rules:ruleSet,generatedInput},signal) as {title:string};
@@ -93,12 +94,12 @@ for(const item of frozen)test('frozen generation boundary '+item.source+'/'+item
 
 for(const id of ['75','76','78'])test('persisted '+id+' bookkeeping cannot run before real provider generation boundary',async()=>{
  const item=frozen.find(p=>p.externalId===id)!;const stages:string[]=[];let historical=0;
- const p=new GeminiLanguageProvider('offline',async(_url,init)=>{
+ const p=new GeminiLanguageProvider('offline',bindingMock(async(_url,init)=>{
   const r=JSON.parse(String(init?.body)),props=r.generationConfig.responseJsonSchema.properties;
   if(props.iranRelated){stages.push('intake');return response({iranRelated:true,rationale:'Frozen source relates materially to Iran'});}
   if(props.title){stages.push('generation');throw new ProcessingError('OFFLINE_GENERATION_REQUIRED');}
   historical++;return response(item.outputs[historical-1]?.output);
- },()=>{},true);
+ }),()=>{},true);
  await assert.rejects(p.prepareGeneration({content:item.normalized},signal),/OFFLINE_GENERATION_REQUIRED/);
  assert.deepEqual(stages,['intake','generation']);assert.equal(historical,0);
 });
@@ -115,16 +116,16 @@ for(const mode of ['NORMAL','DIRECT'] as const)for(const defect of ['faithful','
   const v=assumedPropositionResponse(d);if(v!==undefined)return response(v);
   const x=combinedFixture(text,text,text).extraction;
   if(props.extraction)return response({extraction:x});
-  if(props.contentType){const {safety:unused,statements,...rest}=x;void unused;return response({...rest,statements:statements.map(({evidence,speaker})=>({evidence,speaker}))});}
+  if(props.contentType||props.unitCoverage){const {safety:unused,statements,...rest}=x;void unused;return response({...rest,statements:statements.map(({evidence,speaker})=>({evidence,speaker}))});}
   if(props.anchorIds)return response({anchorIds:[],factLabels:[{id:'f1',kind:'FACT',material:false}],filterReason:'NONE',topic:'UNKNOWN',topicEvidenceId:null,priority:'P2',sensitiveActor:false,leaderDeath:false,seriousClaim:false,rankUnverified:false,rationaleIds:['f1']});
-  if(props.publication){assert.deepEqual(d.frozenArticle,copy);return response({coverage:x.coverage,publication:{title:{text:copy.title,factIds:['f1']},body:[]}});}
+  if(props.publication||props.links){assert.deepEqual(d.frozenArticle,copy);return response({coverage:x.coverage,publication:{title:{text:copy.title,factIds:['f1']},body:[]}});}
   reviews++;
   const result=reviewedFixture(text,d.publication);
   if(defect!=='faithful')for(const c of result.fidelityLedger.claims){c.verdict='UNSUPPORTED' as 'SUPPORTED';c.components[0].verdict='UNSUPPORTED';c.components[0].explanation='Source does not support the generated material change';}
   if(mode==='NORMAL'){const {comparisons:unused,...review}=result;void unused;return response(review);}
   return response(result);
  };
- const run=async()=>{const p=new GeminiLanguageProvider('offline',async(url,init)=>{const key=String(init?.body);const old=cache.get(key);if(old){const r=old.clone();r.headers.set('x-worker-checkpoint-replayed','true');return r;}const r=await transport(url,init);cache.set(key,r.clone());return r;},()=>{},true);const generatedInput=await p.prepareGeneration({content:text},signal);const u=await p.understand({content:text,processingMode:mode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,generatedInput},signal);return p.draft({content:text,processingMode:mode,understanding:u,rules:ruleSet,generatedInput},signal);};
+ const run=async()=>{const p=new GeminiLanguageProvider('offline',bindingMock(async(url,init)=>{const key=String(init?.body);const old=cache.get(key);if(old){const r=old.clone();r.headers.set('x-worker-checkpoint-replayed','true');return r;}const r=await transport(url,init);cache.set(key,r.clone());return r;}),()=>{},true);const generatedInput=await p.prepareGeneration({content:text},signal);const u=await p.understand({content:text,processingMode:mode,publishedAt:new Date(),profile:unknownProfile,rules:ruleSet,generatedInput},signal);return p.draft({content:text,processingMode:mode,understanding:u,rules:ruleSet,generatedInput},signal);};
  if(defect==='faithful'){if(mode==='NORMAL')await assert.rejects(run(),/APPLICATION_CONTINUATION_BUDGET/);assert.equal((await run()).title,copy.title);assert.equal(repairs,0);}else{await assert.rejects(run());assert(repairs<=1);}
  assert.equal(reviews,1);
 });
