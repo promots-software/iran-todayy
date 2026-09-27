@@ -1,3 +1,4 @@
+import {compactMatcherCandidate} from '../src/lib/processing/canonical-matcher-documents';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
@@ -57,7 +58,7 @@ test('older history rescue has no hard cap and compact transport sees only selec
  candidates[19].publishedAt=now;
  const source=candidates.map(c=>c.data.summary).join('\n');const r=retrieveCanonicalCandidates({source,draft:'',publishedAt:now,now,candidates});
  assert.equal(r.base.length,0);assert.equal(r.candidates.length,11);assert.ok(r.selected.includes(19));
- let calls=0;const match=await matchCanonicalArticle(source,now,r.candidates,async request=>{calls++;const input=request.input as {snapshot:string;candidates:{id:string;event:unknown}[]};assert.equal(input.candidates.length,11);assert.deepEqual(input.candidates.map(c=>c.event),r.candidates.map(c=>c.data));return {snapshot:input.snapshot,assessmentComplete:true,matches:[]};});assert.equal(match.classification,'NEW_EVENT');assert.equal(calls,1);
+ let calls=0;const match=await matchCanonicalArticle(source,now,r.candidates,async request=>{calls++;const input=request.input as {snapshot:string;candidates:{id:string;event:unknown}[]};assert.equal(input.candidates.length,11);assert.deepEqual(input.candidates,r.candidates.map(compactMatcherCandidate));return {snapshot:input.snapshot,assessmentComplete:true,matches:[]};});assert.equal(match.classification,'NEW_EVENT');assert.equal(calls,1);
 });
 test('invalid dates and duplicate immutable identities fail closed',()=>{
  const input={source:'',draft:'',publishedAt:now,now,candidates:[candidate(0,'')]};
