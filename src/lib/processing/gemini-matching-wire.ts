@@ -1,28 +1,20 @@
 import {ProcessingError} from './contracts';
-type Schema={properties:{matches:{properties:Record<string,unknown>}}};
-/** Wire-only projection; original matcher schema and decisions remain authoritative. */
+/** Fixed-size wire schema, independent of candidate count. Positional types,
+ * alias membership and snapshot equality remain authoritative local checks.
+ * Avoid heterogeneous prefixItems in the Gemini compatibility projection. */
 export function matchingWireSchema(schema:unknown){
- const entries=Object.entries((schema as Schema).properties.matches.properties);
- if(!entries.length)throw new ProcessingError('INVALID_COMPARISON_SCHEMA');
- const row=entries[0][1] as {properties:Record<string,unknown>;required:string[]};
- return {type:'object',properties:{matches:{type:'array',items:{type:'object',properties:{candidateId:{type:'string'},...row.properties},required:['candidateId',...row.required],additionalProperties:false}}},required:['matches'],additionalProperties:false};
+ const copy=structuredClone(schema) as {properties:{matches:{items:unknown}}};
+ copy.properties.matches.items={type:'array',items:{anyOf:[{type:'string'},{type:'boolean'}]}};
+ return copy;
 }
-export function matchingSerialization(schema:unknown){
- const count=Object.keys((schema as Schema).properties.matches.properties).length;
- return `Response serialization only: return matches as rows. Each row must carry candidateId equal to the supplied candidate id and the existing relation, materialUpdate, conflict and rationale fields. Return exactly ${count} rows: one for EVERY candidate, including DIFFERENT_OCCURRENCE results. Do not stop after finding a match. No missing, duplicate or extra candidate IDs.`;
+export function matchingSerialization(_schema:unknown){
+ void _schema;
+ return 'Response serialization only: matches contains fixed five-element rows [alias, relation, materialUpdate, conflict, rationale]. Return the exact snapshot and assessmentComplete=true. S means SAME_OCCURRENCE and U means UNCERTAIN. Omit negative rows only after assessing every candidate. Do not return a final decision. No duplicate or unknown aliases.';
 }
-export function decodeMatchingReceipt(content:string,schema:unknown):string{
- const fail=():never=>{throw new ProcessingError('INVALID_COMPARISON_SCHEMA');};
- let raw:unknown;try{raw=JSON.parse(content);}catch{return fail();}
- if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).length!==1||!('matches'in raw)||!Array.isArray(raw.matches))return fail();
- const ids=new Set(Object.keys((schema as Schema).properties.matches.properties));
- const matches:Record<string,unknown>=Object.create(null);
- for(const value of raw.matches){
-  if(!value||typeof value!=='object'||Array.isArray(value))return fail();
-  const {candidateId,...decision}=value;
-  if(typeof candidateId!=='string'||!ids.has(candidateId)||Object.hasOwn(matches,candidateId))return fail();
-  matches[candidateId]=decision;
- }
- if(Object.keys(matches).length!==ids.size)return fail();
- return JSON.stringify({matches});
+export function decodeMatchingReceipt(content:string,_schema:unknown):string{
+ void _schema;
+ try{JSON.parse(content);}catch{throw new ProcessingError('INVALID_COMPARISON_SCHEMA');}
+ // No repair, inference, negative-row synthesis or legacy receipt fallback.
+ // The canonical local schema validates the complete receipt after decoding.
+ return content;
 }

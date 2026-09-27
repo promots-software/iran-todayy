@@ -6,14 +6,14 @@ import {ProcessingError,type LanguageProvider,type Understanding,type EventData}
 import {processingSource} from './processing-source';
 import {sourceInputLanguage} from './source-language';
 import {ruleSet} from './rules';
-import type {Candidate} from './matcher';
+import {retrieveCanonicalCandidates,type RetrievalCandidate} from './canonical-retrieval';
 import type {ClaimedJob} from './engine';
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
 const snapshot=async(db:Pick<Prisma.TransactionClient,'canonicalEvent'>)=>{
- const rows=await db.canonicalEvent.findMany({select:{id:true,createdAt:true,revisions:{orderBy:{revision:'desc'},take:1,select:{id:true,revision:true,facts:true,newsItem:{select:{publication:{select:{status:true}}}},matches:{select:{sourcePost:{select:{sourcePublishedAt:true}}}}}}}});
- const {eventSchema}=await import('./contracts');const candidates:Candidate[]=[];let legacy=0;
- for(const row of rows){const r=row.revisions[0],facts=eventSchema.safeParse(r?.facts);if(!r||!facts.success){legacy++;continue;}candidates.push({id:row.id,revisionId:r.id,revision:r.revision,data:facts.data,publishedAt:r.matches[0]?.sourcePost.sourcePublishedAt??row.createdAt,published:r.newsItem?.publication?.status==='SENT'});}
- candidates.sort((a,b)=>a.id.localeCompare(b.id));return {candidates,legacy,key:canonicalDigest({candidates,legacy})};
+ const rows=await db.canonicalEvent.findMany({select:{id:true,createdAt:true,revisions:{orderBy:{revision:'desc'},take:1,select:{id:true,revision:true,facts:true,newsItem:{select:{publication:{select:{status:true}}}},matches:{orderBy:[{createdAt:'asc'},{id:'asc'}],take:1,select:{sourcePost:{select:{sourcePublishedAt:true}}}}}}}});
+ const {eventSchema}=await import('./contracts');const candidates:RetrievalCandidate[]=[];let legacy=0;
+ for(const row of rows){const r=row.revisions[0],facts=eventSchema.safeParse(r?.facts);if(!r||!facts.success){legacy++;continue;}candidates.push({id:row.id,createdAt:row.createdAt,revisionId:r.id,revision:r.revision,data:facts.data,publishedAt:r.matches[0]?.sourcePost.sourcePublishedAt??row.createdAt,published:r.newsItem?.publication?.status==='SENT'});}
+ candidates.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);return {candidates,legacy,key:canonicalDigest({candidates,legacy})};
 };
 /** Staging-only adapter: whole-source provenance is application-owned. It is
  * not a claim of independently verified truth or a fabricated excerpt. */
@@ -25,7 +25,11 @@ export async function runCanonicalJob(db:PrismaClient,job:ClaimedJob,provider:La
  const article=canonical.cycles.at(-1)?.article;
  if(canonical.status==='APPROVED')assertCanonicalApproval(canonical,source,article!);
  const before=canonical.status==='APPROVED'?await snapshot(db):null;
- const match=before?await matchCanonicalArticle(source,post.sourcePublishedAt,before.candidates,request):null;
+ const retrievedAt=new Date();
+ const retrieval=before?retrieveCanonicalCandidates({source,draft:article!.title+'\n'+article!.body,publishedAt:post.sourcePublishedAt,now:retrievedAt,candidates:before.candidates}):null;
+ const retrievalAudit=before&&retrieval?{version:retrieval.version,retrievedAt:retrievedAt.toISOString(),poolDigest:before.key,queryDigest:canonicalDigest({source,draft:article}),poolCount:before.candidates.length,baseRevisionIds:retrieval.base.map(i=>before.candidates[i].revisionId),selectedRevisionIds:retrieval.candidates.map(c=>c.revisionId)}:null;
+ if(retrievalAudit)await db.auditLog.create({data:{action:'CANONICAL_MATCH_RETRIEVAL',actor:'staging-worker',entityType:'SourcePost',entityId:post.id,message:'Deterministic retrieval before semantic matching',metadata:json(retrievalAudit)}});
+ const match=retrieval?await matchCanonicalArticle(source,post.sourcePublishedAt,retrieval.candidates,request,retrievalAudit!):null;
  if(match&&before?.legacy&&match.classification==='NEW_EVENT'){match.classification='UNCERTAIN_MATCH';match.rationale='Legacy event data cannot be safely compared';}
  signal.throwIfAborted();
  return await db.$transaction(async tx=>{
@@ -59,9 +63,9 @@ export async function runCanonicalJob(db:PrismaClient,job:ClaimedJob,provider:La
   if(newsItemId)await tx.newsEvidence.upsert({where:{newsItemId_sourcePostId:{newsItemId,sourcePostId:post.id}},create:{newsItemId,sourcePostId:post.id},update:{}});
   const links=uncertain?match!.candidates.map(c=>c.revisionId):revisionId?[revisionId]:[];
   for(const id of links)await tx.eventMatch.upsert({where:{sourcePostId_eventRevisionId:{sourcePostId:post.id,eventRevisionId:id}},update:{},create:{sourcePostId:post.id,eventRevisionId:id,classification:match!.classification,rationale:match!.rationale,evidence:json(match!.evidence),matcherVersion:'canonical-source-v1'}});
-  await tx.sourcePost.update({where:{id:post.id},data:{status,error:null,nextRetryAt:null,rejectionReason:filtered?'UNRELATED_TO_IRAN':null,originalLanguage:extraction.language,relevance:extraction.relevance,relevanceResult:json({processingMode:mode}),processingResult:json({processingMode:mode,...decision,validated:canonical.status==='APPROVED',canonicalApproval:canonical,editorialStatus:canonical.status,classification:match?.classification??null,eventRevisionId:revisionId??null,extraction,draft,review,provider:'canonical-forty-v1',acceptance:{version:'iran-acceptance-v1',mode,accepted:!filtered}})}});
+  await tx.sourcePost.update({where:{id:post.id},data:{status,error:null,nextRetryAt:null,rejectionReason:filtered?'UNRELATED_TO_IRAN':null,originalLanguage:extraction.language,relevance:extraction.relevance,relevanceResult:json({processingMode:mode}),processingResult:json({processingMode:mode,...decision,retrieval:retrievalAudit,validated:canonical.status==='APPROVED',canonicalApproval:canonical,editorialStatus:canonical.status,classification:match?.classification??null,eventRevisionId:revisionId??null,extraction,draft,review,provider:'canonical-forty-v1',acceptance:{version:'iran-acceptance-v1',mode,accepted:!filtered}})}});
   await tx.processingJob.update({where:{id:job.id},data:{status:'COMPLETED',lockedAt:null,lockedBy:null,lastError:null}});
-  await tx.auditLog.create({data:{action:'CANONICAL_PROCESSING_DECISION',actor:'staging-worker',entityType:'SourcePost',entityId:post.id,message:'Canonical editorial decision followed by operational matching',metadata:json({status,editorialStatus:canonical.status,cycles:canonical.cycles.length,classification:match?.classification??null,newsItemId:newsItemId??null,failedSections:failed?failedSections(canonical.cycles.at(-1)!.check):[]})}});
+  await tx.auditLog.create({data:{action:'CANONICAL_PROCESSING_DECISION',actor:'staging-worker',entityType:'SourcePost',entityId:post.id,message:'Canonical editorial decision followed by operational matching',metadata:json({status,retrieval:retrievalAudit,editorialStatus:canonical.status,cycles:canonical.cycles.length,classification:match?.classification??null,newsItemId:newsItemId??null,failedSections:failed?failedSections(canonical.cycles.at(-1)!.check):[]})}});
   return {postId:post.id,filtered};
  },{timeout:30000,maxWait:5000});
  }catch(error){

@@ -12,12 +12,12 @@ for(const [name,relation,materialUpdate,conflict,expected] of [
  ['similar topic different event','DIFFERENT_OCCURRENCE',false,false,'NEW_EVENT'],
  ['ambiguous','UNCERTAIN',false,false,'UNCERTAIN_MATCH'],
  ['conflicting update','SAME_OCCURRENCE',true,true,'UNCERTAIN_MATCH']
-] as const)test(name,async()=>{const result=await matchCanonicalArticle('خبر إيران',new Date(),[candidate],async()=>({matches:{r1:{relation,materialUpdate,conflict,rationale:name}}}));assert.equal(result.classification,expected);});
+] as const)test(name,async()=>{const result=await matchCanonicalArticle('خبر إيران',new Date(),[candidate],async r=>({snapshot:(r.input as {snapshot:string}).snapshot,assessmentComplete:true,matches:relation==='DIFFERENT_OCCURRENCE'?[]:[['c0',relation==='UNCERTAIN'?'U':'S',materialUpdate,conflict,name]]}));assert.equal(result.classification,expected);});
 
 test('unknown/missing candidate keys fail and multiple matches remain uncertain',async()=>{
  await assert.rejects(matchCanonicalArticle('خبر',new Date(),[candidate],async()=>({matches:{}})),/INVALID_COMPARISON_SCHEMA/);
- const other={...candidate,id:'e2',revisionId:'r2'};const row={relation:'SAME_OCCURRENCE',materialUpdate:false,conflict:false,rationale:'same'};
- assert.equal((await matchCanonicalArticle('خبر',new Date(),[candidate,other],async()=>({matches:{r1:row,r2:row}}))).classification,'UNCERTAIN_MATCH');
+ const other={...candidate,id:'e2',revisionId:'r2'};const row=['c0','S',false,false,'same'];
+ assert.equal((await matchCanonicalArticle('خبر',new Date(),[candidate,other],async r=>({snapshot:(r.input as {snapshot:string}).snapshot,assessmentComplete:true,matches:[row,['c1',...row.slice(1)]]}))).classification,'UNCERTAIN_MATCH');
 });
 
 test('native Gemini adapter uses complete canonical contract and logs each mocked request',async()=>{

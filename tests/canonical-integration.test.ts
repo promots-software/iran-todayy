@@ -27,7 +27,7 @@ test('canonical staging DB: approved -> dedup -> unchanged manual/automatic free
     if(request.stage==='canonical_generate'||request.stage==='canonical_correct'){if(request.stage==='canonical_correct')corrections++;return {title:'إيران الآن | افتتاح مكتبة في طهران',body:content};}
     if(request.stage==='canonical_check')return check(failed);
     if(relation==='BROKEN')return {matches:{}};
-    const input=request.input as {candidates:{id:string}[]};return {matches:Object.fromEntries(input.candidates.map((c,i)=>[c.id,{relation:i===0?relation:'DIFFERENT_OCCURRENCE',materialUpdate:update,conflict:false,rationale:'Offline matching fixture'}]))};
+    const input=request.input as {snapshot:string;candidates:{id:string}[]};return {snapshot:input.snapshot,assessmentComplete:true,matches:relation==='DIFFERENT_OCCURRENCE'?[]:[[input.candidates[0].id,relation==='UNCERTAIN'?'U':'S',update,false,'Offline matching fixture']]};
    }};
    const result=await processJob(db,job,provider,AbortSignal.timeout(20000));if(relation!=='BROKEN')assert.ok(!('error'in result),JSON.stringify(result));
    const after=await db.sourcePost.findUniqueOrThrow({where:{id:post.id}});return {source,post,after,stages,corrections};
