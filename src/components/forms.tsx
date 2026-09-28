@@ -14,8 +14,7 @@ export function AddSourceForm() {
       <label>معرّف الحساب<input name="handle" dir="ltr" required maxLength={33} placeholder="@username" /></label>
     </div>
     <div className="source-form-lower">
-      <SourceProcessingModeControl/>
-      <button disabled={pending} type="submit">{pending ? "جارٍ الحفظ…" : "+ إضافة المصدر"}</button>
+      <SourceProcessingModeControl action={<button disabled={pending} type="submit">{pending ? "جارٍ الحفظ…" : "+ إضافة المصدر"}</button>}/>
     </div>
     {state.message && <p role="status" className={state.ok ? "success" : "error-text"}>{state.message}</p>}
     <p className="muted small">تفعيل المصدر لا يثبت اتصال الموصل. حالة Telegram متاحة في العمليات؛ إعداد X لا يعني تفعيل استقباله.</p>
