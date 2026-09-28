@@ -23,8 +23,7 @@ export default async function MonitoringPage({searchParams}: PageProps) {
       {result.data.items.map(post => {
         const url = safeSourceUrl(post.sourceUrl);
         return <article className="panel monitoring-card" key={post.id} data-source-post-id={post.id}>
-          <h2><bdi>{monitoredSource(post.source)}</bdi></h2>
-          <div className="section-title"><span>Telegram</span><time dateTime={post.ingestedAt.toISOString()}>وقت الرصد: {date(post.ingestedAt)}</time></div>
+          <header className="monitoring-meta"><div className="monitoring-source"><h2>{post.source.name || post.source.id}</h2>{post.source.handle && <bdi className="muted small">{post.source.handle.startsWith('@') ? post.source.handle : '@'+post.source.handle}</bdi>}<span className="badge neutral">{post.source.platform === 'TELEGRAM' ? 'Telegram' : 'X'}</span></div><time dateTime={post.ingestedAt.toISOString()}>وقت الرصد: {date(post.ingestedAt)}</time></header>
           <div dir="auto" className="monitoring-text">{monitoredText(post.originalContent)}</div>
           <div className="monitoring-links">{url && <a className="original-post-action" href={url} target="_blank" rel="noopener noreferrer">المنشور الأصلي ↗</a>}<span className="small">رقم منشور {post.source.platform === 'TELEGRAM' ? 'Telegram' : 'X'}: <bdi>{post.sourcePostId}</bdi></span></div>
         </article>;
