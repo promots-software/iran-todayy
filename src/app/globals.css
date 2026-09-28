@@ -15,3 +15,21 @@ body,input,textarea,select,button,.platform,pre,.brand div>span{font-family:var(
 
 /* Compact operations tables preserve RTL and small-screen horizontal access. */
 .table-scroll{max-width:100%;overflow-x:auto}.table-scroll table{width:100%;border-collapse:collapse;text-align:start}.table-scroll th,.table-scroll td{padding:10px;border-bottom:1px solid var(--line);text-align:start;vertical-align:top}.table-scroll details{min-width:150px}.table-scroll summary{white-space:normal}
+
+/* Shared welcome/theme control; Overview-only statistics. */
+.dashboard-welcome{font-size:15px;font-weight:500;color:var(--muted);margin:0 0 12px;overflow-wrap:anywhere}
+.dashboard-welcome bdi{color:var(--ink);font-weight:600}
+.theme-toggle{display:inline-flex;align-items:center;justify-content:center;flex-shrink:0;width:42px;height:42px;padding:0;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--ink)}
+.theme-toggle:hover{background:var(--soft);filter:none}
+.overview-stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin:0 0 30px}
+.overview-stat{display:flex;flex-direction:column;min-width:0;padding:22px;border:1px solid var(--line);border-radius:14px;background:var(--panel)}
+.overview-stat-heading{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;min-height:64px;font-size:13px;font-weight:500;line-height:1.9}
+.overview-stat strong{font-size:34px;font-weight:600;line-height:1.4;font-variant-numeric:tabular-nums;margin:10px 0 8px}
+.overview-stat-note{font-size:11px;color:var(--muted)}
+.overview-indicator{display:block;flex:0 0 8px;height:8px;border-radius:50%;margin-top:8px}
+.overview-indicator.green{background:var(--success)}.overview-indicator.red{background:var(--danger)}
+.overview-stat-grey{background:#e9edef;border-color:#d4dce0}
+:root[data-theme=dark] .overview-stat-grey{background:#29333b;border-color:#43515a}
+@media(max-width:1200px){.overview-stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:520px){.overview-stats{gap:10px}.overview-stat{padding:16px}.overview-stat-heading{font-size:12px;min-height:92px;gap:8px}.overview-stat strong{font-size:29px}.overview-stat-note{font-size:10px}.dashboard-welcome{font-size:13px}}
+@media(max-width:359px){.overview-stats{grid-template-columns:1fr}.overview-stat-heading{min-height:0}}

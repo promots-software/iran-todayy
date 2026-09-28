@@ -1,3 +1,4 @@
+import {overviewData} from './overview-data';
 import { db } from "./db";
 import type { Prisma } from "@prisma/client";
 
@@ -14,16 +15,4 @@ export const newsInclude = {
   ruleSet: true,
 } satisfies Prisma.NewsItemInclude;
 
-export function overview() {
-  return readDatabase(async () => {
-    const [sources, items, pending, published, filtered, settings] = await Promise.all([
-      db.source.count({ where: { deletedAt: null, enabled: true } }),
-      db.newsItem.count(),
-      db.newsItem.count({ where: { status: { in: ["PENDING_APPROVAL", "NEEDS_REVIEW"] } } }),
-      db.publication.count({ where: { status: "SENT" } }),
-      db.sourcePost.count({ where: { status: { in: ["FILTERED", "REJECTED", "DUPLICATE"] } } }),
-      db.appSettings.findUnique({ where: { id: 1 } }),
-    ]);
-    return { sources, items, pending, published, filtered, mode: settings?.publishingMode ?? "REQUIRE_APPROVAL" };
-  });
-}
+export function overview() { return readDatabase(()=>overviewData(db)); }
