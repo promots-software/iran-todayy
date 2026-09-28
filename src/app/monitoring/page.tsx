@@ -16,8 +16,7 @@ export default async function MonitoringPage({searchParams}: PageProps) {
   const before = typeof params.before === 'string' ? params.before : undefined;
   const result = await readDatabase(() => monitoringFeed(db, {source, before}));
   return <>
-    <PageTitle title="رصد" description="ماذا رصد النظام من المصادر؟"/>
-    <MonitoringRefresh live={!before}/>
+    <PageTitle eyebrow="غرفة الرصد" title="رصد" description="ماذا رصد النظام من المصادر؟" actions={<MonitoringRefresh live={!before}/>}/>
     {!result.available ? <DatabaseNotice/> : <>
       <form className="filters dashboard-filter"><label>المصدر<select name="source" defaultValue={source ?? ''}><option value="">الكل</option>{result.data.sources.map(s => <option key={s.id} value={s.id}>{monitoredSource(s)}</option>)}</select></label><button>تصفية</button></form>
       {!result.data.items.length && <EmptyState/>}
