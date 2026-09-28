@@ -1,3 +1,4 @@
+import {providerFailureDiagnostic} from './provider-diagnostics';
 import {readBudgetSummary,summaryQuota} from './provider-budget-summary';
 import {createHash} from 'node:crypto';
 import type {PrismaClient} from '@prisma/client';
@@ -85,8 +86,26 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
   const endpoint=new URL(String(url));
   const resource=`${endpoint.hostname}${endpoint.pathname}`;
   let networkAttempt=false;
+  let phase='checkpoint_load';
+  const began=Date.now(),phases:Record<string,number>={checkpoint_load:0};
+  const mark=(next:string)=>{phase=next;phases[next]=Date.now()-began;};
+  let reported=false;
+  const diagnose=(error:unknown)=>{
+   if(reported)return;reported=true;
+   // Never expose raw messages, stacks, metadata or request contents.
+   try{console.error(JSON.stringify({event:'PROVIDER_EXECUTION_DIAGNOSTIC',postId,phase,elapsedMs:Date.now()-began,phases,networkAttempt,...providerFailureDiagnostic(error)}));}catch{/* Keep original failure. */}
+  };
+  const tracedStore={
+   load:async(k:string)=>{mark('checkpoint_load');return store.load(k);},
+   start:async(k:string)=>{mark('checkpoint_start');return store.start(k);},
+   finish:async(k:string,output:unknown)=>{mark('checkpoint_finish');return store.finish(k,output);},
+   fail:store.fail?.bind(store),
+  };
   const key=createHash('sha256').update(`native-gemini-request-v1:${String(url)}:${body}`).digest('hex');
-  const envelope=await checkpointCall(store,key,async()=>{
+  let envelope:unknown;
+  try{envelope=await checkpointCall(tracedStore,key,async()=>{
+   try{
+   mark('checkpoint_alias_lookup');
    // Exact former serialization of the SAME contract/input. Replay still flows
    // through all existing validators. A pending legacy request is ambiguous,
    // never an excuse to issue the shortened request as a new paid call.
@@ -98,23 +117,29 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     if(prior)throw new ProcessingError('PROVIDER_STAGE_OUTCOME_REQUIRES_REVIEW');
    }
    let reservationId:string|undefined,requestStartedAt=0,operationAttempt=0;
+   mark('request_validation');
    const bytes=Buffer.byteLength(body,'utf8');
    let outputTokens:number,outputCeiling:number=limits.outputTokens;
    try{const payload=JSON.parse(body);outputTokens=Number(payload.generationConfig?.maxOutputTokens??limits.outputTokens);
     const input=JSON.parse(payload.contents?.[0]?.parts?.[0]?.text??'{}');
     if(input.version==='proposition-support-v4.4'&&payload.generationConfig?.thinkingConfig?.thinkingLevel==='high'&&payload.generationConfig?.candidateCount===1)outputCeiling=8192;
    }catch{throw new ProcessingError('PROVIDER_INPUT_LIMIT');}
+   mark('reservation_transaction_acquire');
    await db.$transaction(async tx=>{
+    mark('reservation_advisory_lock');
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(20916012)`;
+    mark('reservation_clock');
     const [{now}]=await tx.$queryRaw<{now:Date}[]>`SELECT clock_timestamp() as now`;
     const nowMs=now.getTime();
     requestStartedAt=nowMs;
     // Lifetime count for this exact operation survives worker restarts and rolling windows.
+    mark('reservation_attempt_count');
     operationAttempt=await tx.auditLog.count({where:{action:'PROVIDER_RESERVED',entityType:'ProviderBudget',entityId:'gemini',AND:[{metadata:{path:['postId'],equals:postId}},{metadata:{path:['key'],equals:key}}]}});
     if(operationAttempt>=1+geminiCostPolicy.retries)throw new ProcessingError('PROVIDER_RETRY_EXHAUSTED');
     operationAttempt++;
     const inputCheck=budgetDecision([],bytes,nowMs,outputTokens,outputCeiling);
     if(!inputCheck.allowed)throw new ProcessingError(inputCheck.reason!);
+    mark('reservation_budget_summary');
     const summary=await readBudgetSummary(tx,nowMs,resource,inputCheck.reservedUsd,bytes,limits.dayReservedUsd);
     const capacity=capacityState(summary.capacityRows,resource,nowMs);
     if(capacity.waitMs)throw new ProcessingError('PROVIDER_CAPACITY_WAIT',true,undefined,capacity.waitMs);
@@ -124,12 +149,17 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
     if(quota.reason)throw new ProcessingError(quota.reason,quota.waitMs>0,undefined,quota.waitMs);
     const decision={...inputCheck,reason:summary.invalidCost?'PROVIDER_INPUT_LIMIT':summary.accountedUsd+inputCheck.reservedUsd>limits.dayReservedUsd?'PROVIDER_COST_WAIT':null};
     if(decision.reason)throw new ProcessingError(decision.reason,decision.reason!=='PROVIDER_INPUT_LIMIT',undefined,summary.budgetWaitMs);
+    mark('reservation_insert');
     if(capacity.probe)await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_CAPACITY_PROBE',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'One bounded recovery request for this model resource',metadata:json({resource,until:nowMs+65000})}});
     reservationId=(await tx.auditLog.create({data:{createdAt:now,action:'PROVIDER_RESERVED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Conservative actual-request budget; no credentials',metadata:json({usd:decision.reservedUsd,bytes,inputTokens:bytes,outputTokens,resource,postId,key,operationAttempt})}})).id;
+    mark('reservation_transaction_commit');
    });
+   mark('reservation_committed');
    try {
+    mark('http_dispatch');
     networkAttempt=true;
     const response=await transport(url,networkInit);
+    mark('http_response');
     if(!response.ok){
      // Bounded error body; never persist raw text, request headers or secrets.
      const diagnostic=capacityDiagnostic(response.status,await readErrorBody(response),retryAfter(response.headers));
@@ -139,20 +169,25 @@ export function guardedTransport(db:PrismaClient,postId:string,transport:typeof 
      if(failurePolicy(`GEMINI_HTTP_${response.status}`,1).providerFailure)throw new ProcessingError(operationAttempt>=1+geminiCostPolicy.retries?'PROVIDER_RETRY_EXHAUSTED':'PROVIDER_TRANSIENT_WAIT',operationAttempt<1+geminiCostPolicy.retries,undefined,operationAttempt>=1+geminiCostPolicy.retries?0:delay);
      throw new ProcessingError(`GEMINI_HTTP_${response.status}`,false,undefined,delay);
     }
+    mark('response_parse');
     const envelope=await response.json(),usd=observedCost(envelope);
+    mark('usage_settlement');
     // Only a known successful HTTP response with complete usage releases its
     // conservative reservation. Unknown/failed requests retain their full cost.
     if(usd!==null&&reservationId)await db.auditLog.create({data:{action:'PROVIDER_USAGE_SETTLED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Known response usage; original reservation retained in audit',metadata:{key,reservationId,usd,postId,inputTokens:envelope.usageMetadata.promptTokenCount}}});
+    mark('capacity_healthy_write');
     await db.auditLog.create({data:{action:'PROVIDER_CAPACITY_HEALTHY',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Successful model response',metadata:{resource,requestStartedAt}}});
     return envelope;
    }catch(error){
+    diagnose(error);
     const safe=error instanceof ProcessingError?error:new ProcessingError('GEMINI_TRANSPORT_FAILED',true);
     if(safe.code==='GEMINI_TRANSPORT_FAILED'){
      await db.auditLog.create({data:{action:'PROVIDER_CAPACITY_BLOCKED',actor:'production-worker',entityType:'ProviderBudget',entityId:'gemini',message:'Transport outcome unknown; no blind replay',metadata:json({resource,code:safe.code,until:Date.now()+60000})}});
     }
     throw safe;
    }
-  });
+   }catch(error){diagnose(error);throw error;}
+  });}catch(error){diagnose(error);throw error;}
   return Response.json(envelope,{headers:{'x-worker-checkpoint-replayed':networkAttempt?'false':'true'}});
  };
 }
