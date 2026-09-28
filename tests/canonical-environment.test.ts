@@ -20,9 +20,9 @@ test('explicit environment matrix never grants capability from a destination or 
  }
 });
 test('both identities reject missing, other and cross-environment destinations',()=>{
- for(const [identity,destination,code] of [['staging','-1004436536617','STAGING_DESTINATION_REJECTED'],['production','-1004297263933','PRODUCTION_DESTINATION_REJECTED']]){
+ for(const [identity,destination,code] of [['staging','-1004436536617','STAGING_DESTINATION_REJECTED'],['production','-1003856499719','PRODUCTION_DESTINATION_REJECTED']]){
   assert.doesNotThrow(()=>assertStagingDestination({IRAN_TODAY_ENVIRONMENT:identity,TELEGRAM_CHAT_ID:destination}));
-  for(const wrong of [undefined,'','-100123',identity==='staging'?'-1004297263933':'-1004436536617'])assert.throws(()=>assertStagingDestination({IRAN_TODAY_ENVIRONMENT:identity,TELEGRAM_CHAT_ID:wrong}),new RegExp(code));
+  for(const wrong of [undefined,'','-100123','-1004297263933',identity==='staging'?'-1003856499719':'-1004436536617'])assert.throws(()=>assertStagingDestination({IRAN_TODAY_ENVIRONMENT:identity,TELEGRAM_CHAT_ID:wrong}),new RegExp(code));
  }
 });
 async function run(identity:string,mode:'NORMAL'|'DIRECT',value='KEEP',related=true){
