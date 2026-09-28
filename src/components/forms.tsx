@@ -6,12 +6,14 @@ const initial = { ok: false, message: "" };
 
 export function AddSourceForm() {
   const [state, action, pending] = useActionState(addSourceAction, initial);
-  return <form action={action} className="panel form-panel">
+  return <form action={action} className="panel form-panel add-source-form">
     <div className="section-title"><h2>إضافة مصدر</h2><span className="muted">Telegram / X</span></div>
-    <div className="form-grid">
+    <div className="form-grid source-fields">
       <label>اسم المصدر<input name="name" required maxLength={120} placeholder="مثال: وكالة أنباء" /></label>
       <label>المنصة<select name="platform"><option value="TELEGRAM">Telegram</option><option value="X">X</option></select></label>
       <label>معرّف الحساب<input name="handle" dir="ltr" required maxLength={33} placeholder="@username" /></label>
+    </div>
+    <div className="source-form-lower">
       <SourceProcessingModeControl/>
       <button disabled={pending} type="submit">{pending ? "جارٍ الحفظ…" : "+ إضافة المصدر"}</button>
     </div>

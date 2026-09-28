@@ -12,5 +12,5 @@ export function MonitoringRefresh({live}: {live: boolean}) {
     }, 30000);
     return () => clearInterval(timer);
   }, [live, pending, router]);
-  return <div className="section-title"><button type="button" className="secondary" disabled={pending} onClick={() => startTransition(() => router.refresh())}>{pending ? 'جارٍ التحديث…' : 'تحديث الرصد'}</button>{live && <span className="small">تحديث تلقائي كل 30 ثانية أثناء عرض الصفحة</span>}</div>;
+  return <div className="monitoring-refresh"><button type="button" className="secondary" disabled={pending} onClick={() => startTransition(() => router.refresh())}>{pending ? 'جارٍ التحديث…' : 'تحديث الرصد'}</button>{live && <span className="small">تحديث تلقائي كل 30 ثانية أثناء عرض الصفحة</span>}</div>;
 }

@@ -4,8 +4,8 @@ import { safeSourceUrl } from "@/lib/domain";
 export function Badge({ value }: { value: string }) {
   return <span className={`badge ${statusTone(value)}`}><span className="status-dot" aria-hidden="true"/>{label(value)}</span>;
 }
-export function PageTitle({ title, description, eyebrow = "غرفة الأخبار" }: { title: string; description: string; eyebrow?: string }) {
-  return <header className="page-title"><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></header>;
+export function PageTitle({ title, description, eyebrow = "غرفة الأخبار", actions }: { title: string; description: string; eyebrow?: string; actions?: React.ReactNode }) {
+  return <header className={actions ? "page-title page-header" : "page-title"}><div><span className="eyebrow">{eyebrow}</span><h1>{title}</h1><p>{description}</p></div>{actions && <div className="page-header-actions">{actions}</div>}</header>;
 }
 export function DatabaseNotice() {
   return <div className="notice" role="alert"><strong>قاعدة البيانات غير متاحة</strong><p>تحقق من إعداد الاتصال وتطبيق ترحيلات قاعدة البيانات. لا تُعرض بيانات تجريبية، ولا يمكن حفظ التغييرات حالياً.</p></div>;
