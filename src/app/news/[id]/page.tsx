@@ -1,7 +1,7 @@
 import {IngestionSource} from '@/components/ingestion-source';
 import Link from 'next/link';
 import {newsroomView} from '@/lib/newsroom-view';
-import {requireUser} from '@/lib/session';
+import {requirePageAccess} from '@/lib/session';
 import {notFound} from 'next/navigation';
 import {db} from '@/lib/db';
 import {newsInclude,readDatabase} from '@/lib/queries';
@@ -17,7 +17,7 @@ import {sourceHasMedia} from '@/lib/publication-media';
 import {renderPublicationText} from '@/lib/publication-text';
 export const maxDuration=60;
 export default async function NewsDetailPage({params,searchParams}:{params:Promise<{id:string}>;searchParams:Promise<{edit?:string}>}){
- const user=await requireUser();const query=await searchParams;const {id}=await params;const r=await readDatabase(()=>db.newsItem.findUnique({where:{id},include:{...newsInclude,humanDraft:true}}));if(!r.available)return <DatabaseNotice/>;const item=r.data;if(!item)notFound();
+ const user=await requirePageAccess('/news/[id]');const query=await searchParams;const {id}=await params;const r=await readDatabase(()=>db.newsItem.findUnique({where:{id},include:{...newsInclude,humanDraft:true}}));if(!r.available)return <DatabaseNotice/>;const item=r.data;if(!item)notFound();
  const review=(item.validationResult as {review?:{code:string;detail?:string}[]}|null)?.review??[];
  let telegram=false;try{assertManualSendEnabled(process.env);readPublisherEnv();telegram=true;}catch{}
  const {ready,showEditor,showTechnical}=newsroomView(item,query.edit==='1',user.role);

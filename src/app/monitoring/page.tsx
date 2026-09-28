@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import {requireUser} from '@/lib/session';
+import {requirePageAccess} from '@/lib/session';
 import {db} from '@/lib/db';
 import {readDatabase} from '@/lib/queries';
 import {monitoringFeed, monitoringHref, monitoredSource, monitoredText} from '@/lib/monitoring-feed';
@@ -10,7 +10,7 @@ import {date} from '@/lib/labels';
 import {safeSourceUrl} from '@/lib/domain';
 
 export default async function MonitoringPage({searchParams}: PageProps) {
-  await requireUser(true);
+  await requirePageAccess('/monitoring');
   const params = await searchParams;
   const source = typeof params.source === 'string' ? params.source : undefined;
   const before = typeof params.before === 'string' ? params.before : undefined;

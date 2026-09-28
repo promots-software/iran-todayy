@@ -2,7 +2,7 @@ import {AutoPublishPanel} from '@/components/auto-publish-panel';
 import {Fragment} from 'react';
 import Link from 'next/link';
 import {randomUUID} from 'node:crypto';
-import {requireSuperAdmin} from '@/lib/session';
+import {requirePageAccess} from '@/lib/session';
 import {db} from '@/lib/db';
 import {operationsSnapshot,record,safeCode} from '@/lib/operations';
 import {PageTitle,Badge} from '@/components/ui';
@@ -17,7 +17,7 @@ const duration=(n:number|null)=>n===null?'غير مقاس':`${(n/1000).toFixed(1
 function Facts({rows}:{rows:[string,React.ReactNode][]}){return <dl className="facts">{rows.map(([name,value])=><Fragment key={name}><dt>{name}</dt><dd>{value}</dd></Fragment>)}</dl>;}
 function Control(p:Omit<Parameters<typeof OperationControl>[0],'requestId'>){return <OperationControl {...p} requestId={randomUUID()}/>;}
 export default async function OperationsPage(){
- await requireSuperAdmin();const s=await operationsSnapshot(db),cost=s.queue.capacity.cost;
+ await requirePageAccess('/operations');const s=await operationsSnapshot(db),cost=s.queue.capacity.cost;
  const flags=['AUTO_PUBLISH','SHADOW_MODE','REQUIRE_APPROVAL','TELEGRAM_PUBLISH_ENABLED'] as const;
  return <><PageTitle title="مركز العمليات" description={`قراءة فعلية حتى ${date(s.at)}. فتح الصفحة لا يعيد معالجة الأخبار ولا يرسلها.`}/><OperationsRefresh/>
  <nav className="filters">{[['alerts','التنبيهات'],['health','الصحة'],['pipeline','الأخبار'],['cost','الذكاء والكلفة'],['sources','المصادر'],['queue','المعالجة'],['publishing','النشر'],['activity','السجل']].map(([id,label])=><a key={id} href={`#${id}`}>{label}</a>)}</nav>

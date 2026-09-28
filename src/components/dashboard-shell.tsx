@@ -4,10 +4,10 @@ import {ThemeToggle} from './theme-toggle';
 import {SidebarLink} from './sidebar-link';
 import {usePathname} from 'next/navigation';
 import {logoutAction} from '@/app/login/actions';
-import {allowed,roleLabel,type Role} from '@/lib/dashboard-permissions';
+import {visibleDashboardRoutes,roleLabel,type Role} from '@/lib/dashboard-permissions';
 const subscribe=(listener:()=>void)=>{window.addEventListener('storage',listener);window.addEventListener('themechange',listener);return()=>{window.removeEventListener('storage',listener);window.removeEventListener('themechange',listener);};};
 const snapshot=()=>localStorage.getItem('theme')??(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-const routes=[['/','نظرة عامة'],['/sources','المصادر'],['/monitoring','رصد'],['/approvals','الموافقات'],['/review','المراجعات'],['/published','الأخبار المنشورة'],['/filtered','المستبعد والمرفوض'],['/events','الأخبار المكررة'],['/processing','سجل المعالجة'],['/logs','سجل العمليات'],['/settings','الإعدادات'],['/system','حالة النظام'],['/operations','مركز العمليات']];
+
 export function DashboardShell({user,children}:{user:{displayName:string;role:Role}|null;children:React.ReactNode}){
  const path=usePathname(),[open,setOpen]=useState(false);
  const drawer=useRef<HTMLElement>(null),menuButton=useRef<HTMLButtonElement>(null);
@@ -19,6 +19,6 @@ export function DashboardShell({user,children}:{user:{displayName:string;role:Ro
  const control=<ThemeToggle dark={dark} onToggle={theme}/>;
  if(!user||path==='/login')return <>{control}{children}</>;
  return <div className="app-shell"><a className="skip" href="#main">انتقل إلى المحتوى</a>{open&&<button className="drawer-backdrop" aria-label="إغلاق القائمة" onClick={()=>setOpen(false)}/>}
- <aside ref={drawer} id="navigation" className={`sidebar ${open?'drawer-open':''}`}><div className="brand"><strong>منصة إيران الآن</strong></div><button className="mobile-only secondary" onClick={()=>setOpen(false)}>إغلاق القائمة</button><nav aria-label="القائمة الرئيسية">{routes.filter(([href])=>allowed(user.role,href)).map(([href,label])=><SidebarLink onNavigate={()=>setOpen(false)} active={path===href} href={href} label={label} key={href}/>)}</nav><form className="logout" action={logoutAction}><button className="secondary">تسجيل الخروج</button></form></aside>
+ <aside ref={drawer} id="navigation" className={`sidebar ${open?'drawer-open':''}`}><div className="brand"><strong>منصة إيران الآن</strong></div><button className="mobile-only secondary" onClick={()=>setOpen(false)}>إغلاق القائمة</button><nav aria-label="القائمة الرئيسية">{visibleDashboardRoutes(user.role).map(([href,label])=><SidebarLink onNavigate={()=>setOpen(false)} active={path===href} href={href} label={label} key={href}/>)}</nav><form className="logout" action={logoutAction}><button className="secondary">تسجيل الخروج</button></form></aside>
  <div className="workspace"><header className="topbar"><button ref={menuButton} className="mobile-only secondary" aria-controls="navigation" aria-expanded={open} onClick={()=>setOpen(!open)}>القائمة</button><span className="topbar-note"><span className="avatar">{user.displayName.slice(0,1)}</span>{user.displayName} · {roleLabel(user.role)}</span>{control}</header><main id="main"><p className="dashboard-welcome">مرحبا بعودتك، <bdi>{user.displayName}</bdi></p>{children}</main><footer>منصة إيران الآن · جميع الأوقات بتوقيت بيروت</footer></div></div>;
 }

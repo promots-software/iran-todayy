@@ -1,6 +1,6 @@
 import {autoPolicySchema} from '@/lib/telegram/auto-policy';
 import {SourceProcessingModeForm} from "@/components/source-processing-mode";
-import {requireUser} from "@/lib/session";
+import {requirePageAccess} from "@/lib/session";
 import { SourceProfileForm } from "@/components/source-profile-form";
 import { db } from "@/lib/db";
 import { readDatabase } from "@/lib/queries";
@@ -8,7 +8,7 @@ import { date } from "@/lib/labels";
 import { AddSourceForm, SourceControls } from "@/components/forms";
 import { PageTitle, DatabaseNotice, SourceLink, EmptyState } from "@/components/ui";
 export default async function SourcesPage() {
- await requireUser(true);
+ await requirePageAccess('/sources');
   const result = await readDatabase(() => db.source.findMany({ where: { deletedAt: null }, orderBy: [{ platform: "asc" }, { createdAt: "asc" }] }));
   const settings=await readDatabase(()=>db.appSettings.findUnique({where:{id:1},select:{telegramAutoPolicy:true}}));
   const policy=autoPolicySchema.safeParse(settings.available?settings.data?.telegramAutoPolicy:null);

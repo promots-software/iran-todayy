@@ -1,13 +1,13 @@
 import {workerIsProduction} from '@/lib/operations';
 import {queueHealth} from '@/lib/queue-health';
-import {requireUser} from "@/lib/session";
+import {requirePageAccess} from "@/lib/session";
 import { db } from "@/lib/db";
 import { readDatabase } from "@/lib/queries";
 import { workerIsStale } from "@/lib/domain";
 import { date } from "@/lib/labels";
 import { PageTitle, DatabaseNotice, Badge } from "@/components/ui";
 export default async function SystemPage() {
- await requireUser(true);
+ await requirePageAccess('/system');
   const result = await readDatabase(async () => {
     const [workers, jobs] = await Promise.all([db.workerHeartbeat.findMany({ orderBy: { lastSeenAt: "desc" } }), db.processingJob.groupBy({ by: ["status"], _count: true })]);
     return { workers, jobs, queue:await queueHealth(db) };
