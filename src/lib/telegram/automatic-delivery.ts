@@ -32,9 +32,8 @@ export async function automaticDeliveryCycle(db:PrismaClient,env:Record<string,s
   await lockEditorialPublication(tx);
   const current=await tx.appSettings.findUniqueOrThrow({where:{id:1}});if(current.publishingPaused)return null;
   const p=requireAutoPolicy(current.telegramAutoPolicy,env);if(p.id!==policy.id)return null;
-  const owned=await tx.publication.findMany({where:{automaticPolicyId:p.id},select:{id:true,status:true,newsItemId:true},orderBy:{createdAt:'asc'}});
-  if(p.state==='CANARY'&&owned.some(x=>x.status==='SENT'))return null;
-  if(owned.some(x=>['SENDING','UNKNOWN','FAILED'].includes(x.status)))return null;
+  if(await tx.publication.findFirst({where:{automaticPolicyId:p.id,status:{in:p.state==='CANARY'?['SENT','SENDING','UNKNOWN','FAILED']:['SENDING','UNKNOWN','FAILED']}},select:{id:true}}))return null;
+  const owned=await tx.publication.findMany({where:{automaticPolicyId:p.id,status:'PENDING',...(candidateId?{newsItemId:candidateId}:{})},select:{id:true,status:true,newsItemId:true},orderBy:{createdAt:'asc'}});
   for(const pending of owned.filter(x=>x.status==='PENDING'&&(!candidateId||x.newsItemId===candidateId))){
    if(!pending.newsItemId)continue;
    const item=await tx.newsItem.findUniqueOrThrow({where:{id:pending.newsItemId},include});
@@ -42,7 +41,7 @@ export async function automaticDeliveryCycle(db:PrismaClient,env:Record<string,s
   }
   let cursor:string|undefined;
   do {
-  const items=await tx.newsItem.findMany({where:{status:'PENDING_APPROVAL',validationStatus:'PASSED',humanDraft:null,publication:null,createdAt:{gte:new Date(p.notBefore)},...(candidateId?{id:candidateId}:p.state==='CANARY'?{id:p.canaryCandidateId!}:{})},include,orderBy:{id:'asc'},take:100,...(cursor?{cursor:{id:cursor},skip:1}:{})});
+  const items=await tx.newsItem.findMany({where:{status:'PENDING_APPROVAL',validationStatus:'PASSED',humanDraft:null,publication:null,createdAt:{gte:new Date(p.notBefore)},...(candidateId?{id:candidateId}:p.state==='CANARY'?{id:p.canaryCandidateId!}:{})},select:{id:true,evidence:{select:{sourcePost:{select:{sourceId:true}}}}},orderBy:{id:'asc'},take:100,...(cursor?{cursor:{id:cursor},skip:1}:{})});
   for(const item of items){
    for(const sourceId of [...new Set(item.evidence.map(e=>e.sourcePost.sourceId))].sort())await tx.$queryRaw`SELECT id FROM "Source" WHERE id=${sourceId} FOR SHARE`;
    const fresh=await tx.newsItem.findUniqueOrThrow({where:{id:item.id},include});if(!eligibleAutomatic(fresh,p))continue;

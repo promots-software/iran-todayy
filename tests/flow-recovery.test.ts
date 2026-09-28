@@ -7,7 +7,7 @@ import {ingest,claimJob} from '../src/lib/processing/engine';
 const snapshot=(now:number)=>({observedAt:now,state:'AVAILABLE',quotas:{reason:null},costRolling24hUsd:1.1} as Awaited<ReturnType<typeof providerCapacitySnapshot>>);
 test('cost wait reconsideration needs fresh healthy capacity and conservative headroom',()=>{
  const now=Date.now(),s=snapshot(now);
- assert.equal(costWaitRecheckBefore(s,now)?.getTime(),now);
+ assert.equal(costWaitRecheckBefore(s,now)?.getTime(),now-300000);
  assert.equal(limits.dayReservedUsd,2);
  for(const x of [null,{...s,state:'CAPACITY_WAIT'},{...s,quotas:{...s.quotas,reason:'PROVIDER_RPD_WAIT'}},{...s,observedAt:now-60001},{...s,observedAt:now+1},{...s,costRolling24hUsd:2.99}])assert.equal(costWaitRecheckBefore(x,now),undefined);
 });

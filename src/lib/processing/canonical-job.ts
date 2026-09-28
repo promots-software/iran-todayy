@@ -1,3 +1,4 @@
+import {canonicalEventSnapshot as snapshot} from './canonical-event-snapshot';
 import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
 import {Prisma,type PrismaClient} from '@prisma/client';
 import {runCanonicalFlow,assertCanonicalApproval,canonicalDigest,failedSections} from './canonical-flow';
@@ -6,15 +7,9 @@ import {ProcessingError,type LanguageProvider,type Understanding,type EventData}
 import {processingSource} from './processing-source';
 import {sourceInputLanguage} from './source-language';
 import {ruleSet} from './rules';
-import {retrieveCanonicalCandidates,type RetrievalCandidate} from './canonical-retrieval';
+import {retrieveCanonicalCandidates} from './canonical-retrieval';
 import type {ClaimedJob} from './engine';
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
-const snapshot=async(db:Pick<Prisma.TransactionClient,'canonicalEvent'>)=>{
- const rows=await db.canonicalEvent.findMany({select:{id:true,createdAt:true,revisions:{orderBy:{revision:'desc'},take:1,select:{id:true,revision:true,facts:true,newsItem:{select:{publication:{select:{status:true}}}},matches:{orderBy:[{createdAt:'asc'},{id:'asc'}],take:1,select:{sourcePost:{select:{sourcePublishedAt:true}}}}}}}});
- const {eventSchema}=await import('./contracts');const candidates:RetrievalCandidate[]=[];let legacy=0;
- for(const row of rows){const r=row.revisions[0],facts=eventSchema.safeParse(r?.facts);if(!r||!facts.success){legacy++;continue;}candidates.push({id:row.id,createdAt:row.createdAt,revisionId:r.id,revision:r.revision,data:facts.data,publishedAt:r.matches[0]?.sourcePost.sourcePublishedAt??row.createdAt,published:r.newsItem?.publication?.status==='SENT'});}
- candidates.sort((a,b)=>a.id<b.id?-1:a.id>b.id?1:0);return {candidates,legacy,key:canonicalDigest({candidates,legacy})};
-};
 /** Staging-only adapter: whole-source provenance is application-owned. It is
  * not a claim of independently verified truth or a fabricated excerpt. */
 export async function runCanonicalJob(db:PrismaClient,job:ClaimedJob,provider:LanguageProvider,signal:AbortSignal,mode:'NORMAL'|'DIRECT'){
