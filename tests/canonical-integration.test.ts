@@ -23,7 +23,7 @@ test('canonical staging DB: approved -> dedup -> unchanged manual/automatic free
    let corrections=0;const stages:string[]=[];
    const provider:LanguageProvider={id:'offline-canonical',live:false,generationFirst:true,understand:noLegacy,draft:noLegacy,compare:noLegacy,canonicalRequest:async request=>{
     stages.push(request.stage);
-    if(request.stage==='canonical_intake')return {iranRelated:true,rationale:'طهران'};
+    if(request.stage==='canonical_intake')return {newsValue:'KEEP',newsValueRationale:'Offline existing downstream routing fixture',iranRelated:true,rationale:'طهران'};
     if(request.stage==='canonical_generate'||request.stage==='canonical_correct'){if(request.stage==='canonical_correct')corrections++;return {title:'إيران الآن | افتتاح مكتبة في طهران',body:content};}
     if(request.stage==='canonical_check')return check(failed);
     if(relation==='BROKEN')return {matches:{}};

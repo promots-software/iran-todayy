@@ -1,9 +1,10 @@
+import {newsValueIntakeSchema,newsValueInstructions,newsValueFilterReason,type NewsValueIntake} from './news-value';
 import {stableJson} from './structural-integrity';
 import {createHash} from 'node:crypto';
 import {z} from 'zod';
 import {ProcessingError} from './contracts';
 import {EDITORIAL_CONTRACT_SHA256,withEditorialContract} from './editorial-contract';
-import {usableSourceContent,intakeSchema,intakeInstructions} from './pre-generation';
+import {usableSourceContent,intakeInstructions} from './pre-generation';
 
 export const canonicalArticleSchema=z.object({title:z.string().min(1).max(20000),body:z.string().max(20000)}).strict();
 export type CanonicalArticle=z.infer<typeof canonicalArticleSchema>;
@@ -16,7 +17,7 @@ export type CanonicalRequest={stage:'canonical_intake'|'canonical_generate'|'can
 export type CanonicalTransport=(request:CanonicalRequest)=>Promise<unknown>;
 export const canonicalDigest=(value:unknown)=>createHash('sha256').update(stableJson(value)).digest('hex');
 export type CanonicalCycle={cycle:0|1|2;article:CanonicalArticle;check:CanonicalCheck};
-export type CanonicalResult={version:'canonical-forty-v1'|'canonical-forty-v2';contractHash:string;sourceHash:string;articleHash:string|null;status:'APPROVED'|'NEEDS_REVIEW'|'FILTERED';cycles:CanonicalCycle[]};
+export type CanonicalResult={version:'canonical-forty-v1'|'canonical-forty-v2';contractHash:string;sourceHash:string;articleHash:string|null;status:'APPROVED'|'NEEDS_REVIEW'|'FILTERED';cycles:CanonicalCycle[];intake?:NewsValueIntake;filterReason?:'UNRELATED_TO_IRAN'|'LOW_NEWS_VALUE'};
 
 // Execution guidance applies the unchanged contract; examples inside the contract
 // are never source facts. The article is title + body, not two separate articles.
@@ -33,7 +34,7 @@ Apply all 40 unchanged canonical sections at this publication tolerance; do not 
 For every FAIL, the defect must concisely state SOURCE CORE NEWS, ARTICLE CORE NEWS and WHY THE READER NOW UNDERSTANDS SUBSTANTIALLY DIFFERENT NEWS. If that cannot be clearly explained, PASS. Give only the correction required for that blocking defect. PASS/NOT_APPLICABLE rows have empty defects arrays.
 Return the existing receipt schema. sourceQuote and articleQuote must each be a literal contiguous excerpt from its own text; use null only for a genuinely absent side. Never concatenate distant excerpts or headline/body into one quote. Never invent a quote or a defect. A real quote that does not support a major core-news criticism is not grounds for FAIL. Do not fabricate criticism to fill a section.`);
 const correctionInstructions=withEditorialContract(`Correct all diagnosed major CORE NEWS defects, not harmless editorial differences or unrelated content. ${sourceBoundary} ${articleBoundary} Use frozenSource, currentArticle and exact failed-section observations. Return complete title/body. Preserve natural Arabic and supported core news. Do not turn a correction instruction into a new fact. Do not repair secondary omissions, minor interpretations or stylistic differences that leave the core story unchanged.`);
-const canonicalIntakeInstructions=intakeInstructions+` Use ONLY the supplied text, never remembered biography, alliances or regional affiliations of a speaker/group. An Iraq/Palestine/Lebanon story is not Iran-related merely because its speaker is believed to have ties to Iran. Identify the direct material Iran connection stated in the event/claim itself. A hashtag used as the grammatical subject of substantive source text can identify Iran; standalone metadata cannot. If establishing the connection needs external knowledge, return false.`;
+const canonicalIntakeInstructions=intakeInstructions.replace('Decide ONLY whether','First decide whether').replace('Accept any topic when this substantive connection is established.','Establish relevance independently of editorial news value.').replace('assess newsworthiness, ','')+newsValueInstructions+` Use ONLY the supplied text, never remembered biography, alliances or regional affiliations of a speaker/group. An Iraq/Palestine/Lebanon story is not Iran-related merely because its speaker is believed to have ties to Iran. Identify the direct material Iran connection stated in the event/claim itself. A hashtag used as the grammatical subject of substantive source text can identify Iran; standalone metadata cannot. If establishing the connection needs external knowledge, return false.`;
 
 /** Envelope coherence only. Semantic judgments remain those of the canonical check. */
 export function validateCanonicalCheck(raw:unknown,source?:string,article?:CanonicalArticle):CanonicalCheck{
@@ -57,9 +58,11 @@ export function failedSections(check:CanonicalCheck){
  * provider failures never authorize or increment an editorial correction. */
 export async function runCanonicalFlow(source:string,request:CanonicalTransport,observe:(cycle:CanonicalCycle)=>Promise<void>=async()=>{}):Promise<CanonicalResult>{
  if(!usableSourceContent(source))throw new ProcessingError('SOURCE_TEXT_REQUIRED');
- const base={version:'canonical-forty-v2' as const,contractHash:EDITORIAL_CONTRACT_SHA256,sourceHash:canonicalDigest(source)};
- const intake=intakeSchema.parse(await request({stage:'canonical_intake',schema:intakeSchema,instructions:canonicalIntakeInstructions,input:{source}}));
- if(!intake.iranRelated)return {...base,articleHash:null,status:'FILTERED',cycles:[]};
+ const binding={version:'canonical-forty-v2' as const,contractHash:EDITORIAL_CONTRACT_SHA256,sourceHash:canonicalDigest(source)};
+ const intake=newsValueIntakeSchema.parse(await request({stage:'canonical_intake',schema:newsValueIntakeSchema,instructions:canonicalIntakeInstructions,input:{source}}));
+ const base={...binding,intake};
+ const filterReason=newsValueFilterReason(intake);
+ if(filterReason)return {...base,filterReason,articleHash:null,status:'FILTERED',cycles:[]};
  let article=canonicalArticleSchema.parse(await request({stage:'canonical_generate',schema:canonicalArticleSchema,instructions:generationInstructions,input:{frozenSource:{text:source}}}));
  const cycles:CanonicalCycle[]=[];
  for(const cycle of [0,1,2] as const){

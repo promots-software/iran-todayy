@@ -16,7 +16,7 @@ const cases=[
 for(const [name,body,block] of cases)test('owner publication semantics: '+name,async()=>{
  const article={title:'إيران الآن | موقف من المحادثات',body};const seen:CanonicalRequest[]=[];
  const receipt={sections:Object.fromEntries(Array.from({length:40},(_,i)=>[String(i+1),{status:block&&i===39?'FAIL':'PASS',defects:block&&i===39?[{defect:'Central event/speaker/position differs from the confirmed agreement in SOURCE.',correction:'Restore the confirmed Iranian agreement to begin talks.',sourceQuote:source,articleQuote:body}]:[]}]))};
- const result=await runCanonicalFlow(source,async r=>{seen.push(r);if(r.stage==='canonical_intake')return {iranRelated:true,rationale:'Iranian foreign ministry'};if(r.stage==='canonical_generate'||r.stage==='canonical_correct')return article;return receipt;});
+ const result=await runCanonicalFlow(source,async r=>{seen.push(r);if(r.stage==='canonical_intake')return {newsValue:'KEEP',newsValueRationale:'Offline existing downstream routing fixture',iranRelated:true,rationale:'Iranian foreign ministry'};if(r.stage==='canonical_generate'||r.stage==='canonical_correct')return article;return receipt;});
  assert.equal(result.status,block?'NEEDS_REVIEW':'APPROVED');assert.equal(seen.filter(r=>r.stage==='canonical_correct').length,block?2:0);assert.equal(seen.filter(r=>r.stage==='canonical_check').length,block?3:1);
  if(!block)assertCanonicalApproval(result,source,article);
  for(const r of seen.filter(r=>r.stage!=='canonical_intake'))assert.ok(r.instructions.includes(editorialContract));

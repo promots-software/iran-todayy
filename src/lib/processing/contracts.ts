@@ -44,7 +44,7 @@ export const understandingSchema = z.object({
   semanticCoverage:directCoverageSchema.optional(),
   normalContentType:z.enum(["NEWS","PURE_PROMO","UNCERTAIN"]).optional(),
   language: z.string().min(2).max(35), relevance: z.enum(["POLITICAL_NEWS", "IRRELEVANT", "UNCERTAIN"]),
-  filterReason: z.enum(["NONE", "UNRELATED", "UNRELATED_TO_IRAN", "NON_NEWS_PROMO", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
+  filterReason: z.enum(["NONE", "UNRELATED", "UNRELATED_TO_IRAN", "LOW_NEWS_VALUE", "NON_NEWS_PROMO", "ADVERTISING", "SPORT", "ENTERTAINMENT", "SATIRE", "RUMOUR", "OPINION", "INCITEMENT"]),
   topic: z.enum(["IRAN_DOMESTIC", "DEFENCE", "NUCLEAR", "REGION", "GULF", "WEST", "ISRAEL", "GREAT_POWERS", "SECURITY", "HISTORY", "UNKNOWN"]),
   priority: z.enum(["P1", "P2", "P3", "P4"]), rationale: text, event: eventSchema,
   names: z.array(z.object({ arabic: text, kind: z.enum(["person", "place", "institution"]), evidence: evidenceSchema }).strict()),

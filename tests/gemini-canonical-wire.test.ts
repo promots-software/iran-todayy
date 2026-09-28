@@ -32,7 +32,7 @@ test('actual native compact checks preserve V0/R1/R2, full 40 rechecks, full con
   const body=JSON.parse(String(init?.body)),input=JSON.parse(body.contents[0].parts[0].text),isCheck=!!body.generationConfig.responseJsonSchema.properties.statuses;
   assert.equal(body.generationConfig.maxOutputTokens,4096);assert.deepEqual(body.generationConfig.thinkingConfig,{thinkingBudget:0});
   let output:unknown;
-  if('source'in input){stages.push('intake');output={iranRelated:true,rationale:'Iran'};}
+  if('source'in input){stages.push('intake');output={newsValue:'KEEP',newsValueRationale:'Offline existing downstream routing fixture',iranRelated:true,rationale:'Iran'};}
   else{assert(body.systemInstruction.parts[0].text.includes(editorialContract));if(isCheck){stages.push('check');checks++;const c=check();c.sections['1']={status:'FAIL',defects:[defect]};c.sections['40']={status:'FAIL',defects:[defect]};output=encodeCompactCanonicalReceipt(c);}else{stages.push(input.currentArticle?'repair':'generate');if(input.currentArticle)diagnoses.push(input.failures);output={title:'added',body:'source'};}}
   return Response.json({candidates:[{finishReason:'STOP',content:{parts:[{text:JSON.stringify(output)}]}}],usageMetadata:{promptTokenCount:0,candidatesTokenCount:0}});
  },()=>{},true);
