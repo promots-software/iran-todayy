@@ -1,3 +1,4 @@
+import {assertCanonicalEnvironment} from '../canonical-environment';
 import {canonicalEventSnapshot as snapshot} from './canonical-event-snapshot';
 import {EDITORIAL_CONTRACT_SHA256} from './editorial-contract';
 import {Prisma,type PrismaClient} from '@prisma/client';
@@ -10,12 +11,14 @@ import {ruleSet} from './rules';
 import {retrieveCanonicalCandidates} from './canonical-retrieval';
 import type {ClaimedJob} from './engine';
 const json=(v:unknown):Prisma.InputJsonValue=>JSON.parse(JSON.stringify(v));
-/** Staging-only adapter: whole-source provenance is application-owned. It is
+/** Canonical adapter: whole-source provenance is application-owned. It is
  * not a claim of independently verified truth or a fabricated excerpt. */
 export async function runCanonicalJob(db:PrismaClient,job:ClaimedJob,provider:LanguageProvider,signal:AbortSignal,mode:'NORMAL'|'DIRECT'){
- if(process.env.IRAN_TODAY_ENVIRONMENT!=='staging'||!provider.canonicalRequest)throw new ProcessingError('STAGING_CANONICAL_FLOW_REQUIRED');
+ assertCanonicalEnvironment();
+ if(!provider.canonicalRequest)throw new ProcessingError('CANONICAL_PROVIDER_REQUIRED');
+ const actor=process.env.IRAN_TODAY_ENVIRONMENT==='production'?'production-worker':'staging-worker';
  const post=job.sourcePost,source=processingSource(post),request=(r:Parameters<NonNullable<LanguageProvider['canonicalRequest']>>[0])=>provider.canonicalRequest!(r,signal);
- const canonical=await runCanonicalFlow(source,request,async cycle=>{await db.auditLog.create({data:{action:'CANONICAL_SECTION_CHECK',actor:'staging-worker',entityType:'SourcePost',entityId:post.id,message:'Complete canonical editorial check',metadata:json({cycle:cycle.cycle,contractHash:EDITORIAL_CONTRACT_SHA256,articleHash:canonicalDigest(cycle.article),check:cycle.check})}});});
+ const canonical=await runCanonicalFlow(source,request,async cycle=>{await db.auditLog.create({data:{action:'CANONICAL_SECTION_CHECK',actor,entityType:'SourcePost',entityId:post.id,message:'Complete canonical editorial check',metadata:json({cycle:cycle.cycle,contractHash:EDITORIAL_CONTRACT_SHA256,articleHash:canonicalDigest(cycle.article),check:cycle.check})}});});
  try {
  const article=canonical.cycles.at(-1)?.article;
  if(canonical.status==='APPROVED')assertCanonicalApproval(canonical,source,article!);
@@ -23,7 +26,7 @@ export async function runCanonicalJob(db:PrismaClient,job:ClaimedJob,provider:La
  const retrievedAt=new Date();
  const retrieval=before?retrieveCanonicalCandidates({source,draft:article!.title+'\n'+article!.body,publishedAt:post.sourcePublishedAt,now:retrievedAt,candidates:before.candidates}):null;
  const retrievalAudit=before&&retrieval?{version:retrieval.version,retrievedAt:retrievedAt.toISOString(),poolDigest:before.key,queryDigest:canonicalDigest({source,draft:article}),poolCount:before.candidates.length,baseRevisionIds:retrieval.base.map(i=>before.candidates[i].revisionId),selectedRevisionIds:retrieval.candidates.map(c=>c.revisionId)}:null;
- if(retrievalAudit)await db.auditLog.create({data:{action:'CANONICAL_MATCH_RETRIEVAL',actor:'staging-worker',entityType:'SourcePost',entityId:post.id,message:'Deterministic retrieval before semantic matching',metadata:json(retrievalAudit)}});
+ if(retrievalAudit)await db.auditLog.create({data:{action:'CANONICAL_MATCH_RETRIEVAL',actor,entityType:'SourcePost',entityId:post.id,message:'Deterministic retrieval before semantic matching',metadata:json(retrievalAudit)}});
  const match=retrieval?await matchCanonicalArticle(source,post.sourcePublishedAt,retrieval.candidates,request,retrievalAudit!):null;
  if(match&&before?.legacy&&match.classification==='NEW_EVENT'){match.classification='UNCERTAIN_MATCH';match.rationale='Legacy event data cannot be safely compared';}
  signal.throwIfAborted();
@@ -61,7 +64,7 @@ export async function runCanonicalJob(db:PrismaClient,job:ClaimedJob,provider:La
   for(const id of links)await tx.eventMatch.upsert({where:{sourcePostId_eventRevisionId:{sourcePostId:post.id,eventRevisionId:id}},update:{},create:{sourcePostId:post.id,eventRevisionId:id,classification:match!.classification,rationale:match!.rationale,evidence:json(match!.evidence),matcherVersion:'canonical-source-v1'}});
   await tx.sourcePost.update({where:{id:post.id},data:{status,error:null,nextRetryAt:null,rejectionReason:filtered?filterReason:null,originalLanguage:extraction.language,relevance:extraction.relevance,relevanceResult:json({processingMode:mode,intake:canonical.intake??null}),processingResult:json({processingMode:mode,...decision,retrieval:retrievalAudit,validated:canonical.status==='APPROVED',canonicalApproval:canonical,editorialStatus:canonical.status,classification:match?.classification??null,eventRevisionId:revisionId??null,extraction,draft,review,provider:'canonical-forty-v1',acceptance:{version:'iran-acceptance-v1',mode,accepted:!filtered}})}});
   await tx.processingJob.update({where:{id:job.id},data:{status:'COMPLETED',lockedAt:null,lockedBy:null,lastError:null}});
-  await tx.auditLog.create({data:{action:'CANONICAL_PROCESSING_DECISION',actor:'staging-worker',entityType:'SourcePost',entityId:post.id,message:'Canonical editorial decision followed by operational matching',metadata:json({status,filterReason,intake:canonical.intake??null,retrieval:retrievalAudit,editorialStatus:canonical.status,cycles:canonical.cycles.length,classification:match?.classification??null,newsItemId:newsItemId??null,failedSections:failed?failedSections(canonical.cycles.at(-1)!.check):[]})}});
+  await tx.auditLog.create({data:{action:'CANONICAL_PROCESSING_DECISION',actor,entityType:'SourcePost',entityId:post.id,message:'Canonical editorial decision followed by operational matching',metadata:json({status,filterReason,intake:canonical.intake??null,retrieval:retrievalAudit,editorialStatus:canonical.status,cycles:canonical.cycles.length,classification:match?.classification??null,newsItemId:newsItemId??null,failedSections:failed?failedSections(canonical.cycles.at(-1)!.check):[]})}});
   return {postId:post.id,filtered};
  },{timeout:30000,maxWait:5000});
  }catch(error){

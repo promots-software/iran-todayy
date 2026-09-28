@@ -1,3 +1,4 @@
+import {usesCanonicalPipeline} from '../canonical-environment';
 import {stagingBatchSchema,batchRestriction,recordBatchClaim} from '../../worker/staging-batch';
 import {runCanonicalJob} from './canonical-job';
 import {canaryAdmission,canaryTargetSql,stagingCanarySchema} from '../../worker/staging-canary';
@@ -206,7 +207,7 @@ async function runJob(client: PrismaClient, job: ClaimedJob, provider: LanguageP
       const source=await client.source.findUniqueOrThrow({where:{id:post.sourceId}});
       if (source.platform !== "TELEGRAM" || !source.enabled || source.deletedAt) throw new ProcessingError("LIVE_SOURCE_DISABLED");
     }
-    if(process.env.IRAN_TODAY_ENVIRONMENT==='staging'&&provider.generationFirst&&provider.canonicalRequest)return await runCanonicalJob(client,job,provider,signal,processingMode);
+    if(usesCanonicalPipeline(provider))return await runCanonicalJob(client,job,provider,signal,processingMode);
     const generatedInput=provider.generationFirst?await provider.prepareGeneration!({content},signal,async event=>{await audit(client,post.id,event.generationRequired&&!event.articleReturned&&event.causeCode?'IRAN_RELATED_STORY_DID_NOT_REACH_GENERATION':'PRE_GENERATION','Staging generation-order diagnostic',event);}):undefined;
     if(!content.trim())throw new ProcessingError('SOURCE_TEXT_REQUIRED');
     if(processingMode==='DIRECT') {

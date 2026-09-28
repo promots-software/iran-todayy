@@ -1,3 +1,4 @@
+import {assertCanonicalEnvironment} from '../canonical-environment';
 import {isDeepStrictEqual} from 'node:util';
 import {assertCanonicalApproval,type CanonicalResult,canonicalDigest} from '../processing/canonical-flow';
 import {eventSchema,ProcessingError,validateUnderstanding} from '../processing/contracts';
@@ -8,7 +9,7 @@ export type CanonicalPublicationItem={title:string;arabicContent:string|null;eve
  * through a second editorial model or legacy editorial receipt validator. */
 export function canonicalPublicationFacts(item:CanonicalPublicationItem){
  const approval=record(item.validationResult).canonicalApproval;if(!approval)return null;
- if(process.env.IRAN_TODAY_ENVIRONMENT!=='staging')throw new ProcessingError('STAGING_CANONICAL_FLOW_REQUIRED');
+ assertCanonicalEnvironment();
  const current=eventSchema.shape.facts.parse(item.factualEvidence);
  if(current.length!==1)throw new ProcessingError('FACT_EVIDENCE_CHANGED');
  const post=item.evidence.find(e=>e.sourcePost.id===current[0].evidence.sourcePostId)?.sourcePost;
