@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {randomUUID} from 'node:crypto';
 import {readFileSync} from 'node:fs';
 import {PrismaClient} from '@prisma/client';
-import {newsPage,unresolvedPage,pageNumber,pageHref,pageWindow} from '../src/lib/dashboard-pagination';
+import {dashboardReadTransactionOptions,newsPage,unresolvedPage,pageNumber,pageHref,pageWindow} from '../src/lib/dashboard-pagination';
 import {readEditorialState} from '../src/lib/processing/editorial-eligibility';
 import {allowed} from '../src/lib/dashboard-permissions';
 test('page input and independent list navigation are bounded and retain other pages',()=>{
@@ -35,4 +35,13 @@ test('database pagination: over 100 review/approval rows, pre-limit eligibility,
   const seen:string[]=[];let pages=1;for(let p=1;p<=pages;p++){const r=await unresolvedPage(db,p);pages=r.pages;seen.push(...r.items.map(x=>x.id));}assert.equal(new Set(seen).size,seen.length);for(const id of expectedReady.slice(1))assert(seen.includes(id));
   assert.deepEqual((await newsPage(db,'approval',1)).items.map(x=>x.id),(await newsPage(db,'approval',1)).items.map(x=>x.id));
  }finally{await db.newsEvidence.deleteMany({where:{newsItemId:{in:ids}}});await db.sourcePost.deleteMany({where:{sourceId:tag}});await db.newsItem.deleteMany({where:{id:{in:ids}}});await db.eventRevision.deleteMany({where:{id:{in:ids}}});await db.canonicalEvent.deleteMany({where:{id:{in:ids}}});await db.source.deleteMany({where:{id:tag}});await db.$disconnect();}
+});
+
+test('dashboard reads tolerate bounded pool contention and retain snapshot isolation',async()=>{
+ assert.deepEqual(dashboardReadTransactionOptions,{isolationLevel:'RepeatableRead',maxWait:20_000,timeout:15_000});
+ const observed:unknown[]=[];
+ const fake={$transaction:async(_callback:unknown,options:unknown)=>{observed.push(options);return {};}} as unknown as PrismaClient;
+ await newsPage(fake,'approval',1);await newsPage(fake,'review',1);await unresolvedPage(fake,1);
+ assert.equal(observed.length,3);for(const options of observed)assert.equal(options,dashboardReadTransactionOptions);
+ assert(readFileSync('src/components/human-editorial-panel.tsx','utf8').includes('},dashboardReadTransactionOptions)'));
 });
