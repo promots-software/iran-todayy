@@ -1,0 +1,11 @@
+import fs from 'node:fs';import path from 'node:path';import {spawn,spawnSync} from 'node:child_process';
+const root=process.cwd(),dir=path.join(root,'.test-tools/sidebar-navigation-fixture');fs.mkdirSync(path.join(dir,'app/[slug]'),{recursive:true});
+fs.copyFileSync('src/components/sidebar-link.tsx',path.join(dir,'sidebar-link.tsx'));
+fs.writeFileSync(path.join(dir,'package.json'),JSON.stringify({private:true}));
+if(!fs.existsSync(path.join(dir,'node_modules')))fs.symlinkSync(path.join(root,'node_modules'),path.join(dir,'node_modules'),'junction');
+fs.writeFileSync(path.join(dir,'app/layout.tsx'),`import Shell from '../shell';export default function Layout({children}:{children:React.ReactNode}){return <html><body><Shell/>{children}</body></html>}`);
+fs.writeFileSync(path.join(dir,'shell.tsx'),`'use client';import {SidebarLink} from './sidebar-link';import {usePathname} from 'next/navigation';export default function Shell(){const p=usePathname();return <nav>{['/one','/two','/three'].map(h=><SidebarLink key={h} href={h} label={h} active={p===h} onNavigate={()=>{}}/>)}</nav>}`);
+fs.writeFileSync(path.join(dir,'app/[slug]/page.tsx'),`export const dynamic='force-dynamic';export default async function Page({params}:{params:Promise<{slug:string}>}){const {slug}=await params;await new Promise(r=>setTimeout(r,1800));return <main><h1>{slug}</h1></main>}`);
+fs.writeFileSync(path.join(dir,'playwright.config.cjs'),`module.exports={testDir:'../../tests/browser',testMatch:'sidebar-navigation.spec.ts',workers:1,retries:0,timeout:60000,use:{baseURL:'http://127.0.0.1:3199',channel:process.env.E2E_BROWSER_CHANNEL||'chrome',headless:true},reporter:'list'};`);
+const server=spawn(process.execPath,['node_modules/next/dist/bin/next','dev',dir,'--webpack','--hostname','127.0.0.1','--port','3199'],{cwd:root,stdio:'ignore',windowsHide:true});
+try{let ready=false;for(let i=0;i<60;i++){try{if((await fetch('http://127.0.0.1:3199/one')).ok){ready=true;break;}}catch{}await new Promise(r=>setTimeout(r,500));}if(!ready)throw Error('LOCAL_FIXTURE_NOT_READY');const result=spawnSync(process.execPath,['node_modules/@playwright/test/cli.js','test','--config',path.join(dir,'playwright.config.cjs')],{stdio:'inherit'});process.exitCode=result.status??1;}finally{server.kill();}
