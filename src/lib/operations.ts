@@ -1,4 +1,5 @@
 import type {PrismaClient} from '@prisma/client';
+import {operationsPosts} from './operations-posts';
 import {queueHealth,latencySummary} from './queue-health';
 import {workerIsStale} from './domain';
 export const productionWorkerIds=new Set(['telegram-production-worker','telegram-publisher-worker']);
@@ -28,7 +29,7 @@ export async function operationsSnapshot(db:PrismaClient,now=new Date()){
  const [workers,queue,settings,sources,posts,jobs,publications,activity,usage,failures,migrations,lastSent,totalPosts,totalNews,legacyPending]=await Promise.all([
   db.workerHeartbeat.findMany({orderBy:{lastSeenAt:'desc'}}),queueHealth(db),db.appSettings.findUnique({where:{id:1}}),
   db.source.findMany({where:{deletedAt:null},select:{id:true,name:true,handle:true,platform:true,enabled:true,processingMode:true,processingPaused:true,cursor:true,lastPollAt:true,lastError:true,posts:{orderBy:{ingestedAt:'desc'},take:1,select:{sourcePostId:true,ingestedAt:true}}}}),
-  db.sourcePost.findMany({where:{ingestedAt:{gte:today,lte:now}},select:{id:true,sourceId:true,status:true,relevanceResult:true,processingResult:true}}),
+  operationsPosts(db,today,now),
   db.processingJob.groupBy({by:['status','lastError'],_count:true}),db.publication.groupBy({by:['status','destination'],_count:true}),
   db.auditLog.findMany({orderBy:[{createdAt:'desc'},{id:'desc'}],take:60,select:{id:true,action:true,actor:true,entityType:true,entityId:true,createdAt:true,metadata:true}}),
   db.auditLog.findMany({where:{action:'AI_STAGE_USAGE',createdAt:{gte:since,lte:now}},select:{metadata:true}}),
@@ -37,7 +38,7 @@ export async function operationsSnapshot(db:PrismaClient,now=new Date()){
   db.publication.findFirst({where:{status:'SENT'},orderBy:{sentAt:'desc'},select:{id:true,sentAt:true,destination:true,telegramMessageId:true}}),db.sourcePost.count(),db.newsItem.count(),db.publication.count({where:{status:'PENDING',automaticPolicyId:null}}),
  ]);
  const counts:Record<string,number>={},modes:Record<string,number>={NORMAL:0,DIRECT:0,UNRECORDED:0};
- for(const p of posts){counts[p.status]=(counts[p.status]??0)+1;const mode=record(p.processingResult).processingMode??record(p.relevanceResult).processingMode;modes[mode==='DIRECT'||mode==='NORMAL'?mode:'UNRECORDED']++;}
+ for(const p of posts){counts[p.status]=(counts[p.status]??0)+1;const mode=p.processingMode??p.relevanceMode;modes[mode==='DIRECT'||mode==='NORMAL'?mode:'UNRECORDED']++;}
  const alerts:{severity:string;component:string;since:Date|null;message:string}[]=[];
  for(const w of workers)if(workerIsProduction(w.id)&&workerIsStale(w.lastSeenAt,w.intervalMs))alerts.push({severity:'WARNING',component:w.id,since:w.lastSeenAt,message:'النبضة متأخرة؛ تحقق من العامل قبل أي تدخل.'});
  for(const s of sources)if(s.enabled&&s.lastError)alerts.push({severity:'WARNING',component:s.handle,since:null,message:`آخر خطأ للمصدر: ${safeCode(s.lastError)}. وقت بدايته غير مسجل.`});
@@ -45,5 +46,5 @@ export async function operationsSnapshot(db:PrismaClient,now=new Date()){
  if(queue.capacity.cost.warning)alerts.push({severity:'WARNING',component:'Cost',since:null,message:'بلغت الكلفة المحسوبة حد التحذير؛ يشمل المجموع الحجوزات المعلقة.'});
  const uncertain=publications.filter(p=>['SENDING','UNKNOWN'].includes(p.status)).reduce((s,p)=>s+p._count,0);
  if(uncertain)alerts.push({severity:'CRITICAL',component:'Publishing',since:null,message:`${uncertain} عمليات إرسال تحتاج إلى تسوية؛ لا تُعد الإرسال.`});
- return {at:now,today,since,databaseMs,workers:workers.map(w=>({...w,production:workerIsProduction(w.id)})),queue,settings,sources:sources.map(s=>({...s,lastError:s.lastError?safeCode(s.lastError):null,postsToday:posts.filter(p=>p.sourceId===s.id).length})),counts,modes,totalToday:posts.length,materialUpdates:posts.filter(p=>record(p.processingResult).classification==='MATERIAL_UPDATE').length,jobs,publications,activity:activity.map(({metadata,...a})=>({...a,change:safeAuditChange(metadata)})),usage:usageSummary(usage),failures:failures.map(f=>({...f,lastError:safeCode(f.lastError)})),migrations,lastSent,totalPosts,totalNews,legacyPending,alerts};
+ return {at:now,today,since,databaseMs,workers:workers.map(w=>({...w,production:workerIsProduction(w.id)})),queue,settings,sources:sources.map(s=>({...s,lastError:s.lastError?safeCode(s.lastError):null,postsToday:posts.filter(p=>p.sourceId===s.id).length})),counts,modes,totalToday:posts.length,materialUpdates:posts.filter(p=>p.classification==='MATERIAL_UPDATE').length,jobs,publications,activity:activity.map(({metadata,...a})=>({...a,change:safeAuditChange(metadata)})),usage:usageSummary(usage),failures:failures.map(f=>({...f,lastError:safeCode(f.lastError)})),migrations,lastSent,totalPosts,totalNews,legacyPending,alerts};
 }
