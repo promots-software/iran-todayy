@@ -1,7 +1,7 @@
 import type { NextConfig } from "next";
 const config: NextConfig = {
   poweredByHeader: false,
-  outputFileTracingIncludes: {'/*':['./config/editorial/iran-now-contract.txt']},
+  outputFileTracingIncludes: {'/*':['./config/editorial/iran-now-contract.txt','./config/database/digitalocean-production-ca.crt']},
   experimental: {serverActions: {bodySizeLimit: '3mb'}},
   async headers() {
     return [{ source: "/:path*", headers: [
