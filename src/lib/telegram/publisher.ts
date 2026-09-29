@@ -113,15 +113,19 @@ export async function freezeValidatedPublication(tx:Prisma.TransactionClient,inp
 }
 export type SendResult={status:'SENT';messageId:string;chatId:string}|{status:'FAILED'|'UNKNOWN';error:string};
 /** No automatic transport retry: Bot API has no client idempotency key. */
-export async function sendTelegramOnce(config:{token:string;chatId:string},text:string,transport:typeof fetch=fetch,formatSnapshot:unknown=null):Promise<SendResult>{
+export async function sendTelegramOnce(config:{token:string;chatId:string},text:string,transport:typeof fetch=fetch,formatSnapshot:unknown=null,diagnostics?:Record<string,unknown>):Promise<SendResult>{
  const frozen=readTelegramSnapshot(formatSnapshot);
+ const d=diagnostics??{};Object.assign(d,{dispatchBegan:false,phase:'PRE_DISPATCH',httpStatus:null,parsingBegan:false,parsingCompleted:false,telegramOk:null,messageId:null,errorCategory:null});
  try{
+  d.dispatchBegan=true;d.phase='AWAITING_RESPONSE';
   const response=await transport(`https://api.telegram.org/bot${config.token}/sendMessage`,{method:'POST',redirect:'error',signal:AbortSignal.timeout(25000),headers:{'Content-Type':'application/json'},body:JSON.stringify({chat_id:config.chatId,text:frozen?.text??text,...(frozen?{parse_mode:frozen.parseMode}:{}),link_preview_options:{is_disabled:true},allow_paid_broadcast:false})});
+  d.httpStatus=response.status;d.phase="PARSING_RESPONSE";d.parsingBegan=true;
   const data=await response.json();
+  d.parsingCompleted=true;d.phase="RESPONSE_VALIDATION";d.telegramOk=typeof data?.ok==="boolean"?data.ok:null;d.messageId=Number.isSafeInteger(data?.result?.message_id)?String(data.result.message_id):null;
   if(response.ok&&data.ok===true&&Number.isSafeInteger(data.result?.message_id)&&data.result.message_id>0&&String(data.result.chat?.id)===config.chatId)return {status:'SENT',messageId:String(data.result.message_id),chatId:config.chatId};
   if(data.ok===false&&[400,401,403,404,429].includes(data.error_code))return {status:'FAILED',error:`TELEGRAM_REJECTED_${data.error_code}`};
-  return {status:'UNKNOWN',error:'TELEGRAM_DELIVERY_UNCERTAIN'};
- }catch{return {status:'UNKNOWN',error:'TELEGRAM_DELIVERY_UNCERTAIN'};}
+  d.errorCategory='UNEXPECTED_RESPONSE';return {status:'UNKNOWN',error:'TELEGRAM_DELIVERY_UNCERTAIN'};
+ }catch(error){const name=error instanceof Error?error.name:'';d.errorCategory=name==='TimeoutError'?'TIMEOUT':name==='AbortError'?'ABORTED':d.phase==='PARSING_RESPONSE'?'RESPONSE_PARSE_FAILED':'TRANSPORT_EXCEPTION';return {status:'UNKNOWN',error:'TELEGRAM_DELIVERY_UNCERTAIN'};}
 }
 export type ManualSendInput={publicationId:string;digest:string;destination:string;confirmed:boolean};
 export function assertManualSendEnabled(env:Record<string,string|undefined>){
@@ -175,14 +179,18 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   throw error;
  });
  if(!intent)return {status:'NOT_SENT_ALREADY_CLAIMED'};
- const outcome=await sendTelegramOnce(config,intent.contentSnapshot,transport,intent.telegramFormatSnapshot);
+ const diagnostics:Record<string,unknown>={};
+ const outcome=await sendTelegramOnce(config,intent.contentSnapshot,transport,intent.telegramFormatSnapshot,diagnostics);
+ const diagnostic=(phase:string)=>console.log(JSON.stringify({event:"TELEGRAM_DELIVERY_DIAGNOSTIC",publicationId:id,...diagnostics,persistencePhase:phase}));
+ diagnostic("BEGIN");
  // Journal acknowledgement separately before the aggregate transaction.
  // A crash after this write is recoverable without any second Telegram request.
- try{await recordDeliveryReceipt(db,id,intent.idempotencyKey,outcome);}catch{
+ try{await recordDeliveryReceipt(db,id,intent.idempotencyKey,outcome);diagnostic("RECEIPT_PERSISTED");}catch{
+  diagnostic("RECEIPT_FAILED");
   // Safe recovery evidence only: never log token, payload or raw exception.
   console.error(JSON.stringify({event:'TELEGRAM_ACK_PERSISTENCE_FAILED',publicationId:id,digest:intent.idempotencyKey,outcome}));
   throw new ProcessingError('DELIVERY_ACK_PERSISTENCE_FAILED');
  }
- await retryPersistence(()=>reconcileDelivery(db,id,manual?.actor??'telegram-publisher'));
+ try{await retryPersistence(()=>reconcileDelivery(db,id,manual?.actor??'telegram-publisher'));diagnostic('COMPLETE');}catch(error){diagnostic('RECONCILIATION_FAILED');throw error;}
  return outcome;
 }

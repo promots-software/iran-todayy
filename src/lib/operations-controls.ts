@@ -1,3 +1,4 @@
+import {abandonUnknownDelivery,assertResolvedDeliveries} from './telegram/delivery-abandonment';
 import {randomUUID} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
 import {z} from 'zod';
@@ -8,7 +9,7 @@ import {lockEditorialPublication} from './human-editorial-contract';
 import {ProcessingError} from './processing/contracts';
 import {syncAutomaticSources} from './telegram/source-authorization';
 import {automaticControlState} from './telegram/auto-control';
-export const operationSchema=z.object({requestId:z.uuid(),kind:z.enum(['AUTO_PUBLISH','AUTO_PUBLISH_RECOVERY','PUBLISHING_HOLD','PROCESSING_HOLD','SOURCE_ENABLED','SOURCE_MODE','SOURCE_PROCESSING_HOLD','RETRY']),target:z.string().max(100),value:z.string().max(30),expected:z.string().max(150),confirmed:z.literal(true)}).strict();
+export const operationSchema=z.object({requestId:z.uuid(),kind:z.enum(['AUTO_PUBLISH','AUTO_PUBLISH_RECOVERY','DELIVERY_ABANDON','PUBLISHING_HOLD','PROCESSING_HOLD','SOURCE_ENABLED','SOURCE_MODE','SOURCE_PROCESSING_HOLD','RETRY']),target:z.string().max(100),value:z.string().max(30),expected:z.string().max(150),confirmed:z.literal(true)}).strict();
 export const safeRetryCodes=['SOURCE_DISABLED','LIVE_SOURCE_DISABLED','LEASE_EXHAUSTED','PROCESSING_FAILED'] as const;
 export async function assertPublishingActive(tx:Prisma.TransactionClient){if((await tx.appSettings.findUniqueOrThrow({where:{id:1}})).publishingPaused)throw new ProcessingError('OPERATIONS_PUBLISHING_PAUSED');}
 export async function operate(db:PrismaClient,userId:string,raw:unknown){
@@ -24,7 +25,13 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
   const prior=await tx.auditLog.findUnique({where:{id:auditId}});
   if(prior){if(prior.actor!==`user:${userId}`||!isDeepStrictEqual(prior.metadata,input))throw new Error('REQUEST_ID_REUSED');return {changed:false};}
   let before:unknown;let modeAudit:Prisma.InputJsonObject|undefined;
-  if(input.kind==='AUTO_PUBLISH_RECOVERY'){
+  if(input.kind==='DELIVERY_ABANDON'){
+   const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}});
+   const state=automaticControlState(settings.telegramAutoPolicy,settings.publishingPaused,await tx.workerHeartbeat.findUnique({where:{id:'telegram-publisher-worker'}}));
+   if(state.policy?.state!=='CLOSED'||state.policy.reason!=='DELIVERY_RECONCILIATION_REQUIRED'||input.value!=='ABANDON')throw Error('ABANDON_POLICY_REQUIRED');
+   before={publicationId:input.target,historicalOutcome:'UNKNOWN'};
+   await abandonUnknownDelivery(tx,input.target,input.expected,`user:${userId}`,state.policy.id);
+  }else if(input.kind==='AUTO_PUBLISH_RECOVERY'){
    const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}});
    const state=automaticControlState(settings.telegramAutoPolicy,settings.publishingPaused,await tx.workerHeartbeat.findUnique({where:{id:'telegram-publisher-worker'}}));
    const policy=state.policy;
@@ -32,8 +39,7 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
    if(!state.canAcknowledge||settings.publishingMode!=='REQUIRE_APPROVAL')throw new Error('AUTOMATIC_RECOVERY_BLOCKED');
    // Recovery never retries or changes publications. Every unfinished intent must
    // first have an explicit terminal disposition; READY stories are unaffected.
-   if(await tx.publication.count({where:{automaticPolicyId:policy.id,status:{in:['PENDING','SENDING','UNKNOWN','FAILED']}}}))throw new Error('DELIVERY_RECONCILIATION_REQUIRED');
-   if(await tx.publication.count({where:{automaticPolicyId:policy.id,status:'CANCELLED',OR:[{attemptCount:{not:0}},{attempts:{some:{}}},{telegramMessageId:{not:null}},{claimedAt:{not:null}},{sentAt:{not:null}}]}}))throw new Error('DELIVERY_RECONCILIATION_REQUIRED');
+   await assertResolvedDeliveries(tx,policy.id);
    before=policy;
    await tx.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...policy,state:'CLOSED',reason:'OPERATOR_DISABLED'}}});
   }else if(input.kind==='AUTO_PUBLISH'){
@@ -45,7 +51,7 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
    before=policy;
    if(input.value==='true'){
     if(!state.canEnable)throw new Error('AUTOMATIC_ENABLE_BLOCKED');
-    if(await tx.publication.count({where:{automaticPolicyId:{not:null},status:{in:['SENDING','UNKNOWN','FAILED']}}}))throw new Error('DELIVERY_RECONCILIATION_REQUIRED');
+    await assertResolvedDeliveries(tx);
     const {reason: _reason,...retained}=policy;void _reason;
     const revision=randomUUID();const notBefore=new Date().toISOString();
     await tx.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...retained,id:revision,state:'ACTIVE',notBefore,authorizedBy:`user:${userId}`}}});

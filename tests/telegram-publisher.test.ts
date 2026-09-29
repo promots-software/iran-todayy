@@ -38,3 +38,14 @@ test('definite rate-limit rejection is persisted as failed without an automatic 
  let calls=0;const result=await sendTelegramOnce(config,'خبر',async()=>{calls++;return Response.json({ok:false,error_code:429,parameters:{retry_after:2}},{status:429});});
  assert.equal(result.status,'FAILED');assert.equal(calls,1);
 });
+
+test('transport diagnostics are bounded safe metadata and never retry',async()=>{
+ for(const failure of ['timeout','parse','response','success']){
+  let calls=0;const d:Record<string,unknown>={};
+  const result=await sendTelegramOnce(config,'private article',async()=>{calls++;if(failure==='timeout')throw new DOMException('secret URL/token','TimeoutError');if(failure==='parse')return new Response('not json',{status:502});if(failure==='response')return Response.json({ok:true,result:{message_id:7,chat:{id:-999}}});return Response.json({ok:true,result:{message_id:8,chat:{id:-100123}}});},null,d);
+  assert.equal(calls,1);assert.equal(d.dispatchBegan,true);assert(!JSON.stringify(d).includes('secret'));assert(!JSON.stringify(d).includes('private article'));assert.equal(result.status,failure==='success'?'SENT':'UNKNOWN');
+  if(failure==='timeout'){assert.equal(d.errorCategory,'TIMEOUT');assert.equal(d.httpStatus,null);}
+  if(failure==='parse'){assert.equal(d.httpStatus,502);assert.equal(d.parsingBegan,true);assert.equal(d.parsingCompleted,false);}
+  if(failure==='response'){assert.equal(d.messageId,'7');assert.equal(d.telegramOk,true);assert.equal(d.errorCategory,'UNEXPECTED_RESPONSE');}
+ }
+});
