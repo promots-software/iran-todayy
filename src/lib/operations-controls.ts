@@ -1,3 +1,4 @@
+import {databaseNow} from './telegram/automatic-recovery';
 import {abandonUnknownDelivery,assertResolvedDeliveries} from './telegram/delivery-abandonment';
 import {randomUUID} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
@@ -41,7 +42,8 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
    // first have an explicit terminal disposition; READY stories are unaffected.
    await assertResolvedDeliveries(tx,policy.id);
    before=policy;
-   await tx.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...policy,state:'CLOSED',reason:'OPERATOR_DISABLED'}}});
+   const {recovery:_recovery,...retained}=policy;void _recovery;
+   await tx.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...retained,state:'CLOSED',reason:'OPERATOR_DISABLED',...(policy.recovery?{consecutiveFailures:0,failureTimes:[]}:{})}}});
   }else if(input.kind==='AUTO_PUBLISH'){
    const settings=await tx.appSettings.findUniqueOrThrow({where:{id:1}});
    const heartbeat=await tx.workerHeartbeat.findUnique({where:{id:'telegram-publisher-worker'}});
@@ -52,8 +54,8 @@ export async function operate(db:PrismaClient,userId:string,raw:unknown){
    if(input.value==='true'){
     if(!state.canEnable)throw new Error('AUTOMATIC_ENABLE_BLOCKED');
     await assertResolvedDeliveries(tx);
-    const {reason: _reason,...retained}=policy;void _reason;
-    const revision=randomUUID();const notBefore=new Date().toISOString();
+    const {reason: _reason,recovery:_recovery,...retained}=policy;void _reason;void _recovery;
+    const revision=randomUUID();const notBefore=(await databaseNow(tx)).toISOString();
     await tx.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...retained,id:revision,state:'ACTIVE',notBefore,authorizedBy:`user:${userId}`}}});
     modeAudit={policyRevision:revision,notBefore};
    }else{

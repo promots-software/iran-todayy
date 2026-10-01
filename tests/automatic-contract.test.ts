@@ -191,12 +191,15 @@ import {acknowledgePublisher} from '../src/worker/publisher-acknowledgement';
 import {automaticControlState} from '../src/lib/telegram/auto-control';
 import {reconcileDelivery} from '../src/lib/telegram/delivery-receipt';
 
-test('owner abandons UNKNOWN without rewriting receipt, recovers explicitly, and enables forward only',async()=>{
+test('legacy owner abandons UNKNOWN without rewriting receipt, recovers explicitly, and enables forward only',async()=>{
  const a=await make('NORMAL');assert(a.item);
  let uncertainCalls=0;
  await automaticDeliveryCycle(db,env,async()=>{uncertainCalls++;throw new TypeError('offline transport failure');});
  const pub=await db.publication.findUniqueOrThrow({where:{newsItemId:a.item.id},include:{attempts:true}});
  assert.equal(pub.status,'UNKNOWN');assert.equal(uncertainCalls,1);
+ // Retain coverage of the pre-recovery deployment's unresolved legacy incident.
+ await db.appSettings.update({where:{id:1},data:{telegramAutoPolicy:{...a.policy,state:'CLOSED',reason:'DELIVERY_RECONCILIATION_REQUIRED'}}});
+ await db.auditLog.delete({where:{id:`delivery-quarantine:${pub.id}`}});
  const closed=(await db.appSettings.findUniqueOrThrow({where:{id:1}})).telegramAutoPolicy as unknown as typeof a.policy & {reason:string};
  assert.equal(closed.state,'CLOSED');assert.equal(closed.reason,'DELIVERY_RECONCILIATION_REQUIRED');
  await automaticDeliveryCycle(db,env,transport);assert.equal(sends,0);

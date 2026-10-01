@@ -1,6 +1,12 @@
+import {deliveryDiagnosticsSchema} from './delivery-diagnostics';
 import {z} from 'zod';
 import {ProcessingError} from '../processing/contracts';
-export const autoPolicySchema=z.object({version:z.literal('telegram-auto-v1'),id:z.uuid(),state:z.enum(['CANARY','ACTIVE','CLOSED']),destination:z.string().regex(/^-[1-9]\d*$/),notBefore:z.iso.datetime(),sourceIds:z.array(z.string().min(1)),sourceNotBefore:z.record(z.string(),z.iso.datetime()).optional(),canaryCandidateId:z.string().nullable(),authorizedBy:z.string().min(1),reason:z.string().optional()}).strict();
+export const recoverySchema=z.object({
+ version:z.literal('telegram-recovery-v1'),publicationId:z.string(),newsItemId:z.string().nullable(),
+ startedAt:z.iso.datetime(),nextCheckAt:z.iso.datetime(),expiresAt:z.iso.datetime(),checks:z.number().int().nonnegative(),
+ diagnostic:deliveryDiagnosticsSchema.optional(),blocker:z.string().regex(/^[A-Z_0-9]+$/),circuit:z.enum(['COOLDOWN','BACKOFF','OPEN']),
+}).strict();
+export const autoPolicySchema=z.object({version:z.literal('telegram-auto-v1'),id:z.uuid(),state:z.enum(['CANARY','ACTIVE','CLOSED']),destination:z.string().regex(/^-[1-9]\d*$/),notBefore:z.iso.datetime(),sourceIds:z.array(z.string().min(1)),sourceNotBefore:z.record(z.string(),z.iso.datetime()).optional(),canaryCandidateId:z.string().nullable(),authorizedBy:z.string().min(1),reason:z.string().optional(),recovery:recoverySchema.optional(),failureTimes:z.array(z.iso.datetime()).max(3).optional(),consecutiveFailures:z.number().int().min(0).max(3).optional()}).strict();
 export type AutoPolicy=z.infer<typeof autoPolicySchema>;
 export function requireAutoPolicy(raw:unknown,env:Record<string,string|undefined>){
  const p=autoPolicySchema.safeParse(raw);

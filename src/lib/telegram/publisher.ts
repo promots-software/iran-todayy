@@ -1,3 +1,4 @@
+import {safeDeliveryDiagnostics} from './delivery-diagnostics';
 import {canonicalPublicationFacts} from './canonical-publication';
 import {assertStagingDestination} from './staging-guard';
 import {processingSource} from '../processing/processing-source';
@@ -123,7 +124,7 @@ export async function sendTelegramOnce(config:{token:string;chatId:string},text:
   const data=await response.json();
   d.parsingCompleted=true;d.phase="RESPONSE_VALIDATION";d.telegramOk=typeof data?.ok==="boolean"?data.ok:null;d.messageId=Number.isSafeInteger(data?.result?.message_id)?String(data.result.message_id):null;
   if(response.ok&&data.ok===true&&Number.isSafeInteger(data.result?.message_id)&&data.result.message_id>0&&String(data.result.chat?.id)===config.chatId)return {status:'SENT',messageId:String(data.result.message_id),chatId:config.chatId};
-  if(data.ok===false&&[400,401,403,404,429].includes(data.error_code))return {status:'FAILED',error:`TELEGRAM_REJECTED_${data.error_code}`};
+  if(data.ok===false&&[400,401,403,404,429].includes(data.error_code)){d.errorCategory='TELEGRAM_REJECTED';if(data.error_code===429&&Number.isSafeInteger(data.parameters?.retry_after)&&data.parameters.retry_after>0&&data.parameters.retry_after<=86400)d.retryAfterSeconds=data.parameters.retry_after;return {status:'FAILED',error:`TELEGRAM_REJECTED_${data.error_code}`};}
   d.errorCategory='UNEXPECTED_RESPONSE';return {status:'UNKNOWN',error:'TELEGRAM_DELIVERY_UNCERTAIN'};
  }catch(error){const name=error instanceof Error?error.name:'';d.errorCategory=name==='TimeoutError'?'TIMEOUT':name==='AbortError'?'ABORTED':d.phase==='PARSING_RESPONSE'?'RESPONSE_PARSE_FAILED':'TRANSPORT_EXCEPTION';return {status:'UNKNOWN',error:'TELEGRAM_DELIVERY_UNCERTAIN'};}
 }
@@ -191,6 +192,7 @@ async function deliverClaimedPublication(db:PrismaClient,id:string,env:Record<st
   console.error(JSON.stringify({event:'TELEGRAM_ACK_PERSISTENCE_FAILED',publicationId:id,digest:intent.idempotencyKey,outcome}));
   throw new ProcessingError('DELIVERY_ACK_PERSISTENCE_FAILED');
  }
+ await retryPersistence(()=>db.auditLog.upsert({where:{id:`delivery-diagnostic:${id}`},update:{},create:{id:`delivery-diagnostic:${id}`,actor:'telegram-publisher',action:'TELEGRAM_DELIVERY_DIAGNOSTIC',entityType:'Publication',entityId:id,message:'Allowlisted transport diagnostics',metadata:safeDeliveryDiagnostics(diagnostics)}}));
  try{await retryPersistence(()=>reconcileDelivery(db,id,manual?.actor??'telegram-publisher'));diagnostic('COMPLETE');}catch(error){diagnostic('RECONCILIATION_FAILED');throw error;}
  return outcome;
 }

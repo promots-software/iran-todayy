@@ -1,3 +1,4 @@
+import {isQuarantined} from './automatic-recovery';
 import {Prisma} from '@prisma/client';
 import {createHash} from 'node:crypto';
 
@@ -16,7 +17,8 @@ export async function abandonUnknownDelivery(tx:Prisma.TransactionClient,id:stri
 /** Must be called under the shared editorial publication lock. */
 export async function assertResolvedDeliveries(tx:Prisma.TransactionClient,policyId?:string){
  const scope=policyId?{automaticPolicyId:policyId}:{automaticPolicyId:{not:null}};
- if(await tx.publication.count({where:{...scope,status:{in:['PENDING','SENDING','UNKNOWN','FAILED']}}}))throw Error('DELIVERY_RECONCILIATION_REQUIRED');
+ if(await tx.publication.count({where:{...scope,status:{in:['PENDING','SENDING']}}}))throw Error('DELIVERY_RECONCILIATION_REQUIRED');
+ for(const p of await tx.publication.findMany({where:{...scope,status:{in:['UNKNOWN','FAILED']}},select:{id:true}}))if(!await isQuarantined(tx,p.id))throw Error('DELIVERY_RECONCILIATION_REQUIRED');
  const cancelled=await tx.publication.findMany({where:{...scope,status:'CANCELLED'},include:{attempts:true}});
  for(const p of cancelled){
   if(p.attemptCount===0&&!p.attempts.length&&!p.telegramMessageId&&!p.claimedAt&&!p.sentAt)continue;
